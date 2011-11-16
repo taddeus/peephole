@@ -13,7 +13,7 @@ int     [1-9][0-9]*
 {reg}               { yylval.sval = yytext; return REG; }       /* Registry address */
 {word}:             { yylval.sval = yytext; return LABEL; }     /* Label */
 {int}               { yylval.ival = atoi(yytext); return INT; } /* Integer */
-[0-9]+(\({reg}\))?  { yylval.sval = yytext; return OFFSET; }    /* Registry offset */
+{int}(\({reg}\))?   { yylval.sval = yytext; return OFFSET; }    /* Registry offset */
 [a-z\.]+            { yylval.sval = yytext; return INSTR; }     /* Instruction */
 {word}              { yylval.sval = yytext; return REF; }       /* Label reference */
 [,]                 { return COMMA; }                           /* Comma */

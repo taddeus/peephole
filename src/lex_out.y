@@ -23,6 +23,7 @@ symb:
     | LABEL {printf("Found a label: %s\n", $1);}
     | REF {printf("Found a label reference: %s\n", $1);}
     | INT {printf("Found an integer: %d\n", $1);}
+    | OFFSET {printf("Found an offset registry address: %s\n", $1);}
     | INSTR {printf("Found an instruction: %s\n", $1);}
     | COMMA {printf("Found a comma\n");}
     | NL {printf("Found a newline\n");}
