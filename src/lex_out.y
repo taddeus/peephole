@@ -4,28 +4,27 @@
 void yyerror(char*);
 %}
 
-%token COMMA NL
-
 %union {
+    int ival;
     char *sval;
 }
 
-%token <sval> LABEL
-%token <sval> ARG
-%token <sval> INSTR
-%token <sval> DIRECTIVE
-%token <sval> COMMENT
+%token NL COMMA
+%token <ival> INT
+%token <sval> COMMENT DIRECTIVE REG LABEL OFFSET INSTR REF
 
 %%
 
 symb:
     symb symb
-    | LABEL {printf("Found a label: %s\n", $1);}
-    | ARG {printf("Found an argument: %s\n", $1);}
-    | INSTR {printf("Found an instruction: %s\n", $1);}
-    | DIRECTIVE {printf("Found a directive: %s\n", $1);}
-    | COMMA {printf("Found a comma\n");}
     | COMMENT {printf("Found a comment: %s\n", $1);}
+    | DIRECTIVE {printf("Found a directive: %s\n", $1);}
+    | REG {printf("Found a registry address: %s\n", $1);}
+    | LABEL {printf("Found a label: %s\n", $1);}
+    | REF {printf("Found a label reference: %s\n", $1);}
+    | INT {printf("Found an integer: %d\n", $1);}
+    | INSTR {printf("Found an instruction: %s\n", $1);}
+    | COMMA {printf("Found a comma\n");}
     | NL {printf("Found a newline\n");}
     ;
 %%
@@ -41,7 +40,7 @@ main(int argc, const char* argv[])
         printf("No file specified");
         exit(-1);
     }
-    
+
     // open a file handle to a particular file:
 	FILE *myfile = fopen(argv[1], "r");
 	// make sure it is valid:
@@ -51,7 +50,7 @@ main(int argc, const char* argv[])
 	}
 	// set lex to read from it instead of defaulting to STDIN:
 	yyin = myfile;
-	
+
 	// parse through the input until there is no more:
 	do {
 		yyparse();
@@ -62,4 +61,4 @@ void yyerror(char *s)
 {
     printf("Found error: %s\n", s);
     exit(-1);
-} 
+}
