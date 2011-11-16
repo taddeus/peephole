@@ -4,7 +4,7 @@
 %}
 reg     \$[a-zA-Z0-9]+
 word    [a-zA-Z0-9_\.]+
-int     [1-9][0-9]*
+int     [0-9]+
 %%
 
 [\n]                { return NL; }                              /* Newline */
