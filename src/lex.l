@@ -5,12 +5,12 @@
 
 %%
 
-[a-z0-9$._]+:       { return LABEL; }      /* Label */
-\$[a-z0-9._]        { return ARG; }        /* Argument of instruction */
-^[a-z.]+            { return INSTR; }      /* Instruction */
-\.[^\n]*            { return DIRECTIVE; }  /* Assembly */
-\,                  { return COMMA; }      /* Comma */
-#[^\n]*             { return COMMENT; }    /* Comment */
-\n                  { return NL; }         /* New line */
+[a-z0-9$._]+:       { yylval = yytext; return LABEL; }      /* Label */
+\$[a-z0-9._]        { yylval = yytext; return ARG; }        /* Arg of instr */
+^[a-z.]+            { yylval = yytext; return INSTR; }      /* Instruction */
+\.[^\n]*            { yylval = yytext; return DIRECTIVE; }  /* Assembly */
+\,                  { yylval = yytext; return COMMA; }      /* Comma */
+#[^\n]*             { yylval = yytext; return COMMENT; }    /* Comment */
+\n                  { yylval = yytext; return NL; }         /* New line */
 	
-[\s\t]+    {;}
+[\s\t]+             { ; }                              /* Ignore whitespace */
