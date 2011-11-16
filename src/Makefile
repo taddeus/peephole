@@ -3,7 +3,7 @@ LEX=lex
 YACC=yacc
 CFLAGS=-ll
 
-parser: lex yacc
+parser: yacc lex
 	$(CC) -c lex.yy.c y.tab.c
 	$(CC) -o $@ lex.yy.o y.tab.o $(CFLAGS)
 

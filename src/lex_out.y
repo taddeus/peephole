@@ -17,8 +17,10 @@ void yyerror(char*);
 %token <sval> COMMENT
 
 %%
+
 symb:
-    LABEL {printf("Found a label: %s\n", $1);}
+    symb symb
+    | LABEL {printf("Found a label: %s\n", $1);}
     | ARG {printf("Found an argument: %s\n", $1);}
     | INSTR {printf("Found an instruction: %s\n", $1);}
     | DIRECTIVE {printf("Found a directive: %s\n", $1);}
