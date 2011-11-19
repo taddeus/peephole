@@ -1,7 +1,33 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+
+// Instruction types
+#define TYPE_COMMENT 0
+#define TYPE_DIRECTIVE 1
+#define TYPE_LABEL 2
+#define TYPE_CMD 3
+
+// Argument types
+#define ARG_REG 0
+#define ARG_OFFSET 1
+
+typedef struct line {
+    int type;
+    const char *name;
+    int argc;
+    char **argv;
+    int *argt;
+
+    struct line *prev;
+    struct line *next;
+} line;
+
 void yyerror(char*);
+void add_line(int type, const char *name, int argc, char **argv, int *argt);
+
+line *first_line, *last_line;
+
 %}
 
 %union {
@@ -11,22 +37,38 @@ void yyerror(char*);
 
 %token NL COMMA
 %token <ival> INT
-%token <sval> COMMENT DIRECTIVE REG LABEL OFFSET INSTR REF
+%token <sval> COMMENT DIRECTIVE WORD LABEL OFFSET CMD
+%start symbol
+
+%type <sval> reg3
 
 %%
 
-symb:
-    symb symb
-    | COMMENT {printf("Found a comment: %s\n", $1);}
-    | DIRECTIVE {printf("Found a directive: %s\n", $1);}
-    | REG {printf("Found a registry address: %s\n", $1);}
-    | LABEL {printf("Found a label: %s\n", $1);}
-    | REF {printf("Found a label reference: %s\n", $1);}
-    | INT {printf("Found an integer: %d\n", $1);}
-    | OFFSET {printf("Found an offset registry address: %s\n", $1);}
-    | INSTR {printf("Found an instruction: %s\n", $1);}
-    | COMMA {printf("Found a comma\n");}
-    | NL {printf("Found a newline\n");}
+reg3: "add" | "sub"
+
+command:
+    reg3 WORD WORD WORD {
+        char *argv[] = (char **)malloc(3 * sizeof(char *));
+        char *argt[] = (int *)malloc(3 * sizeof(int));
+        argv[0] = $2;
+        argv[1] = $3;
+        argv[2] = $4;
+        argt[2] = argt[1] = argt[0] = ARG_REG;
+        add_line(TYPE_CMD, (char *)$1, 3, argv, argt);
+    }
+    ;
+
+symbol:
+    symbol symbol
+    | COMMENT   { printf("Found comment: %s\n", $1); }
+    | DIRECTIVE { printf("Found directive: %s\n", $1); }
+    | WORD      { printf("Found word: %s\n", $1); }
+    | LABEL     { printf("Found label: %s\n", $1); }
+    | INT       { printf("Found integer: %d\n", $1); }
+    | OFFSET    { printf("Found offset registry address: %s\n", $1); }
+    | CMD       { printf("Found command: %s\n", $1); }
+    | COMMA     { printf("Found comma\n"); }
+    | NL        { printf("Found newline\n"); }
     ;
 %%
 
@@ -34,10 +76,9 @@ extern int yylex();
 extern int yyparse();
 extern FILE *yyin;
 
-main(int argc, const char* argv[])
+main(int argc, const char *argv[])
 {
-    if (argc < 2)
-    {
+    if( argc < 2 ) {
         printf("No file specified");
         exit(-1);
     }
@@ -45,7 +86,7 @@ main(int argc, const char* argv[])
     // open a file handle to a particular file:
 	FILE *myfile = fopen(argv[1], "r");
 	// make sure it is valid:
-	if (!myfile) {
+	if( !myfile ) {
 		printf("Cannot open %s\n", argv[1]);
 		return -1;
 	}
@@ -55,11 +96,28 @@ main(int argc, const char* argv[])
 	// parse through the input until there is no more:
 	do {
 		yyparse();
-	} while (!feof(yyin));
+	} while( !feof(yyin) );
 }
 
 void yyerror(char *s)
 {
-    printf("Found error: %s\n", s);
-    exit(-1);
+    printf("Error: %s\n", s);
+    exit(1);
+}
+
+void add_line(int type, const char *name, int argc, char **argv, int *argt) {
+    line *l = (line*)malloc(sizeof(line));
+
+    l->argc = argc;
+    l->argv = argv;
+    l->argt = argt;
+
+    if( last_line == NULL ) {
+        // First line
+        first_line = last_line = l;
+    } else {
+        // Add line to linked list
+        l->prev = last_line;
+        last_line = last_line->next = l;
+    }
 }
