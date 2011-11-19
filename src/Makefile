@@ -9,8 +9,8 @@ parser: yacc lex
 
 lex: lex.l
 	$(LEX) lex.l
-	
-yacc: lex_out.y
-	$(YACC) -d lex_out.y
+
+yacc: grammar.y
+	$(YACC) -d grammar.y
 
 all: parser
