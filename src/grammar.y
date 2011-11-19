@@ -9,8 +9,10 @@
 #define TYPE_CMD 3
 
 // Argument types
-#define ARG_REG 0
-#define ARG_OFFSET 1
+#define ARG_INT 0
+#define ARG_REG 1
+#define ARG_LABEL 2
+#define ARG_OFFSET 3
 
 typedef struct line {
     int type;
@@ -40,21 +42,19 @@ line *first_line, *last_line;
 %token <sval> COMMENT DIRECTIVE WORD LABEL OFFSET CMD
 %start symbol
 
-%type <sval> reg3
+%type <sval> command
 
 %%
 
-reg3: "add" | "sub"
-
 command:
-    reg3 WORD WORD WORD {
-        char *argv[] = (char **)malloc(3 * sizeof(char *));
-        char *argt[] = (int *)malloc(3 * sizeof(int));
+    "add" WORD COMMA WORD COMMA WORD {
+        char **argv = (char **)malloc(3 * sizeof(char *));
+        int *argt = (int *)malloc(3 * sizeof(int));
         argv[0] = $2;
-        argv[1] = $3;
-        argv[2] = $4;
+        argv[1] = $4;
+        argv[2] = $6;
         argt[2] = argt[1] = argt[0] = ARG_REG;
-        add_line(TYPE_CMD, (char *)$1, 3, argv, argt);
+        add_line(TYPE_CMD, "add", 3, argv, argt);
     }
     ;
 
@@ -107,6 +107,7 @@ void yyerror(char *s)
 
 void add_line(int type, const char *name, int argc, char **argv, int *argt) {
     line *l = (line*)malloc(sizeof(line));
+    printf("\nName: %s\n\n", name);
 
     l->argc = argc;
     l->argv = argv;
