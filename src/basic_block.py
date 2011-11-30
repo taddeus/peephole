@@ -1,5 +1,6 @@
-# TODO: Get all jump commands
-JUMP_COMMANDS = ['j', 'jal']
+# TODO: JALR & JR
+JUMP_COMMANDS = ['j', 'jal', 'beq', 'bne', 'blez', 'bgtz', 'bltz', 'bgez', \
+                 'bc1f', 'bc1t']
 
 def is_jump(statement):
     '''Check if a statement is a jump command.'''
@@ -17,10 +18,12 @@ def find_leaders(statements):
     for i, statement in enumerate(statements[1:]):
         if is_jump(statement):
             leaders.append(i + 2)
-            jump_target_labels.append(statement[2]['args'][0])
+            print statement[2]['args'][-1]
+            jump_target_labels.append(statement[2]['args'][-1])
             #print 'found jump:', i, statement
 
-    #print 'target labels:', jump_target_labels
+    print 'target labels:', jump_target_labels
+    print 'leaders:', leaders
 
     # Append jump targets
     for i, statement in enumerate(statements[1:]):
@@ -40,5 +43,7 @@ def find_basic_blocks(statements):
 
     for i in range(len(leaders) - 1):
         blocks.append(statements[leaders[i]:leaders[i + 1]])
+
+    blocks.append(statements[leaders[-1]:])
 
     return blocks
