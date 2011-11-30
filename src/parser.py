@@ -22,6 +22,7 @@ def t_COMMA(t):
 
 def t_COMMENT(t):
     r'\#.*'
+    t.value = t.value[1:]
     return t
 
 def t_DIRECTIVE(t):
