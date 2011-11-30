@@ -1,10 +1,1 @@
-* Mag je voor een label er van uit gaan dat deze bestaat uit óf woord, óf
-  $L[int] ?
--> Nee. Je kan beter ipv een label/reg match een match doen op woorden waarin
-   een dollarteken zit. in je grammatica zeg je dan waar dat soort woorden mag
-   voorkomen.
-   Update: er is nu een token WORD ipv REG en REF in de lexer.
 
-* Beter instructies matchen in Lex of in YACC?
--> kan beide. Leukste/handigste is een parser-generator-generator schrijven in
-   bijv. Python waarmee grammaticaregels worden gegenereerd.
