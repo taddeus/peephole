@@ -2,9 +2,3 @@
 *.pdf
 *.pyc
 *~
-*.o
-*.s
-lex.yy.c
-y.tab.c
-y.tab.h
-peephole

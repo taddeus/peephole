@@ -1,0 +1,8 @@
+*.o
+*.s
+lex.yy.c
+y.tab.c
+y.tab.h
+peephole
+parser.out
+parsetab.py
