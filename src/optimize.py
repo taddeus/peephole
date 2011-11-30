@@ -9,14 +9,14 @@ if __name__ == '__main__':
         print 'Usage: python %s FILE' % argv[0]
         exit(1)
 
-    lines = parse_file(argv[1])
-    blocks = find_basic_blocks(lines)
+    statements = parse_file(argv[1])
+    blocks = find_basic_blocks(statements)
 
-    #for i, line in enumerate(lines):
-    #    print i, line
+    #for i, statement in enumerate(statements):
+    #    print i, statement
 
     for i, block in enumerate(blocks):
         print '\nbasic block %d:' % i
 
-        for line in block:
-            print line
+        for statement in block:
+            print statement

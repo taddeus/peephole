@@ -1,8 +1,8 @@
 import ply.lex as lex
 import ply.yacc as yacc
 
-# Global lines administration
-lines = []
+# Global statements administration
+statements = []
 
 tokens = ('NEWLINE', 'WORD', 'COMMENT', 'DIRECTIVE', 'COMMA', 'COLON')
 
@@ -61,11 +61,11 @@ def p_line_instruction(p):
 
 def p_line_comment(p):
     'line : COMMENT NEWLINE'
-    lines.append(('comment', p[1], {'inline': False}))
+    statements.append(('comment', p[1], {'inline': False}))
 
 def p_line_inline_comment(p):
     'line : instruction COMMENT NEWLINE'
-    lines.append(('comment', p[2], {'inline': True}))
+    statements.append(('comment', p[2], {'inline': True}))
 
 def p_instruction_command(p):
     'instruction : command'
@@ -73,17 +73,17 @@ def p_instruction_command(p):
 
 def p_instruction_directive(p):
     'instruction : DIRECTIVE'
-    lines.append(('directive', p[1], {}))
+    statements.append(('directive', p[1], {}))
 
 def p_instruction_label(p):
     'instruction : WORD COLON'
-    lines.append(('label', p[1], {}))
+    statements.append(('label', p[1], {}))
 
 def p_command(p):
     '''command : WORD WORD COMMA WORD COMMA WORD
                | WORD WORD COMMA WORD
                | WORD WORD'''
-    lines.append(('command', p[1], {'args': list(p)[2::2]}))
+    statements.append(('command', p[1], {'args': list(p)[2::2]}))
 
 def p_error(p):
     print 'Syntax error at "%s" on line %d' % (p.value, lexer.lineno)
@@ -91,9 +91,9 @@ def p_error(p):
 yacc.yacc()
 
 def parse_file(filename):
-    global lines
+    global statements
 
-    lines = []
+    statements = []
 
     try:
         content = open(filename).read()
@@ -101,4 +101,4 @@ def parse_file(filename):
     except IOError:
         print 'File "%s" could not be opened' % filename
 
-    return lines
+    return statements
