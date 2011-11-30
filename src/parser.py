@@ -1,6 +1,8 @@
-#!/usr/bin/python
 import ply.lex as lex
 import ply.yacc as yacc
+
+# Global lines administration
+lines = []
 
 tokens = ('NEWLINE', 'WORD', 'COMMENT', 'DIRECTIVE', 'COMMA', 'COLON')
 
@@ -46,11 +48,7 @@ def t_error(t):
 lexer = lex.lex()
 
 # Parsing rules
-precedence = (
-    ('nonassoc', 'COLON', 'COMMA'),
-    ('nonassoc', 'COMMENT', 'DIRECTIVE'),
-    ('nonassoc', 'WORD'),
-    )
+start = 'input'
 
 def p_input(p):
     '''input :
@@ -63,11 +61,11 @@ def p_line_instruction(p):
 
 def p_line_comment(p):
     'line : COMMENT NEWLINE'
-    print 'comment line', list(p)[1:]
+    lines.append(('comment', p[1], {'inline': False}))
 
 def p_line_inline_comment(p):
     'line : instruction COMMENT NEWLINE'
-    print 'inline comment', list(p)[1:]
+    lines.append(('comment', p[2], {'inline': True}))
 
 def p_instruction_command(p):
     'instruction : command'
@@ -75,43 +73,32 @@ def p_instruction_command(p):
 
 def p_instruction_directive(p):
     'instruction : DIRECTIVE'
-    print 'directive', list(p)[1:]
+    lines.append(('directive', p[1], {}))
 
 def p_instruction_label(p):
     'instruction : WORD COLON'
-    print 'label', list(p)[1:]
+    lines.append(('label', p[1], {}))
 
-def p_command_3(p):
-    'command : WORD WORD COMMA WORD COMMA WORD'
-    print 'command with 3 args', list(p)[1:]
-
-def p_command_2(p):
-    'command : WORD WORD COMMA WORD'
-    print 'command with 2 args', list(p)[1:]
-
-def p_command_1(p):
-    'command : WORD WORD'
-    print 'command with 1 args', list(p)[1:]
+def p_command(p):
+    '''command : WORD WORD COMMA WORD COMMA WORD
+               | WORD WORD COMMA WORD
+               | WORD WORD'''
+    lines.append(('command', p[1], {'args': list(p)[2::2]}))
 
 def p_error(p):
-    print 'Syntax error at "%s"' % p.value
+    print 'Syntax error at "%s" on line %d' % (p.value, lexer.lineno)
 
 yacc.yacc()
-yacc.parse(open('hello.s').read())
 
-#lexer.input(open('hello.s').read())
-#
-#while True:
-#    tok = lexer.token()
-#
-#    if not tok:
-#        break
-#
-#    print tok
+def parse_file(filename):
+    global lines
 
-#while 1:
-    #try:
-    #    s = input('calc > ')  # Use raw_input on Python 2
-    #except EOFError:
-    #    break
-    #yacc.parse(s)
+    lines = []
+
+    try:
+        content = open(filename).read()
+        yacc.parse(content)
+    except IOError:
+        print 'File "%s" could not be opened' % filename
+
+    return lines
