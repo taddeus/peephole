@@ -17,14 +17,14 @@ if __name__ == '__main__':
     statement_no = 1
 
     for i, block in enumerate(blocks):
-        print 'basic block %d:' % i
+        #print 'basic block %d:' % i
 
         for statement in block:
-            print statement_no, statement
+            #print statement_no, statement
             statement_no += 1
 
-    print '\nOut:'
-    print out
+    #print '\nOut:'
+    #print out
 
     if len(argv) > 2:
         f = open(argv[2], 'w+')

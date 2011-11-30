@@ -29,13 +29,23 @@ def t_DIRECTIVE(t):
     r'\..*'
     return t
 
+def t_hex_word(t):
+    r'0x[0-9a-fA-F]{8}'
+    t.type = 'WORD'
+    return t
+
 def t_offset_address(t):
-    r'[0-9]+(\([a-zA-Z0-9$_.]+\))?'
+    r'[0-9]+\([a-zA-Z0-9$_.]+\)'
+    t.type = 'WORD'
+    return t
+
+def t_int(t):
+    r'-?[0-9]+'
     t.type = 'WORD'
     return t
 
 def t_WORD(t):
-    r'[a-zA-Z0-9$_.]+'
+    r'[a-zA-Z0-9$_.+()]+'
     return t
 
 # Ignore whitespaces
@@ -83,7 +93,8 @@ def p_instruction_label(p):
 def p_command(p):
     '''command : WORD WORD COMMA WORD COMMA WORD
                | WORD WORD COMMA WORD
-               | WORD WORD'''
+               | WORD WORD
+               | WORD'''
     statements.append(('command', p[1], {'args': list(p)[2::2]}))
 
 def p_error(p):
