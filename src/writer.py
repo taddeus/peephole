@@ -1,4 +1,5 @@
 def write_statements(statements):
+    '''Write a list of statements to valid assembly code.'''
     s = '';
 
     for i, statement in enumerate(statements):
@@ -11,7 +12,7 @@ def write_statements(statements):
             line = '#' + name
 
             if args['inline']:
-                newline = '\t\t'
+                newline = '  '
         elif statement_type == 'directive':
             line = '\t' + name
         elif statement_type == 'command':
@@ -22,3 +23,9 @@ def write_statements(statements):
         s += newline + line
 
     return s
+
+def write_to_file(filename, statements):
+    '''Convert a list of statements to valid assembly code and write it to a
+    file.'''
+    s = write_statements(statements)
+    open(filename, 'w+').write(s).close()
