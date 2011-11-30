@@ -12,11 +12,11 @@ if __name__ == '__main__':
     statements = parse_file(argv[1])
     blocks = find_basic_blocks(statements)
 
-    #for i, statement in enumerate(statements):
-    #    print i, statement
+    statement_no = 1
 
     for i, block in enumerate(blocks):
         print '\nbasic block %d:' % i
 
         for statement in block:
-            print statement
+            print statement_no, statement
+            statement_no += 1

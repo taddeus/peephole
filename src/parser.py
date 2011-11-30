@@ -73,11 +73,11 @@ def p_instruction_command(p):
 
 def p_instruction_directive(p):
     'instruction : DIRECTIVE'
-    statements.append(('directive', p[1], {}))
+    statements.append(('directive', p[1], None))
 
 def p_instruction_label(p):
     'instruction : WORD COLON'
-    statements.append(('label', p[1], {}))
+    statements.append(('label', p[1], None))
 
 def p_command(p):
     '''command : WORD WORD COMMA WORD COMMA WORD
