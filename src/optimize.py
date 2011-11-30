@@ -25,3 +25,8 @@ if __name__ == '__main__':
 
     print '\nOut:'
     print out
+
+    if len(argv) > 2:
+        f = open(argv[2], 'w+')
+        f.write(out)
+        f.close()

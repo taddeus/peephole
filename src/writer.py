@@ -28,4 +28,6 @@ def write_to_file(filename, statements):
     '''Convert a list of statements to valid assembly code and write it to a
     file.'''
     s = write_statements(statements)
-    open(filename, 'w+').write(s).close()
+    f = open(filename, 'w+')
+    f.write(s)
+    f.close()
