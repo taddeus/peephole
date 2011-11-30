@@ -16,4 +16,4 @@ lex.yy.c: peephole.l
 	$(LEX) $^
 
 clean:
-	rm -f lex.yy.* y.tab.* *.o peephole
+	rm -f lex.yy.* y.tab.* *.o peephole parser.out parsetab.py
