@@ -1,9 +1,3 @@
 *.swp
 *.pdf
-*.pyc
 *~
-*.o
-lex.yy.c
-y.tab.c
-y.tab.h
-parser

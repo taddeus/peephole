@@ -1,16 +1,19 @@
 CC=gcc
 LEX=lex
 YACC=yacc
-CFLAGS=-ll
 
-parser: yacc lex
-	$(CC) -c lex.yy.c y.tab.c
-	$(CC) -o $@ lex.yy.o y.tab.o $(CFLAGS)
+CFLAGS = -std=c99 -pedantic -Wall -D_POSIX_SOURCE -D_GNU_SOURCE $(PIC) -pipe
 
-lex: lex.l
-	$(LEX) lex.l
-	
-yacc: lex_out.y
-	$(YACC) -d lex_out.y
+all: peephole
 
-all: parser
+peephole: y.tab.o lex.yy.o
+	$(CC) -o $@ $^ -lm
+
+y.tab.c y.tab.h: peephole.y
+	$(YACC) -d $^
+
+lex.yy.c: peephole.l
+	$(LEX) $^
+
+clean:
+	rm -f lex.yy.* y.tab.* *.o peephole parser.out parsetab.py
