@@ -33,7 +33,7 @@ int lineno = 0;
     char *sval;
 }
 
-%token <sval> COMMENT DIRECTIVE LABEL WORD
+%token <sval> COMMENT DIRECTIVE WORD
 %token NEWLINE COMMA COLON
 
 %%
