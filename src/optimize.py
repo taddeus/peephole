@@ -1,7 +1,7 @@
 #!/usr/bin/python
 from parser import parse_file
 from basic_block import find_basic_blocks
-from optimizer import optimize_blocks
+from optimizer import optimize_blocks, optimize_global
 from writer import write_statements
 
 if __name__ == '__main__':
@@ -13,6 +13,12 @@ if __name__ == '__main__':
 
     # Parse File
     statements = parse_file(argv[1])
+    st_original = len(statements)
+    
+    # Optimize on a global level
+    statements = optimize_global(statements)
+    
+    st_aft_global = len(statements)
 
     # Create basic blocks
     blocks = find_basic_blocks(statements)
@@ -22,6 +28,11 @@ if __name__ == '__main__':
 
     # Rewrite to assembly
     out = write_statements(statements)
+    
+    print "Optimization:"
+    print "Original statements:" + str(st_original)
+    print "After global optimization:" + str(st_aft_global)
+    print "After basic blocks optimization:" + str(len(statements))
 
     if len(argv) > 2:
         # Save output assembly

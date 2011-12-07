@@ -18,12 +18,12 @@ def find_leaders(statements):
     for i, statement in enumerate(statements[1:]):
         if is_jump(statement):
             leaders.append(i + 2)
-            print statement[2]['args'][-1]
+#            print statement[2]['args'][-1]
             jump_target_labels.append(statement[2]['args'][-1])
             #print 'found jump:', i, statement
 
-    print 'target labels:', jump_target_labels
-    print 'leaders:', leaders
+#    print 'target labels:', jump_target_labels
+#    print 'leaders:', leaders
 
     # Append jump targets
     for i, statement in enumerate(statements[1:]):
@@ -32,7 +32,9 @@ def find_leaders(statements):
                 and statement[1] in jump_target_labels:
             leaders.append(i + 1)
             #print 'target:', i + 1, statements[i + 1]
-
+    
+    leaders.sort()
+    
     return leaders
 
 def find_basic_blocks(statements):
@@ -45,5 +47,5 @@ def find_basic_blocks(statements):
         blocks.append(statements[leaders[i]:leaders[i + 1]])
 
     blocks.append(statements[leaders[-1]:])
-
+    
     return blocks
