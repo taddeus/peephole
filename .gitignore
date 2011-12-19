@@ -1,3 +1,7 @@
 *.swp
 *.pdf
 *~
+.coverage
+coverage/
+build/
+src/Makefile_old
