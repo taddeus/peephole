@@ -19,7 +19,7 @@ class Statement:
         """Check if two statements are equal by comparing their type, name and
         arguments."""
         return self.stype == other.stype and self.name == other.name \
-                and self.args == other.args
+               and self.args == other.args
 
     def __str__(self):  # pragma: nocover
         return '<Statement type=%s name=%s args=%s>' \
@@ -39,11 +39,11 @@ class Statement:
 
     def is_label(self, name=None):
         return self.stype == 'label' if name == None \
-                else self.stype == 'label' and self.name == name
+               else self.stype == 'label' and self.name == name
 
     def is_command(self, name=None):
         return self.stype == 'command' if name == None \
-                else self.stype == 'command' and self.name == name
+               else self.stype == 'command' and self.name == name
 
     def is_jump(self):
         """Check if the statement is a jump."""
@@ -66,10 +66,10 @@ class Statement:
 
     def jump_target(self):
         """Get the jump target of this statement."""
-        if self.is_jump():
-            return self[-1]
-        else:
+        if not self.is_jump():
             raise Exception('Command "%s" has no jump target' % self.name)
+
+        return self[-1]
 
     def get_def(self):
         """Get the def[S] of this statement."""
