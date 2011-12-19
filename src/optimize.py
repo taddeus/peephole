@@ -1,14 +1,4 @@
-from utils import Statement as S, Block, find_basic_blocks
-
-
-def equal_mov(s):
-    """Check for useless move operations."""
-    return s.is_command() and s.name == 'move' and s[0] == s[1]
-
-
-def empty_shift(s):
-    """Check for useless shift operations."""
-    return s.is_shift() and s[0] == s[1] and s[2] == 0
+from utils import Statement as S, find_basic_blocks
 
 
 def optimize_branch_jump_label(statements):
@@ -39,15 +29,57 @@ def optimize_branch_jump_label(statements):
 
 def optimize_global(statements):
     """Optimize one-line statements in entire code."""
-    statements = optimize_branch_jump_label(statements)
+    old_len = -1
 
-    #while not block.end():
-    #    i, s = block.read()
+    while old_len != len(statements):
+        old_len = len(statements)
 
-    #    if block.peek():
-    #        block.replace(i, i + 3, [nieuwe statements])
+        while not statements.end():
+            s = statements.read()
 
-    return filter(lambda s: not equal_mov(s) and not empty_shift(s), statements)
+            # mov $regA,$regB           ->  --- remove it
+            if s.is_command() and s.name == 'move' and s[0] == s[1]:
+                statements.replace(1, [])
+
+            # mov $regA,$regB           ->  instr $regA, $regB, ...
+            # instr $regA, $regA, ...
+            if s.is_command() and s.name == 'move':
+                ins = statements.peek()
+
+                if ins and len(ins) >= 2 and ins[0] == s[0] and ins[1] == s[0]:
+                    ins[1] = s[1]
+
+            # instr $regA, ...          ->  instr $4, ...
+            # mov $4, $regA                 jal XX
+            # jal XX
+            if s.is_command() and len(s):
+                following = statements.peek(2)
+
+                if len(following) == 2:
+                    mov, jal = following
+
+                    if mov.name == 'move' and mov[1] == s[0] \
+                            and jal.name == 'jal':
+                        s[0] = mov[0]
+                        statements.replace(1, [], start=statements.pointer + 1)
+
+            # sw $regA, XX              ->  sw $regA, XX
+            # ld $regA, XX
+
+            # shift $regA, $regA, 0     ->  --- remove it
+            if s.is_shift() and s[0] == s[1] and s[2] == 0:
+                statements.replace(1, [])
+
+            # add $regA, $regA, X       ->  lw ..., X($regA)
+            # lw ..., 0($regA)
+
+            #     beq ..., $Lx          ->      bne ..., $Ly
+            #     j $Ly                     $Lx:
+            # $Lx:
+            #if block.peek(3):
+            #    block.replace(3, [nieuwe statements])
+
+    return statements
 
 
 def optimize_blocks(blocks):

@@ -11,6 +11,10 @@ class Statement:
         """Get an argument."""
         return self.args[n]
 
+    def __setitem__(self, n, value):
+        """Set an argument."""
+        self.args[n] = value
+
     def __eq__(self, other):
         """Check if two statements are equal by comparing their type, name and
         arguments."""
