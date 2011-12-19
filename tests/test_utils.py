@@ -11,8 +11,12 @@ class TestUtils(unittest.TestCase):
         self.statements = [add, S('command', 'j', 'foo'), add, add, \
                 S('label', 'foo')]
         self.block = B([S('command', 'foo'), \
-                        S('command', 'bar'),
+                        S('comment', 'bar'),
                         S('command', 'baz')])
+
+    def tearDown(self):
+        del self.statements
+        del self.block
 
     def test_find_leaders(self):
         self.assertEqual(find_leaders(self.statements), [0, 2, 4])
@@ -46,9 +50,12 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(S('command', 'j', 'foo').jump_target(), 'foo')
         self.assertRaises(Exception, S('command', 'foo').jump_target)
 
+    def test_iter(self):
+        self.assertEqual(self.block.statements, list(self.block))
+
     def test_read(self):
         self.assertEqual(self.block.read(), S('command', 'foo'))
-        self.assertEqual(self.block.read(), S('command', 'bar'))
+        self.assertEqual(self.block.read(), S('comment', 'bar'))
         self.assertEqual(self.block.read(), S('command', 'baz'))
 
     def test_end(self):
@@ -61,13 +68,18 @@ class TestUtils(unittest.TestCase):
     def test_peek(self):
         self.assertEqual(self.block.peek(), S('command', 'foo'))
         self.assertEqual(self.block.peek(2), [S('command', 'foo'), \
-                                              S('command', 'bar')])
+                                              S('comment', 'bar')])
         self.block.read()
-        self.assertEqual(self.block.peek(), S('command', 'bar'))
+        self.assertEqual(self.block.peek(), S('comment', 'bar'))
 
     def test_replace(self):
         self.block.replace(1, [S('command', 'foobar')])
         self.assertEqual(self.block.pointer, 1)
         self.assertEqual(self.block.statements, [S('command', 'foobar'), \
-                                                 S('command', 'bar'), \
+                                                 S('comment', 'bar'), \
+                                                 S('command', 'baz')])
+
+    def test_apply_filter(self):
+        self.block.apply_filter(lambda s: s.is_command())
+        self.assertEqual(self.block.statements, [S('command', 'foo'), \
                                                  S('command', 'baz')])

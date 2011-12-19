@@ -17,6 +17,13 @@ class Statement:
         return self.stype == other.stype and self.name == other.name \
                 and self.args == other.args
 
+    def __str__(self):  # pragma: nocover
+        return '<Statement type=%s name=%s args=%s>' \
+                % (self.stype, self.name, self.args)
+
+    def __repr__(self):  # pragma: nocover
+        return str(self)
+
     def is_comment(self):
         return self.stype == 'comment'
 
@@ -119,6 +126,11 @@ class Block:
         after = self.statements[start + count:]
         self.statements = before + replacement + after
         self.pointer = start + len(replacement)
+
+    def apply_filter(self, callback):
+        """Apply a filter to the statement list. If the callback returns True,
+        the statement will remain in the list.."""
+        self.statements = filter(callback, self.statements)
 
 
 def find_leaders(statements):
