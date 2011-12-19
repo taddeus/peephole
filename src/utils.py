@@ -90,33 +90,35 @@ class Block:
     def __len__(self):
         return len(self.statements)
 
-    def replace(self, start, end, replacement):
-        """Replace the given range start-end with the given statement list, and
-        move the pointer to the first statement after the replacement."""
-        before = self.statements[:start]
-        after = self.statements[end:]
-        self.statements = before + replacement + after
-        self.pointer = start + len(replacement)
-
     def read(self, count=1):
         """Read the statement at the current pointer position and move the
         pointer one position to the right."""
-        s = statements[self.pointer]
+        s = self.statements[self.pointer]
         self.pointer += 1
 
         return s
 
+    def end(self):
+        """Check if the pointer is at the end of the statement list."""
+        return self.pointer == len(self)
+
     def peek(self, count=1):
         """Read the statements until an offset from the current pointer
         position."""
-        i = self.pointer + offset
+        return self.statements[self.pointer] if count == 1 \
+               else self.statements[self.pointer:self.pointer + count]
 
-        if i < len(self.statements):
-            return self.statements[self.pointer:i]
+    def replace(self, count, replacement, start=None):
+        """Replace the given range start-(start + count) with the given
+        statement list, and move the pointer to the first statement after the
+        replacement."""
+        if start == None:
+            start = self.pointer
 
-    def end(self):
-        """Check if the pointer is at the end of the statement list."""
-        return self.pointer == len(self.statements) - 1
+        before = self.statements[:start]
+        after = self.statements[start + count:]
+        self.statements = before + replacement + after
+        self.pointer = start + len(replacement)
 
 
 def find_leaders(statements):
