@@ -51,10 +51,10 @@ class Statement:
         return self.is_command() \
                and re.match('^(add|sub|mult|div|abs|neg)(u|\.d)?$', self.name)
 
-    def jump_target(self, arg):
+    def jump_target(self):
         """Get the jump target of this statement."""
-        if re.match('^beq|bne|blez|bgtz|bltz|bgez|bct|bcf$', self.name):
-            return self[1]
+        if self.is_jump():
+            return self[-1]
         else:
             raise Exception('Command "%s" has no jump target' % self.name)
 
@@ -66,7 +66,7 @@ class Statement:
         if self.is_load() or self.is_arith():
             return [self[0]]
 
-    def get_use(self, arg):
+    def get_use(self):
         """Get the use[S] of this statement."""
         return []
 
@@ -157,10 +157,3 @@ def find_basic_blocks(statements):
     blocks.append(Block(statements[leaders[-1]:]))
 
     return blocks
-
-
-#while not block.end():
-#    i, s = block.read()
-#
-#    if block.peek():
-#        block.replace(i, i + 3, [nieuwe statements])
