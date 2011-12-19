@@ -37,11 +37,13 @@ class Statement:
     def is_directive(self):
         return self.stype == 'directive'
 
-    def is_label(self):
-        return self.stype == 'label'
+    def is_label(self, name=None):
+        return self.stype == 'label' if name == None \
+                else self.stype == 'label' and self.name == name
 
-    def is_command(self):
-        return self.stype == 'command'
+    def is_command(self, name=None):
+        return self.stype == 'command' if name == None \
+                else self.stype == 'command' and self.name == name
 
     def is_jump(self):
         """Check if the statement is a jump."""
