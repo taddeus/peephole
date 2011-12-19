@@ -1,13 +1,18 @@
+from utils import Statement as S, Block, find_basic_blocks
+
+
 def equal_mov(s):
-    '''Check for useless move operations.'''
+    """Check for useless move operations."""
     return s.is_command() and s.name == 'move' and s[0] == s[1]
 
+
 def empty_shift(s):
-    '''Check for useless shift operations.'''
+    """Check for useless shift operations."""
     return s.is_shift() and s[0] == s[1] and s[2] == 0
 
+
 def optimize_branch_jump_label(statements):
-    '''Optimize jumps after branches.'''
+    """Optimize jumps after branches."""
     out_statements = []
 
     for i in xrange(len(statements)):
@@ -31,15 +36,17 @@ def optimize_branch_jump_label(statements):
 
     return out_statements
 
+
 def optimize_global(statements):
-    '''Optimize one-line statements in entire code.'''
+    """Optimize one-line statements in entire code."""
     statements = optimize_branch_jump_label(statements)
 
     return filter(lambda s: not equal_mov(s) and not empty_shift(s), statements)
 
+
 def optimize_blocks(blocks):
-    '''Call the optimizer for each basic block. Do this several times until
-    no more optimizations are achieved.'''
+    """Call the optimizer for each basic block. Do this several times until
+    no more optimizations are achieved."""
     changed = True
 
     while changed:
@@ -57,8 +64,9 @@ def optimize_blocks(blocks):
 
     return reduce(lambda a, b: a + b, blocks, [])
 
+
 def optimize_block(statements):
-    '''Optimize a basic block.'''
+    """Optimize a basic block."""
     changed = False
     output_statements = []
 
@@ -68,3 +76,25 @@ def optimize_block(statements):
         output_statements.append(new_statement)
 
     return changed, output_statements
+
+
+def optimize(original, verbose=0):
+    # Optimize on a global level
+    opt_global = optimize_global(original)
+
+    # Optimize basic blocks
+    basic_blocks = find_basic_blocks(opt_global)
+    blocks = optimize_blocks(basic_blocks)
+    opt_blocks = reduce(lambda a, b: a.statements + b.statements, blocks)
+
+    if verbose:
+        o = len(original)
+        g = len(opt_global)
+        b = len(opt_blocks)
+        print 'Original statements:             %d' % o
+        print 'After global optimization:       %d' % g
+        print 'After basic blocks optimization: %d' % b
+        print 'Speedup:                         %d (%d%%)' \
+                % (b - o, int((b - o) / o * 100))
+
+    return opt_blocks

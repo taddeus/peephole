@@ -1,6 +1,8 @@
 import ply.lex as lex
 import ply.yacc as yacc
 
+from utils import Statement as S, Block
+
 # Global statements administration
 statements = []
 
@@ -72,11 +74,11 @@ def p_line_instruction(p):
 
 def p_line_comment(p):
     'line : COMMENT NEWLINE'
-    statements.append(('comment', p[1], {'inline': False}))
+    statements.append(S('comment', p[1], inline=False))
 
 def p_line_inline_comment(p):
     'line : instruction COMMENT NEWLINE'
-    statements.append(('comment', p[2], {'inline': True}))
+    statements.append(S('comment', p[2], inline=True))
 
 def p_instruction_command(p):
     'instruction : command'
@@ -84,18 +86,18 @@ def p_instruction_command(p):
 
 def p_instruction_directive(p):
     'instruction : DIRECTIVE'
-    statements.append(('directive', p[1], None))
+    statements.append(S('directive', p[1]))
 
 def p_instruction_label(p):
     'instruction : WORD COLON'
-    statements.append(('label', p[1], None))
+    statements.append(S('label', p[1]))
 
 def p_command(p):
     '''command : WORD WORD COMMA WORD COMMA WORD
                | WORD WORD COMMA WORD
                | WORD WORD
                | WORD'''
-    statements.append(('command', p[1], {'args': list(p)[2::2]}))
+    statements.append(S('command', p[1], *list(p)[2::2]))
 
 def p_error(p):
     print 'Syntax error at "%s" on line %d' % (p.value, lexer.lineno)
@@ -113,4 +115,4 @@ def parse_file(filename):
     except IOError:
         print 'File "%s" could not be opened' % filename
 
-    return statements
+    return Block(statements)
