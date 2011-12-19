@@ -11,14 +11,12 @@ if __name__ == '__main__':
         exit(1)
 
     # Parse File
-    statements = parse_file(argv[1])
-    statements = optimize(statements, verbose=1)
-
-    # Rewrite to assembly
-    out = write_statements(statements)
+    original = parse_file(argv[1])
+    optimized = optimize(original, verbose=1)
 
     if len(argv) > 2:
         # Save output assembly
+        out = write_statements(optimized)
         f = open(argv[2], 'w+')
         f.write(out)
         f.close()

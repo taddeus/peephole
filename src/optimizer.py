@@ -41,6 +41,12 @@ def optimize_global(statements):
     """Optimize one-line statements in entire code."""
     statements = optimize_branch_jump_label(statements)
 
+    #while not block.end():
+    #    i, s = block.read()
+
+    #    if block.peek():
+    #        block.replace(i, i + 3, [nieuwe statements])
+
     return filter(lambda s: not equal_mov(s) and not empty_shift(s), statements)
 
 
@@ -79,6 +85,8 @@ def optimize_block(statements):
 
 
 def optimize(original, verbose=0):
+    """optimization wrapper function, calls global and basic-block level
+    optimization functions."""
     # Optimize on a global level
     opt_global = optimize_global(original)
 
