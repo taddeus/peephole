@@ -100,7 +100,7 @@ def optimize_global(statements):
                 if len(following) == 2:
                     j, label = following
 
-                    if j.is_command('s') and label.is_label(s[2]):
+                    if j.is_command('j') and label.is_label(s[2]):
                         s[2] = label.name
                         statements.replace(3, [s, label])
 
