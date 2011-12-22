@@ -4,19 +4,23 @@ from statement import Block
 
 
 class BasicBlock(Block):
-    edges_to = []
-    edges_from = []
+    def __init__(self, statements=[]):
+        Block.__init__(self, statements)
+        self.edges_to = []
+        self.edges_from = []
 
-    dominates = []
-    dominated_by = []
+        self.dominates = []
+        self.dominated_by = []
 
     def add_edge_to(self, block):
-        self.edges_to.append(block)
-        block.edges_from.append(self)
+        if block not in self.edges_to:
+            self.edges_to.append(block)
+            block.edges_from.append(self)
 
     def set_dominates(self, block):
-        self.dominates.append(block)
-        block.dominated_by.append(self)
+        if block not in self.dominates:
+            self.dominates.append(block)
+            block.dominated_by.append(self)
 
     def get_gen(self):
         pass
@@ -74,7 +78,7 @@ def find_basic_blocks(statements):
 def generate_flow_graph(blocks):
     """Add flow graph edge administration of an ordered sequence of basic
     blocks."""
-    for b in blocks:
+    for i, b in enumerate(blocks):
         last_statement = b[-1]
 
         if last_statement.is_jump():
@@ -85,6 +89,12 @@ def generate_flow_graph(blocks):
             for other in blocks:
                 if other[0].is_label(target):
                     b.add_edge_to(other)
+
+            # A branch instruction also creates an edge to the next block
+            if last_statement.is_branch() and i < len(blocks) - 1:
+                b.add_edge_to(blocks[i + 1])
+        elif i < len(blocks) - 1:
+            b.add_edge_to(blocks[i + 1])
 
 
 def generate_dominator_tree(nodes):
