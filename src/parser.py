@@ -1,7 +1,7 @@
 import ply.lex as lex
 import ply.yacc as yacc
 
-from utils import Statement as S, Block
+from statement import Statement as S, Block
 
 # Global statements administration
 statements = []
