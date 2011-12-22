@@ -1,8 +1,8 @@
-from utils import find_basic_blocks
+from dataflow import find_basic_blocks
 
 
 def optimize_global(statements):
-    """Optimize statement sequences in on a global level."""
+    """Optimize statement sequences on a global level."""
     old_len = -1
 
     while old_len != len(statements):
@@ -11,12 +11,12 @@ def optimize_global(statements):
         while not statements.end():
             s = statements.read()
 
-            # mov $regA,$regB           ->  --- remove it
+            # mov $regA, $regA          ->  --- remove it
             if s.is_command('move') and s[0] == s[1]:
                 statements.replace(1, [])
                 continue
 
-            # mov $regA,$regB           ->  instr $regA, $regB, ...
+            # mov $regA, $regB          ->  instr $regA, $regB, ...
             # instr $regA, $regA, ...
             if s.is_command('move'):
                 ins = statements.peek()
@@ -35,8 +35,8 @@ def optimize_global(statements):
                 if len(following) == 2:
                     mov, jal = following
 
-                    if mov.name == 'move' and mov[1] == s[0] \
-                            and jal.name == 'jal':
+                    if mov.is_command('move') and mov[1] == s[0] \
+                            and jal.is_command('jal'):
                         s[0] = mov[0]
                         statements.replace(1, [], start=statements.pointer + 1)
                         continue
@@ -78,8 +78,6 @@ def optimize_global(statements):
                         s[2] = label.name
                         statements.replace(3, [s, label])
 
-    return statements
-
 
 def optimize_blocks(blocks):
     """Call the optimizer for each basic block. Do this several times until
@@ -115,21 +113,29 @@ def optimize_block(statements):
     return changed, output_statements
 
 
-def optimize(original, verbose=0):
+def optimize(statements, verbose=0):
     """optimization wrapper function, calls global and basic-block level
     optimization functions."""
     # Optimize on a global level
-    opt_global = optimize_global(original)
+    o = len(statements)
+    optimize_global(statements)
+    g = len(statements)
 
     # Optimize basic blocks
-    basic_blocks = find_basic_blocks(opt_global)
+    basic_blocks = find_basic_blocks(statements)
     blocks = optimize_blocks(basic_blocks)
-    opt_blocks = reduce(lambda a, b: a.statements + b.statements, blocks)
+    block_statements = map(lambda b: b.statements, blocks)
+    opt_blocks = reduce(lambda a, b: a + b, block_statements)
+    b = len(opt_blocks)
+
+    # - Common subexpression elimination
+    # - Constant folding
+    # - Copy propagation
+    # - Dead-code elimination
+    # - Temporary variable renaming
+    # - Interchange of independent statements
 
     if verbose:
-        o = len(original)
-        g = len(opt_global)
-        b = len(opt_blocks)
         print 'Original statements:             %d' % o
         print 'After global optimization:       %d' % g
         print 'After basic blocks optimization: %d' % b

@@ -1,31 +1,25 @@
 import unittest
 
-from src.utils import Statement as S, Block as B, find_leaders, \
-        find_basic_blocks
+from src.statement import Statement as S, Block as B
 
 
-class TestUtils(unittest.TestCase):
+class TestStatement(unittest.TestCase):
 
     def setUp(self):
-        add = S('command', 'add', '$1', '$2', '$3')
-        self.statements = [add, S('command', 'j', 'foo'), add, add, \
-                S('label', 'foo')]
+        self.statement = S('command', 'foo', '$1')
         self.block = B([S('command', 'foo'), \
                         S('comment', 'bar'),
                         S('command', 'baz')])
 
     def tearDown(self):
-        del self.statements
         del self.block
 
-    def test_find_leaders(self):
-        self.assertEqual(find_leaders(self.statements), [0, 2, 4])
+    def test_getitem(self):
+        self.assertEqual(self.statement[0], '$1')
 
-    def test_find_basic_blocks(self):
-        s = self.statements
-        self.assertEqual(map(lambda b: b.statements, find_basic_blocks(s)), \
-                [B(s[:2]).statements, B(s[2:4]).statements, \
-                 B(s[4:]).statements])
+    def test_setitem(self):
+        self.statement[0] = '$2'
+        self.assertEqual(self.statement[0], '$2')
 
     def test_eq(self):
         self.assertTrue(S('command', 'foo') == S('command', 'foo'))
@@ -83,3 +77,18 @@ class TestUtils(unittest.TestCase):
         self.block.apply_filter(lambda s: s.is_command())
         self.assertEqual(self.block.statements, [S('command', 'foo'), \
                                                  S('command', 'baz')])
+
+    def test_is_shift(self):
+        self.assertTrue(S('command', 'sll').is_shift())
+        self.assertFalse(S('command', 'foo').is_shift())
+        self.assertFalse(S('label', 'sll').is_shift())
+
+    def test_is_load(self):
+        self.assertTrue(S('command', 'lw').is_load())
+        self.assertFalse(S('command', 'foo').is_load())
+        self.assertFalse(S('label', 'lw').is_load())
+
+    def test_is_arith(self):
+        self.assertTrue(S('command', 'add', '$1', '$2', '$3').is_arith())
+        self.assertFalse(S('command', 'foo').is_arith())
+        self.assertFalse(S('label', 'add').is_arith())
