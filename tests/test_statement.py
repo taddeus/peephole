@@ -67,6 +67,7 @@ class TestStatement(unittest.TestCase):
         self.assertEqual(self.block.peek(), S('comment', 'bar'))
 
     def test_replace(self):
+        self.block.read()
         self.block.replace(1, [S('command', 'foobar')])
         self.assertEqual(self.block.pointer, 1)
         self.assertEqual(self.block.statements, [S('command', 'foobar'), \

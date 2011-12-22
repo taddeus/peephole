@@ -21,6 +21,9 @@ class Statement:
         arguments."""
         return self.stype == other.stype and self.name == other.name \
                and self.args == other.args
+               
+    def __len__(self):
+        return len(self.args)
 
     def __str__(self):  # pragma: nocover
         return '<Statement type=%s name=%s args=%s>' \
@@ -115,8 +118,10 @@ class Block:
         """Replace the given range start-(start + count) with the given
         statement list, and move the pointer to the first statement after the
         replacement."""
+        if self.pointer == 0:
+            raise Exception('No statement have been read yet.')
         if start == None:
-            start = self.pointer
+            start = self.pointer - 1
 
         before = self.statements[:start]
         after = self.statements[start + count:]
