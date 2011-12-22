@@ -17,6 +17,33 @@
 \maketitle
 
 \section{Introduction}
+The goal of the assignment is to implement the optimization stage of the compiler. To reach this goal the parser part of the compiler has to be implemented.
+
+The output of the gcc cross compiler on a c program is our input, the output of the gcc cross compiler is in the form of Assembly code, but not optimized. Our assignment includes a number of c programs, an important part of the assignment is parsing the data. Parsing the data is done with lex and yacc. The lexer is a program that finds keywords that meets the regular expression provided in the lexer. After the lexer, the yaccer takes over. Yaccer can turn the keywords in to an action.
+
+\section{Design \& Implementation}
+We decided to implement the optimization in python. We chose this programming language because python is an easy language to manipulate strings, work objective ori\"ented etc.
+It turns out that a lex and yacc are also implemented in a python version, named PLY(Python Lex-Yacc). This allows us to use one language, Python, instead of two i.e. C and Python. Also no debugging is needed in C, only in Python which makes our assignment more feasible.
+
+\subsection{Design}
 
 
+\subsection*{Implementation}
+This 
+
+\subsubsection*{PLY}
+
+\section{Results}
+
+\subsection*{pi.c}
+
+\subsection*{arcron.c}
+
+\subsection*{whet.c}
+
+\subsection*{slalom.c}
+
+\subsection*{clinpack.c}
+
+\section{conclusion}
 \end{document}
