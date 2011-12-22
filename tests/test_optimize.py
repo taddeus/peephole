@@ -1,7 +1,7 @@
 import unittest
 
 from src.optimize import optimize_global
-from src.utils import Statement as S, Block as B
+from src.statement import Statement as S, Block as B
 
 
 class TestOptimize(unittest.TestCase):

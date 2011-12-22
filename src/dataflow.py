@@ -1,6 +1,6 @@
 from copy import copy
 
-from utils import Block
+from statement import Block
 
 
 class BasicBlock(Block):
