@@ -28,7 +28,7 @@ class TestOptimize(unittest.TestCase):
         optimize_global(block)
         self.assertEquals(block.statements, [foo, move, bar])
         
-    def test_optimize_global_movinst(self):
+    def test_optimize_global_movinst_true(self):
         foo = S('command', 'foo')
         bar = S('command', 'bar')
         
@@ -41,7 +41,7 @@ class TestOptimize(unittest.TestCase):
                    S('command', 'addu', '$regA', '$regB', 2),      
                    bar])
                    
-    def test_optimize_global_movinst(self):
+    def test_optimize_global_movinst_false(self):
         foo = S('command', 'foo')
         bar = S('command', 'bar')
         
