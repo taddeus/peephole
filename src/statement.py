@@ -1,5 +1,6 @@
 import re
 
+
 class Statement:
     def __init__(self, stype, name, *args, **kwargs):
         self.stype = stype
@@ -71,26 +72,6 @@ class Statement:
 
         return self[-1]
 
-    def get_def(self):
-        """Get the def[S] of this statement."""
-        if not self.is_command():
-            return []
-
-        if self.is_load() or self.is_arith():
-            return [self[0]]
-
-    def get_use(self):
-        """Get the use[S] of this statement."""
-        return []
-
-    def defines(self, var):
-        """Check if a variable is defined by this statement."""
-        return var in self.get_def()
-
-    def uses(self, var):
-        """Check if a variable is used by this statement."""
-        return var in self.get_use()
-
 
 class Block:
     def __init__(self, statements=[]):
@@ -137,43 +118,3 @@ class Block:
         """Apply a filter to the statement list. If the callback returns True,
         the statement will remain in the list.."""
         self.statements = filter(callback, self.statements)
-
-
-def find_leaders(statements):
-    """Determine the leaders, which are:
-       1. The first statement.
-       2. Any statement that is the target of a jump.
-       3. Any statement that follows directly follows a jump."""
-    leaders = [0]
-    jump_target_labels = []
-
-    # Append statements following jumps and save jump target labels
-    for i, statement in enumerate(statements[1:]):
-        if statement.is_jump():
-            leaders.append(i + 2)
-            jump_target_labels.append(statement[-1])
-
-    # Append jump targets
-    for i, statement in enumerate(statements[1:]):
-        if i + 1 not in leaders \
-                and statement.is_label() \
-                and statement.name in jump_target_labels:
-            leaders.append(i + 1)
-
-    leaders.sort()
-
-    return leaders
-
-
-def find_basic_blocks(statements):
-    """Divide a statement list into basic blocks. Returns a list of basic
-    blocks, which are also statement lists."""
-    leaders = find_leaders(statements)
-    blocks = []
-
-    for i in range(len(leaders) - 1):
-        blocks.append(Block(statements[leaders[i]:leaders[i + 1]]))
-
-    blocks.append(Block(statements[leaders[-1]:]))
-
-    return blocks

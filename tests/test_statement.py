@@ -1,31 +1,17 @@
 import unittest
 
-from src.utils import Statement as S, Block as B, find_leaders, \
-        find_basic_blocks
+from src.statement import Statement as S, Block as B
 
 
-class TestUtils(unittest.TestCase):
+class TestStatement(unittest.TestCase):
 
     def setUp(self):
-        add = S('command', 'add', '$1', '$2', '$3')
-        self.statements = [add, S('command', 'j', 'foo'), add, add, \
-                S('label', 'foo')]
         self.block = B([S('command', 'foo'), \
                         S('comment', 'bar'),
                         S('command', 'baz')])
 
     def tearDown(self):
-        del self.statements
         del self.block
-
-    def test_find_leaders(self):
-        self.assertEqual(find_leaders(self.statements), [0, 2, 4])
-
-    def test_find_basic_blocks(self):
-        s = self.statements
-        self.assertEqual(map(lambda b: b.statements, find_basic_blocks(s)), \
-                [B(s[:2]).statements, B(s[2:4]).statements, \
-                 B(s[4:]).statements])
 
     def test_eq(self):
         self.assertTrue(S('command', 'foo') == S('command', 'foo'))
