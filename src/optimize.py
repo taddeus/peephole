@@ -64,7 +64,7 @@ def optimize_global(statements):
                 lw = statements.peek()
 
                 if lw.is_command('lw') and lw[-1] == '0(%s)' % s[0]:
-                    lw[-1] = s[2] + lw[1:]
+                    lw[-1] = str(s[2]) + lw[-1][1:]
                     statements.replace(2, [lw])
                     continue
 
@@ -78,7 +78,8 @@ def optimize_global(statements):
                     j, label = following
 
                     if j.is_command('j') and label.is_label(s[2]):
-                        s[2] = label.name
+                        s.name = 'bne'
+                        s[2] = j[0]
                         statements.replace(3, [s, label])
 
 
