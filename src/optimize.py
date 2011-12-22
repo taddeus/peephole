@@ -1,3 +1,5 @@
+import re
+
 from dataflow import find_basic_blocks
 
 
@@ -36,9 +38,10 @@ def optimize_global(statements):
                     mov, jal = following
 
                     if mov.is_command('move') and mov[1] == s[0] \
+                            and re.match('^\$[4-7]$', mov[0]) \
                             and jal.is_command('jal'):
                         s[0] = mov[0]
-                        statements.replace(1, [], start=statements.pointer + 1)
+                        statements.replace(2, [s])
                         continue
 
             # sw $regA, XX              ->  sw $regA, XX
@@ -46,8 +49,8 @@ def optimize_global(statements):
             if s.is_command('sw'):
                 ld = statements.peek()
 
-                if ld.is_command('ld') and ld.args == s.args:
-                    statements.replace(2, [ld])
+                if ld.is_command('ld') and ld[0] == s[0]:
+                    statements.replace(2, [s])
                     continue
 
             # shift $regA, $regA, 0     ->  --- remove it

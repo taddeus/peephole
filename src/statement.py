@@ -120,6 +120,7 @@ class Block:
         replacement."""
         if self.pointer == 0:
             raise Exception('No statement have been read yet.')
+        
         if start == None:
             start = self.pointer - 1
 
