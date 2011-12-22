@@ -13,7 +13,6 @@ def optimize_global(statements):
 
             # mov $regA, $regA          ->  --- remove it
             if s.is_command('move') and s[0] == s[1]:
-                print "Let me fix that", s
                 statements.replace(1, [])
                 continue
 
