@@ -6,12 +6,20 @@ from src.statement import Statement as S, Block as B
 class TestStatement(unittest.TestCase):
 
     def setUp(self):
+        self.statement = S('command', 'foo', '$1')
         self.block = B([S('command', 'foo'), \
                         S('comment', 'bar'),
                         S('command', 'baz')])
 
     def tearDown(self):
         del self.block
+
+    def test_getitem(self):
+        self.assertEqual(self.statement[0], '$1')
+
+    def test_setitem(self):
+        self.statement[0] = '$2'
+        self.assertEqual(self.statement[0], '$2')
 
     def test_eq(self):
         self.assertTrue(S('command', 'foo') == S('command', 'foo'))
@@ -69,3 +77,18 @@ class TestStatement(unittest.TestCase):
         self.block.apply_filter(lambda s: s.is_command())
         self.assertEqual(self.block.statements, [S('command', 'foo'), \
                                                  S('command', 'baz')])
+
+    def test_is_shift(self):
+        self.assertTrue(S('command', 'sll').is_shift())
+        self.assertFalse(S('command', 'foo').is_shift())
+        self.assertFalse(S('label', 'sll').is_shift())
+
+    def test_is_load(self):
+        self.assertTrue(S('command', 'lw').is_load())
+        self.assertFalse(S('command', 'foo').is_load())
+        self.assertFalse(S('label', 'lw').is_load())
+
+    def test_is_arith(self):
+        self.assertTrue(S('command', 'add', '$1', '$2', '$3').is_arith())
+        self.assertFalse(S('command', 'foo').is_arith())
+        self.assertFalse(S('label', 'add').is_arith())

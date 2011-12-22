@@ -5,7 +5,7 @@ class Statement:
     def __init__(self, stype, name, *args, **kwargs):
         self.stype = stype
         self.name = name
-        self.args = args
+        self.args = list(args)
         self.options = kwargs
 
     def __getitem__(self, n):
@@ -52,6 +52,12 @@ class Statement:
                and re.match('^j|jal|beq|bne|blez|bgtz|bltz|bgez|bct|bcf$', \
                             self.name)
 
+    def is_branch(self):
+        """Check if the statement is a branch."""
+        return self.is_command() \
+               and re.match('^beq|bne|blez|bgtz|bltz|bgez|bct|bcf$', \
+                            self.name)
+
     def is_shift(self):
         """Check if the statement is a shift operation."""
         return self.is_command() and re.match('^s(ll|la|rl|ra)$', self.name)
@@ -80,6 +86,9 @@ class Block:
 
     def __iter__(self):
         return iter(self.statements)
+
+    def __getitem__(self, n):
+        return self.statements[n]
 
     def __len__(self):
         return len(self.statements)
