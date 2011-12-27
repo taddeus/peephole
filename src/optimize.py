@@ -68,31 +68,20 @@ def optimize_global(statements):
                     statements.replace(2, [lw])
                     continue
 
-            #     beq ..., $Lx          ->      bne ..., $Ly
+            #     beq/bne ..., $Lx      ->      bne/beq ..., $Ly
             #     j $Ly                     $Lx:
             # $Lx:
-            if s.is_command('beq'):
+            if s.is_command('beq') or s.is_command('bne'):
                 following = statements.peek(2)
 
                 if len(following) == 2:
                     j, label = following
 
                     if j.is_command('j') and label.is_label(s[2]):
-                        s.name = 'bne'
-                        s[2] = j[0]
-                        statements.replace(3, [s, label])
-                        
-            #     bne ..., $Lx          ->      beq ..., $Ly
-            #     j $Ly                     $Lx:
-            # $Lx:
-            if s.is_command('bne'):
-                following = statements.peek(2)
-
-                if len(following) == 2:
-                    j, label = following
-
-                    if j.is_command('j') and label.is_label(s[2]):
-                        s.name = 'beq'
+                        if s.is_command('beq'):
+                            s.name = 'bne'
+                        else:
+                            s.name = 'beq'
                         s[2] = j[0]
                         statements.replace(3, [s, label])
 

@@ -47,7 +47,7 @@ def t_int(t):
     return t
 
 def t_WORD(t):
-    r'[a-zA-Z0-9$_.+()]+'
+    r'[a-zA-Z0-9$_.+()-]+'
     return t
 
 # Ignore whitespaces
