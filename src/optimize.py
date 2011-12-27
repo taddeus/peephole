@@ -143,7 +143,7 @@ def optimize(statements, verbose=0):
         print 'Original statements:             %d' % o
         print 'After global optimization:       %d' % g
         print 'After basic blocks optimization: %d' % b
-        print 'Speedup:                         %d (%d%%)' \
-                % (b - o, int((b - o) / o * 100))
+        print 'Optimization:                    %d (%d%%)' \
+                % (b - o, int((b - o) / float(o) * 100))
 
     return opt_blocks
