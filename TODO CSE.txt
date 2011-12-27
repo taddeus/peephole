@@ -1,0 +1,8 @@
+Common subexpression elimination
+
+Loop through statements of each block
+    for each binary operator, look back for usage of rs and rt. If rs or rt are
+    assigned, break. If exact same operator is found, add it to the list of
+    common subexpressions. If you reach the end of the block, or rs or rt are
+    assigned, make new destination address, and change each occurence of this
+    expression with a move from the new register address.
