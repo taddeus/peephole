@@ -118,7 +118,10 @@ class Block:
 
     def peek(self, count=1):
         """Read the statements until an offset from the current pointer
-        position."""
+        position."""      
+        if self.end():
+            return Statement('empty', '') if count == 1 else []
+              
         return self.statements[self.pointer] if count == 1 \
                else self.statements[self.pointer:self.pointer + count]
 

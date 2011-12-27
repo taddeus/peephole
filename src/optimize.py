@@ -13,6 +13,45 @@ def optimize_global(statements):
         while not statements.end():
             s = statements.read()
 
+            #     beq/bne ..., $Lx      ->      bne/beq ..., $Ly
+            #     j $Ly                     $Lx:
+            # $Lx:
+            if s.is_command('beq') or s.is_command('bne'):
+                following = statements.peek(2)
+
+                if len(following) == 2:
+                    j, label = following
+
+                    if j.is_command('j') and label.is_label(s[2]):
+                        if s.is_command('beq'):
+                            s.name = 'bne'
+                        else:
+                            s.name = 'beq'
+                        s[2] = j[0]
+                        statements.replace(3, [s, label])
+
+
+def optimize_blocks(blocks):
+    """Call the optimizer for each basic block. Do this several times until
+    no more optimizations are achieved."""
+    optimized = []
+    
+    for block in blocks:
+        optimize_block(block)
+    
+    return blocks
+
+
+def optimize_block(statements):
+    """Optimize a basic block."""
+    old_len = -1
+
+    while old_len != len(statements):
+        old_len = len(statements)
+
+        while not statements.end():
+            s = statements.read()
+
             # mov $regA, $regA          ->  --- remove it
             if s.is_command('move') and s[0] == s[1]:
                 statements.replace(1, [])
@@ -67,57 +106,15 @@ def optimize_global(statements):
                     lw[-1] = str(s[2]) + lw[-1][1:]
                     statements.replace(2, [lw])
                     continue
+                        
+            #   move $RegA, $RegB   ->  move $RegA, $RegB
+            #   move $RegB, $RegA
+            if s.is_command('move'):
+                move = statements.peek()
 
-            #     beq/bne ..., $Lx      ->      bne/beq ..., $Ly
-            #     j $Ly                     $Lx:
-            # $Lx:
-            if s.is_command('beq') or s.is_command('bne'):
-                following = statements.peek(2)
-
-                if len(following) == 2:
-                    j, label = following
-
-                    if j.is_command('j') and label.is_label(s[2]):
-                        if s.is_command('beq'):
-                            s.name = 'bne'
-                        else:
-                            s.name = 'beq'
-                        s[2] = j[0]
-                        statements.replace(3, [s, label])
-
-
-def optimize_blocks(blocks):
-    """Call the optimizer for each basic block. Do this several times until
-    no more optimizations are achieved."""
-    changed = True
-
-    while changed:
-        changed = False
-        optimized = []
-
-        for block in blocks:
-            block_changed, b = optimize_block(block)
-            optimized.append(b)
-
-            if block_changed:
-                changed = True
-
-        blocks = optimized
-
-    return reduce(lambda a, b: a + b, blocks, [])
-
-
-def optimize_block(statements):
-    """Optimize a basic block."""
-    changed = False
-    output_statements = []
-
-    for statement in statements:
-        new_statement = statement
-
-        output_statements.append(new_statement)
-
-    return changed, output_statements
+                if move.is_command('move') and move[0] == s[1] and \
+                        move[1] == s[0]:
+                    statements.replace(2, [s])
 
 
 def optimize(statements, verbose=0):
@@ -130,8 +127,7 @@ def optimize(statements, verbose=0):
 
     # Optimize basic blocks
     basic_blocks = find_basic_blocks(statements)
-#    blocks = optimize_blocks(basic_blocks)
-    blocks = basic_blocks
+    blocks = optimize_blocks(basic_blocks)
     block_statements = map(lambda b: b.statements, blocks)
     opt_blocks = reduce(lambda a, b: a + b, block_statements)
     b = len(opt_blocks)
@@ -147,7 +143,7 @@ def optimize(statements, verbose=0):
         print 'Original statements:             %d' % o
         print 'After global optimization:       %d' % g
         print 'After basic blocks optimization: %d' % b
-        print 'Speedup:                         %d (%d%%)' \
-                % (b - o, int((b - o) / o * 100))
+        print 'Optimization:                    %d (%d%%)' \
+                % (b - o, int((b - o) / float(o) * 100))
 
     return opt_blocks
