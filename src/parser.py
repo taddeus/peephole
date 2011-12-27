@@ -32,7 +32,7 @@ def t_DIRECTIVE(t):
     return t
 
 def t_hex_word(t):
-    r'0x[0-9a-fA-F]{8}'
+    r'0x([0-9a-fA-F]{8}|[0-9a-fA-F]{4})'
     t.type = 'WORD'
     return t
 

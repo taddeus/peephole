@@ -81,6 +81,20 @@ def optimize_global(statements):
                         s.name = 'bne'
                         s[2] = j[0]
                         statements.replace(3, [s, label])
+                        
+            #     bne ..., $Lx          ->      beq ..., $Ly
+            #     j $Ly                     $Lx:
+            # $Lx:
+            if s.is_command('bne'):
+                following = statements.peek(2)
+
+                if len(following) == 2:
+                    j, label = following
+
+                    if j.is_command('j') and label.is_label(s[2]):
+                        s.name = 'beq'
+                        s[2] = j[0]
+                        statements.replace(3, [s, label])
 
 
 def optimize_blocks(blocks):
@@ -127,7 +141,8 @@ def optimize(statements, verbose=0):
 
     # Optimize basic blocks
     basic_blocks = find_basic_blocks(statements)
-    blocks = optimize_blocks(basic_blocks)
+#    blocks = optimize_blocks(basic_blocks)
+    blocks = basic_blocks
     block_statements = map(lambda b: b.statements, blocks)
     opt_blocks = reduce(lambda a, b: a + b, block_statements)
     b = len(opt_blocks)

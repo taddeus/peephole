@@ -184,9 +184,6 @@ class TestOptimize(unittest.TestCase):
         self.assertEquals(block2.statements, arguments2)
         self.assertEquals(block3.statements, arguments3)
         
-    #     beq ..., $Lx          ->      bne ..., $Ly
-    #     j $Ly                     $Lx:
-    # $Lx:
     def test_optimize_global_beq_j_true(self):
         foo = S('command', 'foo')
         bar = S('command', 'bar')
@@ -209,6 +206,36 @@ class TestOptimize(unittest.TestCase):
         
         arguments = [foo, \
                      S('command', 'beq', '$regA', '$regB', '$Lz'), \
+                     S('command', 'j', '$Ly'), \
+                     S('label', '$Lx'), \
+                     bar]
+        block = B(arguments)
+        optimize_global(block)
+        
+        self.assertEquals(block.statements, arguments)
+        
+    def test_optimize_global_bne_j_true(self):
+        foo = S('command', 'foo')
+        bar = S('command', 'bar')
+        
+        block = B([foo,
+                   S('command', 'bne', '$regA', '$regB', '$Lx'),
+                   S('command', 'j', '$Ly'),
+                   S('label', '$Lx'),
+                   bar])
+        optimize_global(block)
+        
+        self.assertEquals(block.statements, [foo,
+                   S('command', 'beq', '$regA', '$regB', '$Ly'),
+                   S('label', '$Lx'),
+                   bar])
+                   
+    def test_optimize_global_bne_j_false(self):
+        foo = S('command', 'foo')
+        bar = S('command', 'bar')
+        
+        arguments = [foo, \
+                     S('command', 'bne', '$regA', '$regB', '$Lz'), \
                      S('command', 'j', '$Ly'), \
                      S('label', '$Lx'), \
                      bar]
