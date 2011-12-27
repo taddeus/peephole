@@ -2,7 +2,7 @@ import unittest
 
 from src.statement import Statement as S
 from src.dataflow import BasicBlock as B, find_leaders, find_basic_blocks, \
-        generate_flow_graph
+        generate_flow_graph, Dag
 
 
 class TestDataflow(unittest.TestCase):
@@ -44,3 +44,6 @@ class TestDataflow(unittest.TestCase):
         self.assertEqual(b2.edges_to, [b3])
         self.assertIn(b1, b3.edges_from)
         self.assertIn(b2, b3.edges_from)
+
+    def test_dag(self):
+        pass
