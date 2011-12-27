@@ -21,7 +21,7 @@ class Statement:
         arguments."""
         return self.stype == other.stype and self.name == other.name \
                and self.args == other.args
-               
+
     def __len__(self):
         return len(self.args)
 
@@ -74,6 +74,14 @@ class Statement:
         return self.is_command() \
                and re.match('^(add|sub|mult|div|abs|neg)(u|\.d)?$', self.name)
 
+    def is_monop(self):
+        """Check if the statement is an unary operation."""
+        return len(self) == 2 and self.is_arith()
+
+    def is_binop(self):
+        """Check if the statement is an binary operation."""
+        return self.is_command() and len(self) == 3 and not self.is_jump()
+
     def jump_target(self):
         """Get the jump target of this statement."""
         if not self.is_jump():
@@ -123,7 +131,7 @@ class Block:
         replacement."""
         if self.pointer == 0:
             raise Exception('No statement have been read yet.')
-        
+
         if start == None:
             start = self.pointer - 1
 
