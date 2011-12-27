@@ -175,7 +175,7 @@ class Dag:
 
     def find_op_node(self, op, rd, *args):
         for n in self.nodes:
-            if n.op == op and n.nodes == args:
+            if not isinstance(n, DagLeaf) and n.op == op and n.nodes == args:
                 n.labels.append(rd)
 
                 return n
