@@ -123,6 +123,6 @@ def parse_file(filename):
         content = open(filename).read()
         yacc.parse(content)
     except IOError:
-        print 'File "%s" could not be opened' % filename
+        raise Exception('File "%s" could not be opened' % filename)
 
     return Block(statements)
