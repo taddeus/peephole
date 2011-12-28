@@ -1,6 +1,6 @@
 import unittest
 
-from src.optimize.main import optimize_global, optimize_block#, optimize_blocks
+from src.optimize import optimize_global, optimize_block#, optimize_blocks
 from src.statement import Statement as S, Block as B
 
 
