@@ -1,63 +1,35 @@
 from src.dataflow import find_basic_blocks
 
-from standard import redundant_move_1, redundant_move_2, \
-        redundant_move_3, redundant_move_4, redundant_load, \
-        redundant_shift, redundant_add
+from redundancies import remove_redundant_jumps, move_1, move_2, move_3, \
+        move_4, load, shift, add
 from advanced import eliminate_common_subexpressions, fold_constants, \
-    copy_propagation
+        copy_propagation
 
 
-def optimize_global(statements):
-    """Optimize statement sequences on a global level."""
+def remove_redundancies(block):
+    """Execute all functions that remove redundant statements."""
+    callbacks = [move_1, move_2, move_3, move_4, load, shift, add]
     old_len = -1
+    changed = False
 
-    while old_len != len(statements):
-        old_len = len(statements)
-
-        while not statements.end():
-            s = statements.read()
-
-            #     beq/bne ..., $Lx      ->      bne/beq ..., $Ly
-            #     j $Ly                     $Lx:
-            # $Lx:
-            if s.is_command('beq', 'bne'):
-                following = statements.peek(2)
-
-                if len(following) == 2:
-                    j, label = following
-
-                    if j.is_command('j') and label.is_label(s[2]):
-                        s.name = 'bne' if s.is_command('beq') else 'beq'
-                        s[2] = j[0]
-                        statements.replace(3, [s, label])
-
-
-def optimize_block(block):
-    """Optimize a basic block."""
-    standard = [redundant_move_1, redundant_move_2, redundant_move_3, \
-                redundant_move_4, redundant_load, redundant_shift, \
-                redundant_add]
-    old_len = -1
-
-    # Standard optimizations
     while old_len != len(block):
         old_len = len(block)
 
         while not block.end():
             s = block.read()
 
-            for callback in standard:
+            for callback in callbacks:
                 if callback(s, block):
+                    changed = True
                     break
 
-    # Advanced optimizations
-    #changed = True
+    return changed
 
-    #while changed:
-    #    changed = eliminate_common_subexpressions(block) \
-    #              or fold_constants(block)
 
-    while eliminate_common_subexpressions(block) \
+def optimize_block(block):
+    """Optimize a basic block."""
+    while remove_redundancies(block) \
+            | eliminate_common_subexpressions(block) \
             | fold_constants(block) \
             | copy_propagation(block):
         pass

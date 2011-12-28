@@ -1,6 +1,7 @@
 import unittest
 
-from src.optimize import optimize_global, optimize_block
+from src.optimize.redundancies import remove_redundant_jumps
+from src.optimize import optimize_block
 from src.statement import Statement as S, Block as B
 
 
@@ -155,51 +156,51 @@ class TestOptimize(unittest.TestCase):
         self.assertEquals(block2.statements, arguments2)
         self.assertEquals(block3.statements, arguments3)
 
-    def test_optimize_global_beq_j_true(self):
+    def test_remove_redundant_jumps_beq_j_true(self):
         block = B([self.foo,
                    S('command', 'beq', '$regA', '$regB', '$Lx'),
                    S('command', 'j', '$Ly'),
                    S('label', '$Lx'),
                    self.bar])
-        optimize_global(block)
+        remove_redundant_jumps(block)
 
         self.assertEquals(block.statements, [self.foo,
                    S('command', 'bne', '$regA', '$regB', '$Ly'),
                    S('label', '$Lx'),
                    self.bar])
 
-    def test_optimize_global_beq_j_false(self):
+    def test_remove_redundant_jumps_beq_j_false(self):
         arguments = [self.foo, \
                      S('command', 'beq', '$regA', '$regB', '$Lz'), \
                      S('command', 'j', '$Ly'), \
                      S('label', '$Lx'), \
                      self.bar]
         block = B(arguments)
-        optimize_global(block)
+        remove_redundant_jumps(block)
 
         self.assertEquals(block.statements, arguments)
 
-    def test_optimize_global_bne_j_true(self):
+    def test_remove_redundant_jumps_bne_j_true(self):
         block = B([self.foo,
                    S('command', 'bne', '$regA', '$regB', '$Lx'),
                    S('command', 'j', '$Ly'),
                    S('label', '$Lx'),
                    self.bar])
-        optimize_global(block)
+        remove_redundant_jumps(block)
 
         self.assertEquals(block.statements, [self.foo,
                    S('command', 'beq', '$regA', '$regB', '$Ly'),
                    S('label', '$Lx'),
                    self.bar])
 
-    def test_optimize_global_bne_j_false(self):
+    def test_remove_redundant_jumps_bne_j_false(self):
         arguments = [self.foo, \
                      S('command', 'bne', '$regA', '$regB', '$Lz'), \
                      S('command', 'j', '$Ly'), \
                      S('label', '$Lx'), \
                      self.bar]
         block = B(arguments)
-        optimize_global(block)
+        remove_redundant_jumps(block)
 
         self.assertEquals(block.statements, arguments)
 
