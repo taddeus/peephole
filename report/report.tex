@@ -11,39 +11,230 @@
 \usepackage{hyperref}
 
 \title{Peephole Optimizer}
-\author{Jayke Meijer (6049885), Richard Torenvliet (6138861), Taddeus Kroes (6054129)}
+\author{Jayke Meijer (6049885), Richard Torenvliet (6138861), Tadde\"us Kroes
+    (6054129)}
 
 \begin{document}
 \maketitle
+\tableofcontents
+\pagebreak
 
 \section{Introduction}
-The goal of the assignment is to implement the optimization stage of the compiler. To reach this goal the parser part of the compiler has to be implemented.
 
-The output of the gcc cross compiler on a c program is our input, the output of the gcc cross compiler is in the form of Assembly code, but not optimized. Our assignment includes a number of c programs, an important part of the assignment is parsing the data. Parsing the data is done with lex and yacc. The lexer is a program that finds keywords that meets the regular expression provided in the lexer. After the lexer, the yaccer takes over. Yaccer can turn the keywords in to an action.
+The goal of the assignment is to implement the optimization stage of the
+compiler. To reach this goal the parser and the optimizer part of the compiler
+have to be implemented.
 
-\section{Design \& Implementation}
-We decided to implement the optimization in python. We chose this programming language because python is an easy language to manipulate strings, work objective ori\"ented etc.
-It turns out that a lex and yacc are also implemented in a python version, named PLY(Python Lex-Yacc). This allows us to use one language, Python, instead of two i.e. C and Python. Also no debugging is needed in C, only in Python which makes our assignment more feasible.
+The output of the xgcc cross compiler on a C program is our input. The output
+of the xgcc cross compiler is in the form of Assembly code, but not optimized.
+Our assignment includes a number of C programs. An important part of the
+assignment is parsing the data. Parsing the data is done with Lex and Yacc. The
+Lexer is a program that finds keywords that meets the regular expression
+provided in the Lexer. After the Lexer, the Yaccer takes over. Yacc can turn
+the keywords in to an action.
 
-\subsection{Design}
+\section{Design}
 
+There are two general types of of optimizations of the assembly code, global
+optimizations and optimizations on a so-called basic block. These optimizations
+will be discussed separately
 
-\subsection*{Implementation}
-This 
+\subsection{Global optimizations}
 
-\subsubsection*{PLY}
+We only perform one global optimization, which is optimizing branch-jump
+statements. The unoptimized Assembly code contains sequences of code of the
+following structure:
+\begin{verbatim}
+    beq ...,$Lx
+    j $Ly
+$Lx:   ...
+\end{verbatim}
+This is inefficient, since there is a jump to a label that follows this code.
+It would be more efficient to replace the branch statement with a \texttt{bne}
+(the opposite case) to the label used in the jump statement. This way the jump
+statement can be eliminated, since the next label follows anyway. The same can
+of course be done for the opposite case, where a \texttt{bne} is changed into a
+\texttt{beq}.
+
+Since this optimization is done between two series of codes with jumps and
+labels, we can not perform this code during the basic block optimizations. The
+reason for this will become clearer in the following section.
+
+\subsection{Basic Block Optimizations}
+
+Optimizations on basic blocks are a more important part of the optimizer.
+First, what is a basic block? A basic block is a sequence of statements
+guaranteed to be executed in that order, and that order alone. This is the case
+for a piece of code not containing any branches or jumps.
+
+To create a basic block, you need to define what is the leader of a basic
+block. We call a statement a leader if it is either a jump/branch statement, or
+the target of such a statement. Then a basic block runs from one leader until
+the next leader.
+
+There are quite a few optimizations we perform on these basic blocks, so we
+will describe the types of optimizations here in stead of each optimization.
+
+\subsubsection*{Standard peephole optimizations}
+
+These are optimizations that simply look for a certain statement or pattern of
+statements, and optimize these. For example,
+\begin{verbatim}
+mov $regA,$regB
+instr $regA, $regA,... 
+\end{verbatim}
+can be optimized into
+\begin{verbatim}
+instr $regA, $regB,...
+\end{verbatim}
+since the register \texttt{\$regA} gets overwritten by the second instruction
+anyway, and the instruction can easily use \texttt{\$regB} in stead of
+\texttt{\$regA}. There are a few more of these cases, which are the same as
+those described on the practicum page
+\footnote{\url{http://staff.science.uva.nl/~andy/compiler/prac.html}} and in
+Appendix \ref{opt}.
+
+\subsubsection*{Common subexpression elimination}
+
+A more advanced optimization is common subexpression elimination. This means
+that expensive operations as a multiplication or addition are performed only
+once and the result is then `copied' into variables where needed.
+
+A standard method for doing this is the creation of a DAG or Directed Acyclic
+Graph. However, this requires a fairly advanced implementation. Our
+implementation is a slightly less fancy, but easier to implement.
+We search from the end of the block up for instructions that are eligible for
+CSE. If we find one, we check further up in the code for the same instruction,
+and add that to a temporary storage list. This is done until the beginning of
+the block or until one of the arguments of this expression is assigned.
+
+We now add the instruction above the first use, and write the result in a new
+variable. Then all occurrences of this expression can be replaced by a move of
+from new variable into the original destination variable of the instruction.
+
+This is a less efficient method then the dag, but because the basic blocks are
+in general not very large and the execution time of the optimizer is not a
+primary concern, this is not a big problem.
+
+\section{Implementation}
+
+We decided to implement the optimization in Python. We chose this programming
+language because Python is an easy language to manipulate strings, work
+object-oriented etc.
+It turns out that a Lex and Yacc are also available as a Python module,
+named PLY(Python Lex-Yacc). This allows us to use one language, Python, instead
+of two, i.e. C and Python. Also no debugging is needed in C, only in Python
+which makes our assignment more feasible.
+
+The program has three steps, parsing the Assembly code into a datastructure we
+can use, the so-called Intermediate Representation, performing optimizations on
+this IR and writing the IR back to Assembly.
+
+\subsection{Parsing}
+
+The parsing is done with PLY, which allows us to perform Lex-Yacc tasks in
+Python by using a Lex-Yacc like syntax. This way there is no need to combine
+languages like we should do otherwise since Lex and Yacc are coupled with C.
+
+The decision was made to not recognize exactly every possible instruction in
+the parser, but only if something is for example a command, a comment or a gcc
+directive. We then transform per line to a object called a Statement. A
+statement has a type, a name and optionally a list of arguments. These
+statements together form a statement list, which is placed in another object
+called a Block. In the beginning there is one block for the entire program, but
+after global optimizations this will be separated in several blocks that are
+the basic blocks.
+
+\subsection{Optimizations}
+
+The optimizations are done in two different steps. First the global
+optimizations are performed, which are only the optimizations on branch-jump
+constructions. This is done repeatedly until there are no more changes.
+
+After all possible global optimizations are done, the program is seperated into
+basic blocks. The algorithm to do this is described earlier, and means all
+jump and branch instructions are called leaders, as are their targets. A basic
+block then goes from leader to leader.
+
+After the division in basic blocks, optimizations are performed on each of
+these basic blocks. This is also done repeatedly, since some times several
+steps can be done to optimize something.
+
+\subsection{Writing}
+
+Once all the optimizations have been done, the IR needs to be rewritten into
+Assembly code, so the xgcc crosscompiler can make binary code out of it.
+
+The writer expects a list of statements, so first the blocks have to be
+concatenated again into a list. After this is done, the list is passed on to
+the writer, which writes the instructions back to Assembly and saves the file
+so we can let xgcc compile it.
 
 \section{Results}
 
-\subsection*{pi.c}
+\subsection{pi.c}
 
-\subsection*{arcron.c}
+\subsection{acron.c}
 
-\subsection*{whet.c}
+\subsection{whet.c}
 
-\subsection*{slalom.c}
+\subsection{slalom.c}
 
-\subsection*{clinpack.c}
+\subsection{clinpack.c}
 
-\section{conclusion}
+\section{Conclusion}
+
+\appendix
+
+\section{List of all optimizations}
+
+\label{opt}
+
+\textbf{Global optimizations}
+
+\begin{verbatim}
+    beq ...,$Lx             bne ...,$Ly
+    j $Ly               ->  $Lx:   ...
+$Lx:   ...
+
+
+    bne ...,$Lx             beq ...,$Ly
+    j $Ly               ->  $Lx:   ...
+$Lx:   ...
+\end{verbatim}
+\textbf{Standard basic block optimizations}
+
+\begin{verbatim}
+mov $regA,$regA         ->  --- // remove it
+
+
+mov $regA,$regB         ->  instr $regA, $regB,...
+instr $regA, $regA,...
+
+
+instr $regA,...             instr $4,...
+mov [$4-$7], $regA      ->  jal XXX
+jal  XXX
+
+
+sw $regA,XXX            ->  sw $regA, XXX
+ld $regA,XXX
+
+
+shift $regA,$regA,0     ->  --- // remove it
+
+
+add $regA,$regA,X       ->  lw ...,X($regA)
+lw ...,0($regA)
+\end{verbatim}
+\textbf{Advanced basic block optimizations}
+
+\begin{verbatim}
+# Common subexpression elimination
+addu $regA, $regB, 4        addu $regD, $regB, 4
+...                         move $regA, $regD
+Code not writing $regB  ->  ...
+...                         ...
+addu $regC, $regB, 4        move $regC, $regD
+\end{verbatim}
 \end{document}

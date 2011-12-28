@@ -21,7 +21,7 @@ class Statement:
         arguments."""
         return self.stype == other.stype and self.name == other.name \
                and self.args == other.args
-               
+
     def __len__(self):
         return len(self.args)
 
@@ -45,9 +45,8 @@ class Statement:
         return self.stype == 'label' if name == None \
                else self.stype == 'label' and self.name == name
 
-    def is_command(self, name=None):
-        return self.stype == 'command' if name == None \
-               else self.stype == 'command' and self.name == name
+    def is_command(self, *args):
+        return self.stype == 'command' and (not len(args) or self.name in args)
 
     def is_jump(self):
         """Check if the statement is a jump."""
@@ -73,6 +72,14 @@ class Statement:
         """Check if the statement is an arithmetic operation."""
         return self.is_command() \
                and re.match('^(add|sub|mult|div|abs|neg)(u|\.d)?$', self.name)
+
+    def is_monop(self):
+        """Check if the statement is an unary operation."""
+        return len(self) == 2 and self.is_arith()
+
+    def is_binop(self):
+        """Check if the statement is an binary operation."""
+        return self.is_command() and len(self) == 3 and not self.is_jump()
 
     def jump_target(self):
         """Get the jump target of this statement."""
@@ -111,6 +118,9 @@ class Block:
     def peek(self, count=1):
         """Read the statements until an offset from the current pointer
         position."""
+        if self.end():
+            return Statement('empty', '') if count == 1 else []
+
         return self.statements[self.pointer] if count == 1 \
                else self.statements[self.pointer:self.pointer + count]
 
@@ -120,7 +130,7 @@ class Block:
         replacement."""
         if self.pointer == 0:
             raise Exception('No statement have been read yet.')
-        
+
         if start == None:
             start = self.pointer - 1
 
@@ -129,7 +139,18 @@ class Block:
         self.statements = before + replacement + after
         self.pointer = start + len(replacement)
 
+    def insert(self, statement, index=None):
+        if index == None:
+            index = self.pointer
+
+        self.statements.insert(index, statement)
+
     def apply_filter(self, callback):
         """Apply a filter to the statement list. If the callback returns True,
         the statement will remain in the list.."""
         self.statements = filter(callback, self.statements)
+
+    def reverse_statements(self):
+        """Reverse the statement list and reset the pointer."""
+        self.statements = self.statements[::-1]
+        self.pointer = 0

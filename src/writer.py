@@ -1,5 +1,6 @@
 from math import ceil
 
+
 def write_statements(statements):
     """Write a list of statements to valid assembly code."""
     out = ''
@@ -12,13 +13,15 @@ def write_statements(statements):
         if s.is_label():
             line = s.name + ':'
             indent_level = 1
-        elif s.is_inline_comment():
-            line = '#' + s.name
-            l = len(prevline.expandtabs(4))
-            tabs = int(ceil((24 - l) / 4.)) + 1
-            newline = '\t' * tabs
         elif s.is_comment():
-            line = '\t' * indent_level + line
+            line = '#' + s.name
+
+            if s.is_inline_comment():
+                l = len(prevline.expandtabs(4))
+                tabs = int(ceil((24 - l) / 4.)) + 1
+                newline = '\t' * tabs
+            else:
+                line = '\t' * indent_level + line
         elif s.is_directive():
             line = '\t' + s.name
         elif s.is_command():
@@ -36,6 +39,9 @@ def write_statements(statements):
 
         out += newline + line
         prevline = line
+
+    # Add newline at end of file
+    out += '\n'
 
     return out
 

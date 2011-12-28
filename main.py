@@ -1,7 +1,7 @@
 #!/usr/bin/python
-from parser import parse_file
-from optimize import optimize
-from writer import write_statements
+from src.parser import parse_file
+from src.optimize import optimize
+from src.writer import write_statements
 
 if __name__ == '__main__':
     from sys import argv, exit
