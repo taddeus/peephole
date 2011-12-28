@@ -27,3 +27,4 @@ class TestOptimizeAdvanced(unittest.TestCase):
 #                   self.foo,
 #                   S('command', 'addu', '$3', '$2', '$4'),
 #                   self.bar])
+        pass
