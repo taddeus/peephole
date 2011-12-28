@@ -137,7 +137,7 @@ def fold_constants(block):
             register[s[0]] = constants[s[1]]
         elif s.name in ['addu', 'subu', 'mult', 'div']:
             # Calculation with constants
-            rd, rs, rt = s
+            rd, rs, rt = s[0], s[1], s[2]
             rs_known = rs in register
             rt_known = rt in register
 
@@ -255,17 +255,22 @@ def algebraic_transformations(block):
         if (s.is_command('addu') or s.is_command('subu')) and s[2] == 0:
             block.replace(1, [S('command', 'move', s[0], s[1])])
             changed = True
-        elif s.is_command('mult') and s[2] == 1:
-            block.replace(1, [S('command', 'move', s[0], s[1])])
-            changed = True
-        elif s.is_command('mult') and s[2] == 0:
-            block.replace(1, [S('command', 'li', '$1', to_hex(0))])
-            changed = True
         elif s.is_command('mult'):
-            shift_amount = log(s[2], 2)
-            if shift_amount.is_integer():
-                new_command = S('command', 'sll', s[0], s[1], shift_amount)
-                block.replace(1, [new_command])
-                changed = True
+            next = block.peek()
+            if next.is_command('mflo'):
+                if s[1] == 1:
+                    block.replace(2, [S('command', 'move', next[0], s[0])])
+                    changed = True
+                    break
+                elif s[1] == 0:
+                    block.replace(2, [S('command', 'li', '$1', to_hex(0))])
+                    changed = True
+                    break
+                
+                shift_amount = log(s[1], 2)
+                if shift_amount.is_integer():
+                    new_command = S('command', 'sll', next[0], s[0], int(shift_amount))
+                    block.replace(2, [new_command])
+                    changed = True
 
     return changed

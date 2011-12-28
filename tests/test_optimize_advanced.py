@@ -125,7 +125,8 @@ class TestOptimizeAdvanced(unittest.TestCase):
 
     def test_algebraic_transforms_mult0(self):
         block = B([self.foo,
-                   S('command', 'mult', '$1', '$2', 0),
+                   S('command', 'mult', '$2', 0),
+                   S('command', 'mflo', '$1'),
                    self.bar])
 
         self.assertTrue(algebraic_transformations(block))
@@ -135,7 +136,8 @@ class TestOptimizeAdvanced(unittest.TestCase):
 
     def test_algebraic_transforms_mult1(self):
         block = B([self.foo,
-                   S('command', 'mult', '$1', '$2', 1),
+                   S('command', 'mult', '$2', 1),
+                   S('command', 'mflo', '$1'),
                    self.bar])
 
         self.assertTrue(algebraic_transformations(block))
@@ -145,7 +147,8 @@ class TestOptimizeAdvanced(unittest.TestCase):
 
     def test_algebraic_transforms_mult2(self):
         block = B([self.foo,
-                   S('command', 'mult', '$1', '$2', 2),
+                   S('command', 'mult', '$2', 2),
+                   S('command', 'mflo', '$1'),
                    self.bar])
 
         self.assertTrue(algebraic_transformations(block))
@@ -155,7 +158,8 @@ class TestOptimizeAdvanced(unittest.TestCase):
 
     def test_algebraic_transforms_mult16(self):
         block = B([self.foo,
-                   S('command', 'mult', '$1', '$2', 16),
+                   S('command', 'mult', '$2', 16),
+                   S('command', 'mflo', '$1'),
                    self.bar])
 
         self.assertTrue(algebraic_transformations(block))
