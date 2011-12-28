@@ -76,7 +76,6 @@ class TestOptimizeAdvanced(unittest.TestCase):
                    S('command', 'addu', '$1', '$2', 0),
                    self.bar])
                    
-#        self.assertTrue(copy_propagation(block))
-        algebraic_transformations(block)
+        self.assertTrue(algebraic_transformations(block))
         self.assertEqual(block.statements, [self.foo,
                    self.bar])

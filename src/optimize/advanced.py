@@ -166,6 +166,13 @@ def copy_propagation(block):
     walking through the code, storing move operations and checking whether it
     changes or whether a variable can be replaced. This way, the move statement
     might be a target for dead code elimination.
+    
+    move $regA, $regB           move $regA, $regB
+    ...                         ...
+    Code not writing $regA, ->  ...
+    $regB                       ...
+    ...                         ...
+    addu $regC, $regA, ...      addu $regC, $regB, ...
     """
     moves_from = []
     moves_to = []
@@ -221,17 +228,18 @@ def algebraic_transformations(block):
     changed = False
     
     while not block.end():
-        changed = True
         s = block.read()
         
         if (s.is_command('addu') or s.is_command('subu')) and s[2] == 0:
             block.replace(1, [])
+            changed = True
         elif s.is_command('mult') and s[2] == 1:
             block.replace(1, [])
+            changed = True
         elif s.is_command('mult') and s[2] == 2:
-            new_command = S(['command', 'sll', s[0], s[1], 1])
+            new_command = S(['command', 'sll', 
+            s[0], s[1], 1])
             block.replace(1, [new_command])
-        else:
-            changed = False
+            changed = True
             
     return changed
