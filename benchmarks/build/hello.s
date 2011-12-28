@@ -44,6 +44,9 @@ main:
 	lw	$3,20($fp)
 	addu	$2,$2,$3
 	sw	$2,24($fp)
+	lw	$2,16($fp)
+	addu	$3,$2,10
+	sw	$3,28($fp)
 	l.d	$f0,$LC0
 	s.d	$f0,32($fp)
 	l.d	$f0,$LC1
