@@ -25,6 +25,7 @@ def remove_redundancies(block):
 
     return changed
 
+
 def optimize_block(block):
     """Optimize a basic block."""
     while remove_redundancies(block) \
