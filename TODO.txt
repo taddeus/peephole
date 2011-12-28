@@ -1,3 +1,0 @@
-Jump/branch end of basoc block, Label begin of BB
-instr writing to register and immediatly overwritten by second instruction
-    (general case of second optimization in table practicum assignment)
