@@ -28,30 +28,34 @@ $LC1:
 	.loc	1 2
 	.ent	main
 main:
-	.frame	$fp,56,$31		# vars= 32, regs= 2/0, args= 16, extra= 0
+	.frame	$fp,64,$31		# vars= 40, regs= 2/0, args= 16, extra= 0
 	.mask	0xc0000000,-4
 	.fmask	0x00000000,0
-	subu	$sp,$sp,56
-	sw	$31,52($sp)
-	sw	$fp,48($sp)
+	subu	$sp,$sp,64
+	sw	$31,60($sp)
+	sw	$fp,56($sp)
 	move	$fp,$sp
 	jal	__main
 	li	$2,0x00000001		# 1
 	sw	$2,16($fp)
 	li	$2,0x00000005		# 5
 	sw	$2,20($fp)
+	lw	$2,16($fp)
+	lw	$3,20($fp)
+	addu	$2,$2,$3
+	sw	$2,24($fp)
 	l.d	$f0,$LC0
-	s.d	$f0,24($fp)
-	l.d	$f0,$LC1
 	s.d	$f0,32($fp)
+	l.d	$f0,$LC1
+	s.d	$f0,40($fp)
 	li	$2,0x00000061		# 97
-	sb	$2,40($fp)
+	sb	$2,48($fp)
 	move	$2,$0
 	j	$L1
 $L1:
 	move	$sp,$fp			# sp not trusted here
-	lw	$31,52($sp)
-	lw	$fp,48($sp)
-	addu	$sp,$sp,56
+	lw	$31,60($sp)
+	lw	$fp,56($sp)
+	addu	$sp,$sp,64
 	j	$31
 	.end	main
