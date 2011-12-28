@@ -58,7 +58,8 @@ def optimize_block(block):
     #              or fold_constants(block)
 
     while eliminate_common_subexpressions(block) \
-            | fold_constants(block) | copy_propagation(block):
+            | fold_constants(block) \
+            | copy_propagation(block):
         pass
 
 def optimize(statements, verbose=0):
