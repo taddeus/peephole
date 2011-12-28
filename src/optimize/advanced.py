@@ -1,4 +1,4 @@
-from statement import Statement as S
+from src.statement import Statement as S
 
 
 def create_variable():
@@ -109,15 +109,44 @@ def copy_propagation(block):
     Rename values that were copied to there original, so the copy statement
     might be useless, allowing it to be removed by dead code elimination.
     """
-    moves = []
-    count = 0
+    moves_from = []
+    moves_to = []
 
     while not block.end():
         s = block.read()
+        print "len(s)",len(s)
+        if len(s) == 3:
+            print "s[0] = ", s[0]
+            print "s[1] = ", s[1]
+            print "s[2] = ", s[2]
+            
+            if moves_from:
+                print moves_from
+                print moves_to
 
-        if s.is_command('move'):
-            moves.append((s[0], s[1]))
-            count += 1
-
-    print "count", count
+        if s.is_command('move') and s[0] not in moves_from:
+            moves_from.append(s[0])
+            moves_to.append(s[1])
+            print "Added move to list."
+        elif s.is_command('move'):
+            for i in xrange(len(moves_to)):
+                if moves_to[i] == s[0]:
+                    moves_from[i] = s[1]
+        elif len(s) == 3 and s[0] in moves_to:
+            for i in xrange(len(moves_to)):
+                if moves_to[i] == s[0]:
+                    del moves_to[i]
+                    del moves_from[i]
+                    "Removed move from list."
+        elif len(s) == 3 and (s[1] in moves_to or s[2] in moves_to):
+            print "Have to propagate."
+            for i in xrange(len(moves_to)):
+                if s[1] == moves_to[i]:
+                    s[1] = moves_from[i]
+                    print "Propagated"
+                
+                if s[2] == moves_to[i]:
+                    s[2] = moves_from[i]
+                    print "Propagated"
+                
     return False
