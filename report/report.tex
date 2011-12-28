@@ -240,6 +240,7 @@ addu $regC, $regB, 4        move $regC, $regD
 
 # Constant folding
 
+
 # Copy propagation
 move $regA, $regB           move $regA, $regB
 ...                         ...
@@ -247,5 +248,17 @@ Code not writing $regA, ->  ...
 $regB                       ...
 ...                         ...
 addu $regC, $regA, ...      addu $regC, $regB, ...
+
+
+# Algebraic transformations
+addu $regA, $regB, 0    ->  move $regA, $regB
+
+subu $regA, $regB, 0    ->  move $regA, $regB
+
+mult $regA, $regB, 1    ->  move $regA, $regB
+
+mult $regA, $regB, 0    ->  li   $regA, 0
+
+mult $regA, $regB, 2    ->  sll  $regA, $regB, 1
 \end{verbatim}
 \end{document}
