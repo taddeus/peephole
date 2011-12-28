@@ -8,6 +8,11 @@ def create_variable():
 def eliminate_common_subexpressions(block):
     """
     Common subexpression elimination:
+    x = a + b           ->  u = a + b
+    y = a + b               x = u
+                            y = u
+
+    The algorithm used is as follows:
     - Traverse through the statements in reverse order.
     - If the statement can be possibly be eliminated, walk further collecting
       all other occurrences of the expression until one of the arguments is
@@ -65,7 +70,11 @@ def to_hex(value):
 def fold_constants(block):
     """
     Constant folding:
-    - An immidiate load defines a register value:
+    x = 3 + 5           ->  x = 8
+    y = x * 2               y = 16
+
+    To keep track of constant values, the following assumptions are made:
+    - An immediate load defines a register value:
         li $reg, XX     ->  register[$reg] = XX
     - Integer variable definition is of the following form:
         li $reg, XX     ->  constants[VAR] = XX
@@ -161,12 +170,12 @@ def copy_propagation(block):
 
     while not block.end():
         s = block.read()
-        
+
         if len(s) == 3:
             print "s[0] = ", s[0]
             print "s[1] = ", s[1]
             print "s[2] = ", s[2]
-            
+
             if moves_from:
                 print "fr: ", moves_from
                 print "to: ", moves_to
@@ -193,10 +202,10 @@ def copy_propagation(block):
                 if s[1] == moves_to[i]:
                     s[1] = moves_from[i]
                     print "Propagated"
-                
+
                 if s[2] == moves_to[i]:
                     s[2] = moves_from[i]
                     print "Propagated"
-                    
-        print ""       
+
+        print ""
     return False
