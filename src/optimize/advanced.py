@@ -208,3 +208,30 @@ def copy_propagation(block):
             changed = True
                           
     return changed
+    
+    
+def algebraic_transformations(block):
+    """
+    Change ineffective or useless algebraic transformations. Handled are:
+    - x = x + 0 -> remove
+    - x = x - 0 -> remove
+    - x = x * 1 -> remove
+    - x = x * 2 -> x = x << 1
+    """
+    changed = False
+    
+    while not block.end():
+        changed = True
+        s = block.read()
+        
+        if (s.is_command('addu') or s.is_command('subu')) and s[2] == 0:
+            block.replace(1, [])
+        elif s.is_command('mult') and s[2] == 1:
+            block.replace(1, [])
+        elif s.is_command('mult') and s[2] == 2:
+            new_command = S(['command', 'sll', s[0], s[1], 1])
+            block.replace(1, [new_command])
+        else:
+            changed = False
+            
+    return changed
