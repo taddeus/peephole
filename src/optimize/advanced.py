@@ -211,11 +211,12 @@ def copy_propagation(block):
                 if moves_to[i] == s[0]:
                     moves_from[i] = s[1]
                     break
-        elif len(s) == 3 and s[0] in moves_to:
-            # The result gets overwritten, so remove the data from the list.
+        elif len(s) == 3 and (s[0] in moves_to or s[0] in moves_from):
+            # One of the registers getss overwritten, so remove the data from
+            # the list.
             i = 0
             while i  < len(moves_to):
-                if moves_to[i] == s[0]:
+                if moves_to[i] == s[0] or moves_to[i] == s[1]:
                     del moves_to[i]
                     del moves_from[i]
                 else:
