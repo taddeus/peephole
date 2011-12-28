@@ -240,7 +240,7 @@ def copy_propagation(block):
 
 def algebraic_transformations(block):
     """
-    Change ineffective or useless algebraic transformations. Handled are:
+    Change ineffective or useless algebraic expressions. Handled are:
     - x = y + 0 -> x = y
     - x = y - 0 -> x = y
     - x = y * 1 -> x = y
