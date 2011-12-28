@@ -23,6 +23,35 @@ class TestDataflow(unittest.TestCase):
         self.assertEqual(map(lambda b: b.statements, find_basic_blocks(s)), \
                 [B(s[:2]).statements, B(s[2:4]).statements, \
                  B(s[4:]).statements])
+                 
+#    def test_get_gen(self):
+#        b1 = B([S('command', 'add', '$1', '$2', '$3'), \
+#                S('command', 'add', '$2', '$3', '$4'), \
+#                S('command', 'add', '$1', '$4', '$5')])
+#        
+#        self.assertEqual(b1.get_gen(), ['$1', '$2'])
+
+#    def test_get_out(self):
+#        b1 = B([S('command', 'add', '$1', '$2', '$3'), \
+#                S('command', 'add', '$2', '$3', '$4'), \
+#                S('command', 'add', '$1', '$4', '$5'), \
+#                S('command', 'j', 'b2')])
+#        
+#        b2 = B([S('command', 'add', '$3', '$5', '$6'), \
+#                S('command', 'add', '$1', '$2', '$3'), \
+#                S('command', 'add', '$6', '$4', '$5')])      
+#                
+#        blocks = [b1, b2]
+#        
+#        for block in blocks:
+#            block.out_set = block.get_gen()
+#            print 'block.out_set', block.out_set       
+
+#        generate_flow_graph(blocks)     
+#        print b1.get_gen()
+#        print b2.get_gen()
+#        print b2.get_out()
+
 
     def test_generate_flow_graph_simple(self):
         b1 = B([S('command', 'foo'), S('command', 'j', 'b2')])

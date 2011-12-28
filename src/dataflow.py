@@ -11,6 +11,10 @@ class BasicBlock(Block):
 
         self.dominates = []
         self.dominated_by = []
+        self.in_set = set([])
+        self.out_set = set([])
+        self.gen_set = set([])
+        self.kill_set = set([])
 
     def add_edge_to(self, block):
         if block not in self.edges_to:
@@ -23,17 +27,38 @@ class BasicBlock(Block):
             block.dominated_by.append(self)
 
     def get_gen(self):
-        pass
-
+        for s in self.statements:       
+            if s.is_arith():
+                self.gen_set.add(s[0])
+                print 'added: ', s[0]
+        
+        return self.gen_set
+        
     def get_kill(self):
-        pass
+#        if self.edges_from != []:
+        for backw in self.edges_from:
+            self.kill_set = self.kill_set | backw.get_kill()
+            
+        self.kill_set = self.kill_set - self.get_gen()
+        print 'get_kill_set', self.kill_set
+        return self.kill_set
 
     def get_in(self):
-        pass
+        for backw in self.edges_from:
+            self.in_set = self.in_set | backw.get_out()
+        print 'in_set', self.in_set
+        return self.in_set
 
     def get_out(self):
-        pass
+        print 'gen_set', self.gen_set
+        print 'get_in', self.get_in()
+        print 'get_kill', self.get_kill()
+        self.out_set = self.gen_set | (self.get_in() - self.get_kill())
+        
+def reaching_definition(blocks):
+    generate_flow_graph(blocks)
 
+    
 
 def find_leaders(statements):
     """Determine the leaders, which are:

@@ -101,6 +101,9 @@ def optimize_blocks(blocks):
 
         blocks = optimized
 
+    
+    
+
     return reduce(lambda a, b: a + b, blocks, [])
 
 
