@@ -65,8 +65,19 @@ def to_hex(value):
 def fold_constants(block):
     """
     Constant folding:
+    - Integer variable definition is of the following form:
+        li $reg, XX
+        sw $reg, VAR
+      save this as:
+        reg[$reg] = XX
+        constants[VAR] = XX
+    - When a variable is used, the following happens:
+        lw $reg, VAR
+      save this as:
+        reg[$reg] = constants[VAR]
     """
     constants = {}
+    reg = {}
 
     while not block.end():
         s = block.read()
@@ -91,7 +102,7 @@ def fold_constants(block):
             #else:
 
     return False
-    
+
 def copy_propagtion(block):
     """
     Rename values that were copied to there original, so the copy statement
