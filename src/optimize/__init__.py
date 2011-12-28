@@ -34,6 +34,7 @@ def optimize_block(block):
             | copy_propagation(block):
         pass
 
+
 def optimize(statements, verbose=0):
     """Optimization wrapper function, calls global and basic-block level
     optimization functions."""
