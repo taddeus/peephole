@@ -162,10 +162,9 @@ def fold_constants(block):
 
 def copy_propagation(block):
     """
-    Replace a variable with its original variable after a move if possible, by
-    walking through the code, storing move operations and checking whether it
-    changes or whether a variable can be replaced. This way, the move statement
-    might be a target for dead code elimination.
+    Unpack a move instruction, by replacing its destination
+    address with its source address in the code following the move instruction. 
+    This way, the move statement might be a target for dead code elimination.
     
     move $regA, $regB           move $regA, $regB
     ...                         ...
