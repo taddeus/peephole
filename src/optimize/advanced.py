@@ -54,3 +54,10 @@ def fold_constants(block):
     Constant folding:
     """
     return False
+    
+def copy_propagtion(block):
+    """
+    Rename values that were copied to there original, so the copy statement
+    might be useless, allowing it to be removed by dead code elimination.
+    """
+    return false
