@@ -162,50 +162,49 @@ def fold_constants(block):
 
 def copy_propagation(block):
     """
-    Rename values that were copied to there original, so the copy statement
-    might be useless, allowing it to be removed by dead code elimination.
+    Replace a variable with its original variable after a move if possible, by
+    walking through the code, storing move operations and checking whether it
+    changes or whether a variable can be replaced. This way, the move statement
+    might be a target for dead code elimination.
     """
     moves_from = []
     moves_to = []
+    changed = False
 
     while not block.end():
         s = block.read()
 
-        if len(s) == 3:
-            print "s[0] = ", s[0]
-            print "s[1] = ", s[1]
-            print "s[2] = ", s[2]
-
-            if moves_from:
-                print "fr: ", moves_from
-                print "to: ", moves_to
-
         if s.is_command('move') and s[0] not in moves_to:
+            # Add this move to the lists, because it is not yet there.
             moves_from.append(s[1])
             moves_to.append(s[0])
-            print "Added move to list."
-        elif s.is_command('move'):
+        elif s.is_command('move') and s[0] in moves_to:
+            # This move is already in the lists, so only update it
             for i in xrange(len(moves_to)):
                 if moves_to[i] == s[0]:
                     moves_from[i] = s[1]
+                    break
         elif len(s) == 3 and s[0] in moves_to:
-            print len(s)
-            print len(moves_to)
-            for i in xrange(len(moves_to)):
+            # The result gets overwritten, so remove the data from the list.
+            i = 0            
+            while i  < len(moves_to):
                 if moves_to[i] == s[0]:
                     del moves_to[i]
                     del moves_from[i]
-                    "Removed move from list."
+                else:
+                    i += 1
         elif len(s) == 3 and (s[1] in moves_to or s[2] in moves_to):
-            print "Have to propagate."
+            # Check where the result of the move is used and replace it with
+            # the original variable.
             for i in xrange(len(moves_to)):
                 if s[1] == moves_to[i]:
                     s[1] = moves_from[i]
-                    print "Propagated"
-
+                    break
+                
                 if s[2] == moves_to[i]:
                     s[2] = moves_from[i]
-                    print "Propagated"
-
-        print ""
-    return False
+                    break
+            
+            changed = True
+                          
+    return changed
