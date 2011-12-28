@@ -1,9 +1,10 @@
-from src.dataflow import find_basic_blocks
+from dataflow import find_basic_blocks
 
 from standard import redundant_move_1, redundant_move_2, \
         redundant_move_3, redundant_move_4, redundant_load, \
         redundant_shift, redundant_add
-from advanced import eliminate_common_subexpressions, fold_constants
+from advanced import eliminate_common_subexpressions, fold_constants, \
+    copy_propagation
 
 
 def optimize_global(statements):
@@ -57,7 +58,7 @@ def optimize_block(block):
     #              or fold_constants(block)
 
     while eliminate_common_subexpressions(block) \
-            | fold_constants(block):
+            | fold_constants(block) | copy_propagation(block):
         pass
 
 def optimize(statements, verbose=0):
