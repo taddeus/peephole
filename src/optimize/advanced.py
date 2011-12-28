@@ -1,8 +1,25 @@
 from src.statement import Statement as S
 
 
-def create_variable():
-    return '$15'
+def reg_dead_in(var, context):
+    """Check if a register is `dead' in a given list of statements."""
+    # TODO: Finish
+    for s in context:
+        if s.defines(var) or s.uses(var):
+            return False
+
+    return True
+
+
+def find_free_reg(context):
+    """Find a temporary register that is free in a given list of statements."""
+    for i in xrange(8):
+        tmp = '$t%d' % i
+
+        if reg_dead_in(tmp, context):
+            return tmp
+
+    raise Exception('No temporary register is available.')
 
 
 def eliminate_common_subexpressions(block):
@@ -44,18 +61,21 @@ def eliminate_common_subexpressions(block):
                 # Replace a similar expression by a move instruction
                 if s2.name == s.name and s2[1:] == args:
                     if not new_reg:
-                        new_reg = create_variable()
+                        new_reg = find_free_reg(block[:pointer])
 
                     block.replace(1, [S('command', 'move', s2[0], new_reg)])
                     last = block.pointer
 
-            # Insert an additional expression with a new destination address
-            if last:
-                block.insert(S('command', s.name, [new_reg] + args), last)
-                found = True
-
             # Reset pointer to and continue from the original statement
             block.pointer = pointer
+
+            if last:
+                # Insert an additional expression with a new destination address
+                block.insert(S('command', s.name, *([new_reg] + args)), last)
+
+                # Replace the original expression with a move statement
+                block.replace(1, [S('command', 'move', s[0], new_reg)])
+                found = True
 
     block.reverse_statements()
 
@@ -139,7 +159,7 @@ def fold_constants(block):
                 if s.name == 'div':
                     result = to_hex(rs_val / rt_val)
 
-                block.replace(1, [S('command', 'li', result)])
+                block.replace(1, [S('command', 'li', rd, result)])
                 register[rd] = result
                 found = True
             elif rt_known:
@@ -186,7 +206,7 @@ def copy_propagation(block):
                     break
         elif len(s) == 3 and s[0] in moves_to:
             # The result gets overwritten, so remove the data from the list.
-            i = 0            
+            i = 0
             while i  < len(moves_to):
                 if moves_to[i] == s[0]:
                     del moves_to[i]
@@ -200,16 +220,16 @@ def copy_propagation(block):
                 if s[1] == moves_to[i]:
                     s[1] = moves_from[i]
                     break
-                
+
                 if s[2] == moves_to[i]:
                     s[2] = moves_from[i]
                     break
-            
+
             changed = True
-                          
+
     return changed
-    
-    
+
+
 def algebraic_transformations(block):
     """
     Change ineffective or useless algebraic transformations. Handled are:
@@ -219,11 +239,11 @@ def algebraic_transformations(block):
     - x = x * 2 -> x = x << 1
     """
     changed = False
-    
+
     while not block.end():
         changed = True
         s = block.read()
-        
+
         if (s.is_command('addu') or s.is_command('subu')) and s[2] == 0:
             block.replace(1, [])
         elif s.is_command('mult') and s[2] == 1:
@@ -233,5 +253,5 @@ def algebraic_transformations(block):
             block.replace(1, [new_command])
         else:
             changed = False
-            
+
     return changed
