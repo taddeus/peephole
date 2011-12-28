@@ -1,6 +1,6 @@
 from src.dataflow import find_basic_blocks
 
-from glob import redundant_move_1, redundant_move_2, \
+from standard import redundant_move_1, redundant_move_2, \
         redundant_move_3, redundant_move_4, redundant_load, \
         redundant_shift, redundant_add
 
@@ -41,8 +41,9 @@ def optimize_global(statements):
 
 def optimize_block(statements):
     """Optimize a basic block."""
-    glob = [redundant_move_1, redundant_move_2, redundant_move_3, \
-            redundant_move_4, redundant_load, redundant_shift, redundant_add]
+    standard = [redundant_move_1, redundant_move_2, redundant_move_3, \
+                redundant_move_4, redundant_load, redundant_shift, \
+                redundant_add]
     old_len = -1
 
     while old_len != len(statements):
@@ -51,9 +52,10 @@ def optimize_block(statements):
         while not statements.end():
             s = statements.read()
 
+            #
             cont = False
 
-            for callback in glob:
+            for callback in standard:
                 if callback(s, statements):
                     cont = True
                     break
