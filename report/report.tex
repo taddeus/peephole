@@ -106,14 +106,15 @@ implementation is a slightly less fancy, but easier to implement.
 We search from the end of the block up for instructions that are eligible for
 CSE. If we find one, we check further up in the code for the same instruction,
 and add that to a temporary storage list. This is done until the beginning of
-the block or until one of the arguments of this expression is assigned. Now all
-occurrences of this expression can be replaced by a move of a new variable that
-is generated above the first occurrence, which contains the value of the
-expression.
+the block or until one of the arguments of this expression is assigned.
 
-This is a less efficient method, but because the basic blocks are in general
-not very large and the execution time of the optimizer is not a primary
-concern, this is not a big problem.
+We now add the instruction above the first use, and write the result in a new
+variable. Then all occurrences of this expression can be replaced by a move of
+from new variable into the original destination variable of the instruction.
+
+This is a less efficient method then the dag, but because the basic blocks are
+in general not very large and the execution time of the optimizer is not a
+primary concern, this is not a big problem.
 
 \section{Implementation}
 
@@ -201,7 +202,7 @@ $Lx:   ...
     j $Ly               ->  $Lx:   ...
 $Lx:   ...
 \end{verbatim}
-\textbf{Simple basic block optimizations}
+\textbf{Standard basic block optimizations}
 
 \begin{verbatim}
 mov $regA,$regA         ->  --- // remove it
