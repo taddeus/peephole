@@ -1,4 +1,5 @@
 BUILD=build/
+CLEAN=src/*.pyc src/optimize/*.pyc
 
 # Fix pdflatex search path
 TGT_DIR :=
