@@ -220,11 +220,11 @@ def copy_propagation(block):
 def algebraic_transformations(block):
     """
     Change ineffective or useless algebraic transformations. Handled are:
-    - x = x + 0 -> remove
-    - x = x - 0 -> remove
-    - x = x * 1 -> remove
-    - x = x * 0 -> x = 0
-    - x = x * 2 -> x = x << 1
+    - x = y + 0 -> x = y
+    - x = y - 0 -> x = y
+    - x = y * 1 -> x = y
+    - x = y * 0 -> x = 0
+    - x = y * 2 -> x = x << 1
     """
     changed = False
     
@@ -232,10 +232,10 @@ def algebraic_transformations(block):
         s = block.read()
         
         if (s.is_command('addu') or s.is_command('subu')) and s[2] == 0:
-            block.replace(1, [])
+            block.replace(1, [S('command', 'move', s[0], s[1])])
             changed = True
         elif s.is_command('mult') and s[2] == 1:
-            block.replace(1, [])
+            block.replace(1, [S('command', 'move', s[0], s[1])])
             changed = True
         elif s.is_command('mult') and s[2] == 0:
             block.replace(1, [S('command', 'li', '$1', to_hex(0))])

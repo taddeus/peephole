@@ -78,7 +78,8 @@ class TestOptimizeAdvanced(unittest.TestCase):
                    
         self.assertTrue(algebraic_transformations(block))
         self.assertEqual(block.statements, [self.foo,
-                   self.bar])
+                         S('command', 'move', '$1', '$2'),
+                         self.bar])
                    
     def test_algebraic_transforms_add1(self):
         arguments = [self.foo,
@@ -96,7 +97,8 @@ class TestOptimizeAdvanced(unittest.TestCase):
                    
         self.assertTrue(algebraic_transformations(block))
         self.assertEqual(block.statements, [self.foo,
-                   self.bar])
+                         S('command', 'move', '$1', '$2'),
+                         self.bar])
                    
     def test_algebraic_transforms_sub1(self):
         arguments = [self.foo,
@@ -124,7 +126,8 @@ class TestOptimizeAdvanced(unittest.TestCase):
                    
         self.assertTrue(algebraic_transformations(block))
         self.assertEqual(block.statements, [self.foo,
-                   self.bar])
+                         S('command', 'move', '$1', '$2'),
+                         self.bar])
                    
     def test_algebraic_transforms_mult2(self):
         block = B([self.foo,
