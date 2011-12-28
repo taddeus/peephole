@@ -61,7 +61,7 @@ def optimize_block(block):
         pass
 
 def optimize(statements, verbose=0):
-    """optimization wrapper function, calls global and basic-block level
+    """Optimization wrapper function, calls global and basic-block level
     optimization functions."""
     # Optimize on a global level
     o = len(statements)
