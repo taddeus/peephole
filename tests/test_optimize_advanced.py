@@ -1,7 +1,7 @@
 import unittest
 
 from src.optimize.advanced import eliminate_common_subexpressions, \
-        copy_propagation
+        fold_constants, copy_propagation
 from src.statement import Statement as S, Block as B
 
 
@@ -39,6 +39,5 @@ class TestOptimizeAdvanced(unittest.TestCase):
 #                   S('command', 'addu', '$3', '$1', '$4'),
 #                   self.bar]
 #        block = B(arguments)
-#                   
 #        copy_propagation(block)
 #        self.assertEqual(block.statements, arguments)
