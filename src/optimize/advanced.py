@@ -1,4 +1,4 @@
-from src.statement import Statement as S
+from statement import Statement as S
 
 
 def eliminate_common_subexpressions(block):
@@ -55,9 +55,20 @@ def fold_constants(block):
     """
     return False
     
-def copy_propagtion(block):
+def copy_propagation(block):
     """
     Rename values that were copied to there original, so the copy statement
     might be useless, allowing it to be removed by dead code elimination.
     """
+    moves = []
+    count = 0
+    
+    while not block.end():
+        s = block.read()
+        
+        if s.is_command('move'):
+            moves.append((s[0], s[1]))
+            count += 1
+            
+    print "count", count
     return false
