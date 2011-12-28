@@ -1,7 +1,7 @@
 import unittest
 
 from src.optimize.advanced import eliminate_common_subexpressions, \
-        fold_constants, copy_propagation
+        fold_constants, copy_propagation, algebraic_transformations
 from src.statement import Statement as S, Block as B
 
 
@@ -63,3 +63,13 @@ class TestOptimizeAdvanced(unittest.TestCase):
         block = B(arguments)
         self.assertFalse(copy_propagation(block))
         self.assertEqual(block.statements, arguments)
+        
+    def test_algebraic_transforms_add0(self):
+        block = B([self.foo,
+                   S('command', 'addu', '$1', '$2', 0),
+                   self.bar])
+                   
+#        self.assertTrue(copy_propagation(block))
+        algebraic_transformations(block)
+        self.assertEqual(block.statements, [self.foo,
+                   self.bar])
