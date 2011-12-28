@@ -3,6 +3,7 @@ from src.dataflow import find_basic_blocks
 from standard import redundant_move_1, redundant_move_2, \
         redundant_move_3, redundant_move_4, redundant_load, \
         redundant_shift, redundant_add
+from advanced import eliminate_common_subexpressions, fold_constants
 
 
 def optimize_global(statements):
@@ -30,41 +31,34 @@ def optimize_global(statements):
                         statements.replace(3, [s, label])
 
 
-#def optimize_blocks(blocks):
-#    """Call the optimizer for each basic block. Do this several times until
-#    no more optimizations are achieved."""
-#    for block in blocks:
-#        optimize_block(block)
-#
-#    return blocks
-
-
-def optimize_block(statements):
+def optimize_block(block):
     """Optimize a basic block."""
     standard = [redundant_move_1, redundant_move_2, redundant_move_3, \
                 redundant_move_4, redundant_load, redundant_shift, \
                 redundant_add]
     old_len = -1
 
-    while old_len != len(statements):
-        old_len = len(statements)
+    # Standard optimizations
+    while old_len != len(block):
+        old_len = len(block)
 
-        while not statements.end():
-            s = statements.read()
-
-            #
-            cont = False
+        while not block.end():
+            s = block.read()
 
             for callback in standard:
-                if callback(s, statements):
-                    cont = True
+                if callback(s, block):
                     break
 
-            if cont:
-                continue
+    # Advanced optimizations
+    #changed = True
 
-            # Other optimizations...
+    #while changed:
+    #    changed = eliminate_common_subexpressions(block) \
+    #              or fold_constants(block)
 
+    while eliminate_common_subexpressions(block) \
+            | fold_constants(block):
+        pass
 
 def optimize(statements, verbose=0):
     """optimization wrapper function, calls global and basic-block level

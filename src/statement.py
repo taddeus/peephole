@@ -139,7 +139,18 @@ class Block:
         self.statements = before + replacement + after
         self.pointer = start + len(replacement)
 
+    def insert(self, statement, index=None):
+        if index == None:
+            index = self.pointer
+
+        self.statements.insert(index, statement)
+
     def apply_filter(self, callback):
         """Apply a filter to the statement list. If the callback returns True,
         the statement will remain in the list.."""
         self.statements = filter(callback, self.statements)
+
+    def reverse_statements(self):
+        """Reverse the statement list and reset the pointer."""
+        self.statements = self.statements[::-1]
+        self.pointer = 0
