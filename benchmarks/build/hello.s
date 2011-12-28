@@ -15,6 +15,10 @@ __gnu_compiled_c:
 $LC0:
 	.word	0x00000000		# 2
 	.word	0x40000000
+	.align	3
+$LC1:
+	.word	0x00000000		# 3.5
+	.word	0x400c0000
 	.text
 	.align	2
 	.globl	main
@@ -24,24 +28,30 @@ $LC0:
 	.loc	1 2
 	.ent	main
 main:
-	.frame	$fp,40,$31		# vars= 16, regs= 2/0, args= 16, extra= 0
+	.frame	$fp,56,$31		# vars= 32, regs= 2/0, args= 16, extra= 0
 	.mask	0xc0000000,-4
 	.fmask	0x00000000,0
-	subu	$sp,$sp,40
-	sw	$31,36($sp)
-	sw	$fp,32($sp)
+	subu	$sp,$sp,56
+	sw	$31,52($sp)
+	sw	$fp,48($sp)
 	move	$fp,$sp
 	jal	__main
 	li	$2,0x00000001		# 1
 	sw	$2,16($fp)
+	li	$2,0x00000005		# 5
+	sw	$2,20($fp)
 	l.d	$f0,$LC0
 	s.d	$f0,24($fp)
+	l.d	$f0,$LC1
+	s.d	$f0,32($fp)
+	li	$2,0x00000061		# 97
+	sb	$2,40($fp)
 	move	$2,$0
 	j	$L1
 $L1:
 	move	$sp,$fp			# sp not trusted here
-	lw	$31,36($sp)
-	lw	$fp,32($sp)
-	addu	$sp,$sp,40
+	lw	$31,52($sp)
+	lw	$fp,48($sp)
+	addu	$sp,$sp,56
 	j	$31
 	.end	main
