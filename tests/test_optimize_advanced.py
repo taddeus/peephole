@@ -1,6 +1,7 @@
 import unittest
 
-from src.optimize.advanced import eliminate_common_subexpressions
+from src.optimize.advanced import eliminate_common_subexpressions, \
+        fold_constants, copy_propagation
 from src.statement import Statement as S, Block as B
 
 
