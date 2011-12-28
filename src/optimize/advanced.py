@@ -1,5 +1,5 @@
 from src.statement import Statement as S
-
+from math import log
 
 def reg_dead_in(var, context):
     """Check if a register is `dead' in a given list of statements."""
@@ -182,10 +182,16 @@ def fold_constants(block):
 
 def copy_propagation(block):
     """
-    Replace a variable with its original variable after a move if possible, by
-    walking through the code, storing move operations and checking whether it
-    changes or whether a variable can be replaced. This way, the move statement
-    might be a target for dead code elimination.
+    Unpack a move instruction, by replacing its destination
+    address with its source address in the code following the move instruction.
+    This way, the move statement might be a target for dead code elimination.
+
+    move $regA, $regB           move $regA, $regB
+    ...                         ...
+    Code not writing $regA, ->  ...
+    $regB                       ...
+    ...                         ...
+    addu $regC, $regA, ...      addu $regC, $regB, ...
     """
     moves_from = []
     moves_to = []
@@ -233,25 +239,31 @@ def copy_propagation(block):
 def algebraic_transformations(block):
     """
     Change ineffective or useless algebraic transformations. Handled are:
-    - x = x + 0 -> remove
-    - x = x - 0 -> remove
-    - x = x * 1 -> remove
-    - x = x * 2 -> x = x << 1
+    - x = y + 0 -> x = y
+    - x = y - 0 -> x = y
+    - x = y * 1 -> x = y
+    - x = y * 0 -> x = 0
+    - x = y * 2 -> x = x << 1
     """
     changed = False
 
     while not block.end():
-        changed = True
         s = block.read()
 
         if (s.is_command('addu') or s.is_command('subu')) and s[2] == 0:
-            block.replace(1, [])
+            block.replace(1, [S('command', 'move', s[0], s[1])])
+            changed = True
         elif s.is_command('mult') and s[2] == 1:
-            block.replace(1, [])
-        elif s.is_command('mult') and s[2] == 2:
-            new_command = S(['command', 'sll', s[0], s[1], 1])
-            block.replace(1, [new_command])
-        else:
-            changed = False
+            block.replace(1, [S('command', 'move', s[0], s[1])])
+            changed = True
+        elif s.is_command('mult') and s[2] == 0:
+            block.replace(1, [S('command', 'li', '$1', to_hex(0))])
+            changed = True
+        elif s.is_command('mult'):
+            shift_amount = log(s[2], 2)
+            if shift_amount.is_integer():
+                new_command = S('command', 'sll', s[0], s[1], shift_amount)
+                block.replace(1, [new_command])
+                changed = True
 
     return changed

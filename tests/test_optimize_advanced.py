@@ -90,8 +90,84 @@ class TestOptimizeAdvanced(unittest.TestCase):
         block = B([self.foo,
                    S('command', 'addu', '$1', '$2', 0),
                    self.bar])
-
-#        self.assertTrue(copy_propagation(block))
-        algebraic_transformations(block)
+        self.assertTrue(algebraic_transformations(block))
         self.assertEqual(block.statements, [self.foo,
+                         S('command', 'move', '$1', '$2'),
+                         self.bar])
+
+    def test_algebraic_transforms_add1(self):
+        arguments = [self.foo,
+                   S('command', 'addu', '$1', '$2', 1),
+                   self.bar]
+        block = B(arguments)
+
+        self.assertFalse(algebraic_transformations(block))
+        self.assertEqual(block.statements, arguments)
+
+    def test_algebraic_transforms_sub0(self):
+        block = B([self.foo,
+                   S('command', 'subu', '$1', '$2', 0),
                    self.bar])
+
+        self.assertTrue(algebraic_transformations(block))
+        self.assertEqual(block.statements, [self.foo,
+                         S('command', 'move', '$1', '$2'),
+                         self.bar])
+
+    def test_algebraic_transforms_sub1(self):
+        arguments = [self.foo,
+                   S('command', 'subu', '$1', '$2', 1),
+                   self.bar]
+        block = B(arguments)
+
+        self.assertFalse(algebraic_transformations(block))
+        self.assertEqual(block.statements, arguments)
+
+    def test_algebraic_transforms_mult0(self):
+        block = B([self.foo,
+                   S('command', 'mult', '$1', '$2', 0),
+                   self.bar])
+
+        self.assertTrue(algebraic_transformations(block))
+        self.assertEqual(block.statements, [self.foo,
+                         S('command', 'li', '$1', '0x00000000'),
+                         self.bar])
+
+    def test_algebraic_transforms_mult1(self):
+        block = B([self.foo,
+                   S('command', 'mult', '$1', '$2', 1),
+                   self.bar])
+
+        self.assertTrue(algebraic_transformations(block))
+        self.assertEqual(block.statements, [self.foo,
+                         S('command', 'move', '$1', '$2'),
+                         self.bar])
+
+    def test_algebraic_transforms_mult2(self):
+        block = B([self.foo,
+                   S('command', 'mult', '$1', '$2', 2),
+                   self.bar])
+
+        self.assertTrue(algebraic_transformations(block))
+        self.assertEqual(block.statements, [self.foo,
+                         S('command', 'sll', '$1', '$2', 1),
+                         self.bar])
+
+    def test_algebraic_transforms_mult16(self):
+        block = B([self.foo,
+                   S('command', 'mult', '$1', '$2', 16),
+                   self.bar])
+
+        self.assertTrue(algebraic_transformations(block))
+        self.assertEqual(block.statements, [self.foo,
+                         S('command', 'sll', '$1', '$2', 4),
+                         self.bar])
+
+    def test_algebraic_transforms_mult3(self):
+        arguments = [self.foo,
+                     S('command', 'mult', '$1', '$2', 3),
+                     self.bar]
+        block = B(arguments)
+
+        self.assertFalse(algebraic_transformations(block))
+        self.assertEqual(block.statements, arguments)
