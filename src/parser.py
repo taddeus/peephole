@@ -3,10 +3,12 @@ import ply.yacc as yacc
 
 from statement import Statement as S, Block
 
+
 # Global statements administration
 statements = []
 
 tokens = ('NEWLINE', 'WORD', 'COMMENT', 'DIRECTIVE', 'COMMA', 'COLON')
+
 
 # Tokens
 def t_NEWLINE(t):
@@ -50,6 +52,7 @@ def t_WORD(t):
     r'[a-zA-Z0-9$_.+()-]+'
     return t
 
+
 # Ignore whitespaces
 t_ignore = ' \t'
 
@@ -57,8 +60,10 @@ def t_error(t):
     print('Illegal character "%s"' % t.value[0])
     t.lexer.skip(1)
 
+
 # Build the lexer
 lexer = lex.lex()
+
 
 # Parsing rules
 start = 'input'
@@ -102,9 +107,14 @@ def p_command(p):
 def p_error(p):
     print 'Syntax error at "%s" on line %d' % (p.value, lexer.lineno)
 
+
+# Build YACC
 yacc.yacc()
 
+
 def parse_file(filename):
+    """Parse a given Assembly file, return a Block with Statement objects
+    containing the parsed instructions."""
     global statements
 
     statements = []
