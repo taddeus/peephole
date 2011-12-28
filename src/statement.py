@@ -88,6 +88,16 @@ class Statement:
 
         return self[-1]
 
+    def defines(self, reg):
+        """Check if this statement defines the given register."""
+        # TODO: Finish
+        return (self.is_load() or self.is_arith()) and self[0] == reg
+
+    def uses(self, reg):
+        """Check if this statement uses the given register."""
+        # TODO: Finish
+        return (self.is_load() or self.is_arith()) and reg in self[1:]
+
 
 class Block:
     def __init__(self, statements=[]):

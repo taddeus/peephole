@@ -116,6 +116,50 @@ This is a less efficient method then the dag, but because the basic blocks are
 in general not very large and the execution time of the optimizer is not a
 primary concern, this is not a big problem.
 
+\subsubsection*{Fold constants}
+
+
+
+\subsubsection*{Copy propagation}
+
+Copy propagation `unpacks' a move instruction, by replacing its destination
+address with its source address in the code following the move instruction.
+
+This is not a direct optimization, but this does allow for a more effective
+dead code elimination.
+
+The code of the block is checked linearly. When a move operation is
+encountered, the source and destination address of this move are stored. When
+a normal operation with a source and a destination address are found, a number
+of checks are performed.
+
+The first check is whether the destination address is stored as a destination
+address of a move instruction. If so, this move instruction is no longer valid,
+so the optimizations can not be done. Otherwise, continue with the second
+check.
+
+In the second check, the source address is compared to the destination
+addresses of all still valid move operations. If these are the same, in the
+current operation the found source address is replaced with the source address
+of the move operation.
+
+An example would be the following:
+\begin{verbatim}
+move $regA, $regB           move $regA, $regB
+...                         ...
+Code not writing $regA, ->  ...
+$regB                       ...
+...                         ...
+addu $regC, $regA, ...      addu $regC, $regB, ...
+\end{verbatim}
+This code shows that \texttt{\$regA} is replaced with \texttt{\$regB}. This
+way, the move instruction might have become useless, and it will then be
+removed by the dead code elimination.
+
+\subsubsection*{Algebraic transformations}
+
+
+
 \section{Implementation}
 
 We decided to implement the optimization in Python. We chose this programming
@@ -236,5 +280,29 @@ addu $regA, $regB, 4        addu $regD, $regB, 4
 Code not writing $regB  ->  ...
 ...                         ...
 addu $regC, $regB, 4        move $regC, $regD
+
+
+# Constant folding
+
+
+# Copy propagation
+move $regA, $regB           move $regA, $regB
+...                         ...
+Code not writing $regA, ->  ...
+$regB                       ...
+...                         ...
+addu $regC, $regA, ...      addu $regC, $regB, ...
+
+
+# Algebraic transformations
+addu $regA, $regB, 0    ->  move $regA, $regB
+
+subu $regA, $regB, 0    ->  move $regA, $regB
+
+mult $regA, $regB, 1    ->  move $regA, $regB
+
+mult $regA, $regB, 0    ->  li   $regA, 0
+
+mult $regA, $regB, 2    ->  sll  $regA, $regB, 1
 \end{verbatim}
 \end{document}

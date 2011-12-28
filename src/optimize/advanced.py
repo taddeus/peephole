@@ -1,13 +1,36 @@
 from src.statement import Statement as S
+from math import log
 
 
-def create_variable():
-    return '$15'
+def reg_dead_in(var, context):
+    """Check if a register is `dead' in a given list of statements."""
+    # TODO: Finish
+    for s in context:
+        if s.defines(var) or s.uses(var):
+            return False
+
+    return True
+
+
+def find_free_reg(context):
+    """Find a temporary register that is free in a given list of statements."""
+    for i in xrange(8):
+        tmp = '$t%d' % i
+
+        if reg_dead_in(tmp, context):
+            return tmp
+
+    raise Exception('No temporary register is available.')
 
 
 def eliminate_common_subexpressions(block):
     """
     Common subexpression elimination:
+    x = a + b           ->  u = a + b
+    y = a + b               x = u
+                            y = u
+
+    The algorithm used is as follows:
     - Traverse through the statements in reverse order.
     - If the statement can be possibly be eliminated, walk further collecting
       all other occurrences of the expression until one of the arguments is
@@ -39,18 +62,21 @@ def eliminate_common_subexpressions(block):
                 # Replace a similar expression by a move instruction
                 if s2.name == s.name and s2[1:] == args:
                     if not new_reg:
-                        new_reg = create_variable()
+                        new_reg = find_free_reg(block[:pointer])
 
                     block.replace(1, [S('command', 'move', s2[0], new_reg)])
                     last = block.pointer
 
-            # Insert an additional expression with a new destination address
-            if last:
-                block.insert(S('command', s.name, [new_reg] + args), last)
-                found = True
-
             # Reset pointer to and continue from the original statement
             block.pointer = pointer
+
+            if last:
+                # Insert an additional expression with a new destination address
+                block.insert(S('command', s.name, *([new_reg] + args)), last)
+
+                # Replace the original expression with a move statement
+                block.replace(1, [S('command', 'move', s[0], new_reg)])
+                found = True
 
     block.reverse_statements()
 
@@ -65,7 +91,11 @@ def to_hex(value):
 def fold_constants(block):
     """
     Constant folding:
-    - An immidiate load defines a register value:
+    x = 3 + 5           ->  x = 8
+    y = x * 2               y = 16
+
+    To keep track of constant values, the following assumptions are made:
+    - An immediate load defines a register value:
         li $reg, XX     ->  register[$reg] = XX
     - Integer variable definition is of the following form:
         li $reg, XX     ->  constants[VAR] = XX
@@ -130,7 +160,7 @@ def fold_constants(block):
                 if s.name == 'div':
                     result = to_hex(rs_val / rt_val)
 
-                block.replace(1, [S('command', 'li', result)])
+                block.replace(1, [S('command', 'li', rd, result)])
                 register[rd] = result
                 found = True
             elif rt_known:
@@ -153,50 +183,88 @@ def fold_constants(block):
 
 def copy_propagation(block):
     """
-    Rename values that were copied to there original, so the copy statement
-    might be useless, allowing it to be removed by dead code elimination.
+    Unpack a move instruction, by replacing its destination
+    address with its source address in the code following the move instruction.
+    This way, the move statement might be a target for dead code elimination.
+
+    move $regA, $regB           move $regA, $regB
+    ...                         ...
+    Code not writing $regA, ->  ...
+    $regB                       ...
+    ...                         ...
+    addu $regC, $regA, ...      addu $regC, $regB, ...
     """
     moves_from = []
     moves_to = []
+    changed = False
 
     while not block.end():
         s = block.read()
-        
-        if len(s) == 3:
-            print "s[0] = ", s[0]
-            print "s[1] = ", s[1]
-            print "s[2] = ", s[2]
-            
-            if moves_from:
-                print "fr: ", moves_from
-                print "to: ", moves_to
 
         if s.is_command('move') and s[0] not in moves_to:
+            # Add this move to the lists, because it is not yet there.
             moves_from.append(s[1])
             moves_to.append(s[0])
-            print "Added move to list."
-        elif s.is_command('move'):
+        elif s.is_command('move') and s[0] in moves_to:
+            # This move is already in the lists, so only update it
             for i in xrange(len(moves_to)):
                 if moves_to[i] == s[0]:
                     moves_from[i] = s[1]
+                    break
         elif len(s) == 3 and s[0] in moves_to:
-            print len(s)
-            print len(moves_to)
-            for i in xrange(len(moves_to)):
+            # The result gets overwritten, so remove the data from the list.
+            i = 0
+            while i  < len(moves_to):
                 if moves_to[i] == s[0]:
                     del moves_to[i]
                     del moves_from[i]
-                    "Removed move from list."
+                else:
+                    i += 1
         elif len(s) == 3 and (s[1] in moves_to or s[2] in moves_to):
-            print "Have to propagate."
+            # Check where the result of the move is used and replace it with
+            # the original variable.
             for i in xrange(len(moves_to)):
                 if s[1] == moves_to[i]:
                     s[1] = moves_from[i]
-                    print "Propagated"
-                
+                    break
+
                 if s[2] == moves_to[i]:
                     s[2] = moves_from[i]
-                    print "Propagated"
-                    
-        print ""       
-    return False
+                    break
+
+            changed = True
+
+    return changed
+
+
+def algebraic_transformations(block):
+    """
+    Change ineffective or useless algebraic transformations. Handled are:
+    - x = y + 0 -> x = y
+    - x = y - 0 -> x = y
+    - x = y * 1 -> x = y
+    - x = y * 0 -> x = 0
+    - x = y * 2 -> x = x << 1
+    """
+    changed = False
+
+    while not block.end():
+        s = block.read()
+
+        if (s.is_command('addu') or s.is_command('subu')) and s[2] == 0:
+            block.replace(1, [S('command', 'move', s[0], s[1])])
+            changed = True
+        elif s.is_command('mult') and s[2] == 1:
+            block.replace(1, [S('command', 'move', s[0], s[1])])
+            changed = True
+        elif s.is_command('mult') and s[2] == 0:
+            block.replace(1, [S('command', 'li', '$1', to_hex(0))])
+            changed = True
+        elif s.is_command('mult'):
+            shift_amount = log(s[2], 2)
+            if shift_amount.is_integer():
+                new_command = S('command', 'sll', s[0], s[1], shift_amount)
+                block.replace(1, [new_command])
+                changed = True
+
+    return changed

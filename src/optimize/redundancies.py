@@ -1,7 +1,7 @@
 import re
 
 
-def redundant_move_1(mov, statements):
+def move_1(mov, statements):
     """
     mov $regA, $regA          ->  --- remove it
     """
@@ -11,7 +11,7 @@ def redundant_move_1(mov, statements):
         return True
 
 
-def redundant_move_2(mov, statements):
+def move_2(mov, statements):
     """
     mov $regA, $regB          ->  instr $regA, $regB, ...
     instr $regA, $regA, ...
@@ -26,7 +26,7 @@ def redundant_move_2(mov, statements):
             return True
 
 
-def redundant_move_3(ins, statements):
+def move_3(ins, statements):
     """
     instr $regA, ...          ->  instr $4, ...
     mov $4, $regA                 jal XX
@@ -47,7 +47,7 @@ def redundant_move_3(ins, statements):
                 return True
 
 
-def redundant_move_4(mov1, statements):
+def move_4(mov1, statements):
     """
     mov $RegA, $RegB         ->  move $RegA, $RegB
     mov $RegB, $RegA
@@ -62,7 +62,7 @@ def redundant_move_4(mov1, statements):
             return True
 
 
-def redundant_load(sw, statements):
+def load(sw, statements):
     """
     sw $regA, XX              ->  sw $regA, XX
     ld $regA, XX
@@ -76,7 +76,7 @@ def redundant_load(sw, statements):
             return True
 
 
-def redundant_shift(shift, statements):
+def shift(shift, statements):
     """
     shift $regA, $regA, 0     ->  --- remove it
     """
@@ -86,7 +86,7 @@ def redundant_shift(shift, statements):
         return True
 
 
-def redundant_add(add, statements):
+def add(add, statements):
     """
     add $regA, $regA, X       ->  lw ..., X($regA)
     lw ..., 0($regA)
@@ -99,3 +99,28 @@ def redundant_add(add, statements):
             statements.replace(2, [lw])
 
             return True
+
+
+def remove_redundant_jumps(statements):
+    """Optimize statement sequences on a global level."""
+    old_len = -1
+
+    while old_len != len(statements):
+        old_len = len(statements)
+
+        while not statements.end():
+            s = statements.read()
+
+            #     beq/bne ..., $Lx      ->      bne/beq ..., $Ly
+            #     j $Ly                     $Lx:
+            # $Lx:
+            if s.is_command('beq', 'bne'):
+                following = statements.peek(2)
+
+                if len(following) == 2:
+                    j, label = following
+
+                    if j.is_command('j') and label.is_label(s[2]):
+                        s.name = 'bne' if s.is_command('beq') else 'beq'
+                        s[2] = j[0]
+                        statements.replace(3, [s, label])
