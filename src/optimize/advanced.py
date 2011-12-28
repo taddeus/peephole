@@ -1,6 +1,10 @@
 from statement import Statement as S
 
 
+def create_variable():
+    return '$15'
+
+
 def eliminate_common_subexpressions(block):
     """
     Common subexpression elimination:
@@ -21,6 +25,7 @@ def eliminate_common_subexpressions(block):
         if s.is_arith():
             pointer = block.pointer
             last = False
+            new_reg = False
             args = s[1:]
 
             # Collect similar statements
@@ -33,6 +38,9 @@ def eliminate_common_subexpressions(block):
 
                 # Replace a similar expression by a move instruction
                 if s2.name == s.name and s2[1:] == args:
+                    if not new_reg:
+                        new_reg = create_variable()
+
                     block.replace(1, [S('command', 'move', s2[0], new_reg)])
                     last = block.pointer
 
@@ -49,10 +57,39 @@ def eliminate_common_subexpressions(block):
     return found
 
 
+def to_hex(value):
+    """Create the hexadecimal string of an integer."""
+    return '0x%08x' % value
+
+
 def fold_constants(block):
     """
     Constant folding:
     """
+    constants = {}
+
+    while not block.end():
+        s = block.read()
+
+        if s.is_load():
+            constants[s[0]] = s[1]
+        elif s.is_command() and len(s) == 3:
+            d, s, t = s
+
+            if s in constants and t in constants:
+                if s.name == 'addu':
+                    result = s + t
+                elif s.name == 'subu':
+                    result = s - t
+                elif s.name == 'mult':
+                    result = s * t
+                elif s.name == 'div':
+                    result = s / t
+
+                block.replace(1, [S('command', 'li', to_hex(result))])
+                constants[d] = result
+            #else:
+
     return False
     
 def copy_propagation(block):
