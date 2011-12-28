@@ -81,7 +81,7 @@ def eliminate_common_subexpressions(block):
     block.reverse_statements()
 
     return found
-
+    
 
 def to_hex(value):
     """Create the hexadecimal string of an integer."""
