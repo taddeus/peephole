@@ -14,30 +14,52 @@ class TestOptimizeAdvanced(unittest.TestCase):
     def test_eliminate_common_subexpressions(self):
         pass
         
-    def test_copy_propagation_true(self):        
-        print "testing true"
+    def test_copy_propagation_true(self):
         block = B([self.foo,
                    S('command', 'move', '$1', '$2'),
                    self.foo,
                    S('command', 'addu', '$3', '$1', '$4'),
                    self.bar])
                    
-        copy_propagation(block)
+        self.assertTrue(copy_propagation(block))
         self.assertEqual(block.statements, [self.foo,
                    S('command', 'move', '$1', '$2'),
                    self.foo,
                    S('command', 'addu', '$3', '$2', '$4'),
                    self.bar])
-        print "Test true succesfull"
+    
+    def test_copy_propagation_overwrite(self):
+        block = B([self.foo, \
+                    S('command', 'move', '$1', '$2'),
+                    S('command', 'move', '$1', '$5'),
+                    S('command', 'addu', '$3', '$1', '$4'),
+                    self.bar])
+                    
+        self.assertTrue(copy_propagation(block))
+        self.assertEqual(block.statements, [self.foo,
+                   S('command', 'move', '$1', '$2'),
+                   S('command', 'move', '$1', '$5'),
+                   S('command', 'addu', '$3', '$5', '$4'),
+                   self.bar])
                    
-#    def test_copy_propagation_false(self):
-#        print "Testing false"
-#        arguments = [self.foo,
-#                   S('command', 'move', '$1', '$2'),
-#                   S('command', 'move', '$10', '$20'),
-#                   S('command', 'addu', '$1', '$5', 1),
-#                   S('command', 'addu', '$3', '$1', '$4'),
-#                   self.bar]
-#        block = B(arguments)
-#        copy_propagation(block)
-#        self.assertEqual(block.statements, arguments)
+    def test_copy_propagation_false(self):
+        arguments = [self.foo,
+                   S('command', 'move', '$1', '$2'),
+                   S('command', 'move', '$10', '$20'),
+                   S('command', 'addu', '$1', '$5', 1),
+                   S('command', 'addu', '$3', '$1', '$4'),
+                   self.bar]
+        block = B(arguments)
+        self.assertFalse(copy_propagation(block))
+        self.assertEqual(block.statements, arguments)
+    
+    def test_copy_propagation_false_severalmoves(self):
+        arguments = [self.foo,
+                   S('command', 'move', '$1', '$2'),
+                   self.foo,
+                   S('command', 'addu', '$1', '$5', 1),
+                   S('command', 'addu', '$3', '$1', '$4'),
+                   self.bar]
+        block = B(arguments)
+        self.assertFalse(copy_propagation(block))
+        self.assertEqual(block.statements, arguments)
