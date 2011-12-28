@@ -45,10 +45,11 @@ will be discussed seperatly
 We only perform one global optimization, which is optimizing branch-jump
 statements. The unoptimized Assembly code contains sequences of code of the
 following structure:
-\begin{lstlisting}
+\begin{verbatim}
     beq ...,$Lx
     j $Ly
-$Lx:   ...\end{lstlisting}
+$Lx:   ...
+\end{verbatim}
 This is inefficient, since there is a jump to a label that follows this code.
 It would be more efficient to replace the branch statement with a \texttt{bne}
 (the opposite case) to the label used in the jump statement. This way the jump
@@ -79,14 +80,14 @@ will describe the types of optimizations here in stead of each optimization.
 
 These are optimizations that simply look for a certain statement or pattern of
 statements, and optimize these. For example,
-\begin{lstlisting}
+\begin{verbatim}
 mov $regA,$regB
 instr $regA, $regA,... 
-\end{lstlisting}
+\end{verbatim}
 can be optimized into
-\begin{lstlisting}
+\begin{verbatim}
 instr $regA, $regB,...
-\end{lstlisting}
+\end{verbatim}
 since the register \texttt{\$regA} gets overwritten by the second instruction
 anyway, and the instruction can easily use \texttt{\$regB} in stead of
 \texttt{\$regA}. There are a few more of these cases, which are the same as
@@ -163,36 +164,48 @@ this IR and writing the IR back to Assembly.
 
 \textbf{Global optimizations}
 
-\begin{tabular}{| c c c |}
-\hline
-\begin{lstlisting}
-    beq ...,$Lx
-    j $Ly
-$Lx:   ...\end{lstlisting} & $\Rightarrow$ & \begin{lstlisting}
-    bne ...,$Ly
-$Lx:   ...\end{lstlisting}\\
-\hline
-\begin{lstlisting}
-    bne ...,$Lx
-    j $Ly
-$Lx:   ...\end{lstlisting} & $\Rightarrow$ & \begin{lstlisting}
-    beq ...,$Ly
-$Lx:   ...\end{lstlisting}\\
-\hline
-\end{tabular}\\
-\\
+\begin{verbatim}
+    beq ...,$Lx             bne ...,$Ly
+    j $Ly               ->  $Lx:   ...
+$Lx:   ...
+
+
+    bne ...,$Lx             beq ...,$Ly
+    j $Ly               ->  $Lx:   ...
+$Lx:   ...
+\end{verbatim}
 \textbf{Simple basic block optimizations}
 
-\begin{tabular}{|c c c|}
-\hline
-\begin{lstlisting}
-    beq ...,$Lx
-    j $Ly
-$Lx:   ...\end{lstlisting} & $\Rightarrow$ & \begin{lstlisting}
-    bne ...,$Ly
-$Lx:   ...\end{lstlisting}\\
-\hline
-\end{tabular}\\
-\\
+\begin{verbatim}
+mov $regA,$regA         ->  --- // remove it
+
+
+mov $regA,$regB         ->  instr $regA, $regB,...
+instr $regA, $regA,...
+
+
+instr $regA,...             instr $4,...
+mov [$4-$7], $regA      ->  jal XXX
+jal  XXX
+
+
+sw $regA,XXX            ->  sw $regA, XXX
+ld $regA,XXX
+
+
+shift $regA,$regA,0     ->  --- // remove it
+
+
+add $regA,$regA,X       ->  lw ...,X($regA)
+lw ...,0($regA)
+\end{verbatim}
 \textbf{Advanced basic block optimizations}
+
+\begin{verbatim}
+addu $regA, $regB, 4        addu $regD, $regB, 4
+...                         move $regA, $regD
+Code not writing $regB  ->  ...
+...                         ...
+addu $regC, $regB, 4        move $regC, $regD
+\end{verbatim}
 \end{document}
