@@ -25,38 +25,38 @@ class BasicBlock(Block):
         if block not in self.dominates:
             self.dominates.append(block)
             block.dominated_by.append(self)
-
-    def get_gen(self):
-        for s in self.statements:       
-            if s.is_arith():
-                self.gen_set.add(s[0])
-                print 'added: ', s[0]
-        
-        return self.gen_set
-        
-    def get_kill(self):
-#        if self.edges_from != []:
-        for backw in self.edges_from:
-            self.kill_set = self.kill_set | backw.get_kill()
             
-        self.kill_set = self.kill_set - self.get_gen()
-        print 'get_kill_set', self.kill_set
-        return self.kill_set
+    
+#    def get_gen(self):
+#        for s in self.statements:       
+#            if s.is_arith():
+#                self.gen_set.add(s[0])
+#                print 'added: ', s[0]
+#        
+#        return self.gen_set
+#        
+#    def get_kill(self):
+##        if self.edges_from != []:
+#    
+#        for backw in self.edges_from:
+#            self.kill_set = self.gen_set & backw.kill_set
+#            
+#        self.kill_set = self.kill_set - self.get_gen()
+#        print 'get_kill_set', self.kill_set
+#        return self.kill_set
 
-    def get_in(self):
-        for backw in self.edges_from:
-            self.in_set = self.in_set | backw.get_out()
-        print 'in_set', self.in_set
-        return self.in_set
+#    def get_in(self):
+#        for backw in self.edges_from:
+#            self.in_set = self.in_set | backw.out_set
+#        print 'in_set', self.in_set
+#        return self.in_set
 
-    def get_out(self):
-        print 'gen_set', self.gen_set
-        print 'get_in', self.get_in()
-        print 'get_kill', self.get_kill()
-        self.out_set = self.gen_set | (self.get_in() - self.get_kill())
+#    def get_out(self):
+#        print 'gen_set', self.gen_set
+#        print 'get_in', self.get_in()
+#        print 'get_kill', self.get_kill()
+#        self.out_set = self.gen_set | (self.get_in() - self.get_kill())
         
-def reaching_definition(blocks):
-    generate_flow_graph(blocks)
 
     
 

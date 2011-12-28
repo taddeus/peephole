@@ -43,14 +43,21 @@ class TestDataflow(unittest.TestCase):
 #                
 #        blocks = [b1, b2]
 #        
+#        # initialize  out[B] = gen[B] for every block        
 #        for block in blocks:
 #            block.out_set = block.get_gen()
-#            print 'block.out_set', block.out_set       
+#            print 'block.out_set', block.out_set
+#            
+#        generate_flow_graph(blocks)
 
-#        generate_flow_graph(blocks)     
-#        print b1.get_gen()
-#        print b2.get_gen()
-#        print b2.get_out()
+#        change = True
+#        while change:
+#            for i, block in enumerate(blocks):
+#                block.get_in()
+#                oldout = block.out_set
+#                newout = block.get_out()
+#                if (block.out_set == block.get_out()):
+#                    change = False
 
 
     def test_generate_flow_graph_simple(self):
