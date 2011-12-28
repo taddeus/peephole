@@ -1,6 +1,7 @@
 from src.statement import Statement as S
 from math import log
 
+
 def reg_dead_in(var, context):
     """Check if a register is `dead' in a given list of statements."""
     # TODO: Finish
