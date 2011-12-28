@@ -6,11 +6,14 @@
  # -mgas -mgpOPT
 
  # Cc1 arguments (-G value = 8, Cpu = default, ISA = 1):
- # -quiet -dumpbase -o
+ # -quiet -dumpbase -O0 -o
 
 gcc2_compiled.:
 __gnu_compiled_c:
 	.sdata
+	.align	2
+$LC2:
+	.ascii	"e: %d\n\000"
 	.align	3
 $LC0:
 	.word	0x00000000		# 2
@@ -25,7 +28,7 @@ $LC1:
 
 	.text
 
-	.loc	1 2
+	.loc	1 3
 	.ent	main
 main:
 	.frame	$fp,64,$31		# vars= 40, regs= 2/0, args= 16, extra= 0
@@ -53,6 +56,9 @@ main:
 	s.d	$f0,40($fp)
 	li	$2,0x00000061		# 97
 	sb	$2,48($fp)
+	la	$4,$LC2
+	lw	$5,28($fp)
+	jal	printf
 	move	$2,$0
 	j	$L1
 $L1:
