@@ -35,10 +35,10 @@ def optimize_blocks(blocks):
     """Call the optimizer for each basic block. Do this several times until
     no more optimizations are achieved."""
     optimized = []
-    
+
     for block in blocks:
         optimize_block(block)
-    
+
     return blocks
 
 
@@ -106,7 +106,7 @@ def optimize_block(statements):
                     lw[-1] = str(s[2]) + lw[-1][1:]
                     statements.replace(2, [lw])
                     continue
-                        
+
             #   move $RegA, $RegB   ->  move $RegA, $RegB
             #   move $RegB, $RegA
             if s.is_command('move'):
