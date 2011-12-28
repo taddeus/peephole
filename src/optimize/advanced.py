@@ -1,5 +1,5 @@
 from src.statement import Statement as S
-
+from math import log
 
 def create_variable():
     return '$15'
@@ -223,6 +223,7 @@ def algebraic_transformations(block):
     - x = x + 0 -> remove
     - x = x - 0 -> remove
     - x = x * 1 -> remove
+    - x = x * 0 -> x = 0
     - x = x * 2 -> x = x << 1
     """
     changed = False
@@ -236,10 +237,14 @@ def algebraic_transformations(block):
         elif s.is_command('mult') and s[2] == 1:
             block.replace(1, [])
             changed = True
-        elif s.is_command('mult') and s[2] == 2:
-            new_command = S(['command', 'sll', 
-            s[0], s[1], 1])
-            block.replace(1, [new_command])
+        elif s.is_command('mult') and s[2] == 0:
+            block.replace(1, [S('command', 'li', '$1', to_hex(0))])
             changed = True
+        elif s.is_command('mult'):   
+            shift_amount = log(s[2], 2)
+            if shift_amount.is_integer():
+                new_command = S('command', 'sll', s[0], s[1], shift_amount)
+                block.replace(1, [new_command])
+                changed = True
             
     return changed
