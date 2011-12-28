@@ -1,4 +1,4 @@
-from dataflow import find_basic_blocks
+from src.dataflow import find_basic_blocks
 
 from standard import redundant_move_1, redundant_move_2, \
         redundant_move_3, redundant_move_4, redundant_load, \

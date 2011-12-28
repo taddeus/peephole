@@ -7,6 +7,8 @@
 *.out
 *.toc
 .coverage
+parser.out
+parsetab.py
 coverage/
 build/
 src/Makefile_old
