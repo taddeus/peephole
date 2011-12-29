@@ -10,7 +10,7 @@ class Statement:
         self.args = list(args)
         self.options = kwargs
 
-        # Assign a unique ID to each satement
+        # Assign a unique ID to each statement
         self.sid = Statement.sid
         Statement.sid += 1
 
@@ -65,7 +65,7 @@ class Statement:
         return self.is_command() \
                and re.match('^beq|bne|blez|bgtz|bltz|bgez|bct|bcf$', \
                             self.name)
-                            
+
     def is_branch_zero(self):
         """Check if statement is a branch that compares with zero."""
         return self.is_command() \
@@ -79,12 +79,12 @@ class Statement:
         """Check if the statement is a load instruction."""
         return self.is_command() and self.name in ['lw', 'li', 'dlw', 'l.s', \
                                                    'l.d']
-                                                   
+
     def is_store(self):
         """Check if the statement is a store instruction."""
         return self.is_command() and self.name in ['sw', 's.d', 'dsw', 's.s', \
                                                    's.b']
-                                                   
+
     def is_arith(self):
         """Check if the statement is an arithmetic operation."""
         return self.is_command() \
@@ -101,7 +101,7 @@ class Statement:
     def is_binop(self):
         """Check if the statement is an binary operation."""
         return self.is_command() and len(self) == 3 and not self.is_jump()
-        
+
     def is_load_non_immediate(self):
         """Check if the statement is a load statement."""
         return self.is_command() \
@@ -110,48 +110,48 @@ class Statement:
     def is_logical(self):
         """Check if the statement is a logical operator."""
         return self.is_command() and re.match('^(xor|or|and)i?$', self.name)
-    
+
     def is_double_arithmetic(self):
         """Check if the statement is a arithmetic .d operator."""
         return self.is_command() and \
                 re.match('^(add|sub|div|mul)\.d$', self.name)
-                
+
     def is_double_unary(self):
         """Check if the statement is a unary .d operator."""
         return self.is_command() and \
                 re.match('^(abs|neg|mov)\.d$', self.name)
-                
+
     def is_move_from_spec(self):
         """Check if the statement is a move from the result register."""
         return self.is_command() and self.name in ['mflo', 'mthi']
-        
+
     def is_set_if_less(self):
         """Check if the statement is a shift if less then."""
         return self.is_command() and self.name in ['slt', 'sltu']
-        
+
     def is_convert(self):
         """Check if the statement is a convert operator."""
         return self.is_command() and re.match('^cvt\.[a-z\.]*$', self.name)
-        
+
     def is_truncate(self):
         """Check if the statement is a convert operator."""
         return self.is_command() and re.match('^trunc\.[a-z\.]*$', self.name)
-        
+
     def is_compare(self):
         """Check if the statement is a comparison."""
         return self.is_command() and re.match('^c\.[a-z\.]*$', self.name)
-        
+
     def jump_target(self):
         """Get the jump target of this statement."""
         if not self.is_jump():
             raise Exception('Command "%s" has no jump target' % self.name)
 
         return self[-1]
-    
+
     def get_def(self):
         """Get the variable that this statement defines, if any."""
         instr = ['move', 'addu', 'subu', 'li', 'mtc1', 'dmfc1', 'mov.d']
-        
+
         if self.is_load_non_immediate() or self.is_arith() \
                 or self.is_logical() or self.is_double_arithmetic() \
                 or self.is_move_from_spec() or self.is_double_unary() \
@@ -184,7 +184,7 @@ class Statement:
                 or self.is_command(*instr):
             use.append(self[1])
         # Case arg1 relative adressing
-        if self.is_load_non_immediate() or self.is_store():    
+        if self.is_load_non_immediate() or self.is_store():
             m = re.match('^\d+\(([^)]+)\)$', self[1])
             if m:
                 use.append(m)
@@ -208,9 +208,21 @@ class Statement:
 
 
 class Block:
+    bid = 1
+
     def __init__(self, statements=[]):
         self.statements = statements
         self.pointer = 0
+
+        # Assign a unique ID to each block for printing purposes
+        self.bid = Block.bid
+        Block.bid += 1
+
+    def __str__(self):
+        return '<Block bid=%d statements=%d>' % (self.bid, len(self))
+
+    def __repr__(self):
+        return str(self)
 
     def __iter__(self):
         return iter(self.statements)
