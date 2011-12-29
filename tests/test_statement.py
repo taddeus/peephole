@@ -110,8 +110,3 @@ class TestStatement(unittest.TestCase):
                                                                      ['$1']) 
         self.assertEqual(S('command','mov.d', '$1','$2').get_def(), ['$1'])
         self.assertEqual(S('command','dmfc1', '$1','$f0').get_def(), ['$1'])
-        
-        
-        
-        
-        
