@@ -32,7 +32,7 @@ def optimize_block(block):
             | eliminate_common_subexpressions(block) \
             | fold_constants(block) \
             | copy_propagation(block)\
-            | algebraic_transformations(block) \
+            #| algebraic_transformations(block) \
             | eliminate_dead_code(block):
         pass
 
