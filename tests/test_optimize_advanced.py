@@ -49,6 +49,20 @@ class TestOptimizeAdvanced(unittest.TestCase):
                    self.foo,
                    S('command', 'addu', '$3', '$2', '$4'),
                    self.bar])
+                   
+    def test_copy_propagation_other_arg(self):
+        block = B([self.foo,
+                   S('command', 'move', '$1', '$2'),
+                   self.foo,
+                   S('command', 'addu', '$3', '$4', '$1'),
+                   self.bar])
+
+        self.assertTrue(copy_propagation(block))
+        self.assertEqual(block.statements, [self.foo,
+                   S('command', 'move', '$1', '$2'),
+                   self.foo,
+                   S('command', 'addu', '$3', '$4', '$2'),
+                   self.bar])
 
     def test_copy_propagation_overwrite(self):
         block = B([self.foo, \
@@ -169,7 +183,8 @@ class TestOptimizeAdvanced(unittest.TestCase):
 
     def test_algebraic_transforms_mult3(self):
         arguments = [self.foo,
-                     S('command', 'mult', '$1', '$2', 3),
+                     S('command', 'mult', '$2', 3),
+                     S('command', 'mflo', '$1'),
                      self.bar]
         block = B(arguments)
 
