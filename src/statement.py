@@ -288,4 +288,8 @@ class Block:
     def reverse_statements(self):
         """Reverse the statement list and reset the pointer."""
         self.statements = self.statements[::-1]
+        self.reset()
+
+    def reset(self):
+        """Reset the internal pointer."""
         self.pointer = 0

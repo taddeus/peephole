@@ -50,6 +50,8 @@ def eliminate_common_subexpressions(block):
     """
     changed = False
 
+    block.reset()
+
     while not block.end():
         s = block.read()
 
@@ -123,6 +125,8 @@ def fold_constants(block):
     # Current known values in register
     register = {}
 
+    block.reset()
+
     while not block.end():
         s = block.read()
 
@@ -147,10 +151,10 @@ def fold_constants(block):
         elif s.name == 'lw' and s[1] in constants:
             # Usage of variable with constant value
             register[s[0]] = constants[s[1]]
-        elif s.name == 'mflo':
+        elif s.name == 'mflo' and '$lo' in register:
             # Move of `Lo' register to another register
             register[s[0]] = register['$lo']
-        elif s.name == 'mfhi':
+        elif s.name == 'mfhi' and '$hi' in register:
             # Move of `Hi' register to another register
             register[s[0]] = register['$hi']
         elif s.name in ['mult', 'div'] \
@@ -252,6 +256,8 @@ def copy_propagation(block):
     moves_to = []
     changed = False
 
+    block.reset()
+
     while not block.end():
         s = block.read()
 
@@ -304,6 +310,8 @@ def algebraic_transformations(block):
     - x = y * 2 -> x = x << 1
     """
     changed = False
+
+    block.reset()
 
     while not block.end():
         s = block.read()
