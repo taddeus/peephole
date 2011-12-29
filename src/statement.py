@@ -151,8 +151,10 @@ class Statement:
 
     def get_def(self):
         """Get the variable that this statement defines, if any."""
-        instr = ['move', 'addu', 'subu', 'li', 'mtc1', 'dmfc1', 'mov.d']
-
+        instr = ['move', 'addu', 'subu', 'li', 'dmfc1', 'mov.d']
+        
+        if self.is_command('mtc1'):
+            return [self[1]]
         if self.is_load_non_immediate() or self.is_arith() \
                 or self.is_logical() or self.is_double_arithmetic() \
                 or self.is_move_from_spec() or self.is_double_unary() \
@@ -165,13 +167,13 @@ class Statement:
 
     def get_use(self):
         """Get the variables that this statement uses, if any."""
-        instr = ['addu', 'subu', 'mult', 'div', 'move', 'mtc1', 'mov.d', \
+        instr = ['addu', 'subu', 'mult', 'div', 'move', 'mov.d', \
             'dmfc1']
         use = []
 
         # Case arg0
         if self.is_branch() or self.is_store() or self.is_compare() \
-                or self.is_command(*['mult', 'div', 'dsz']):
+                or self.is_command(*['mult', 'div', 'dsz', 'mtc1']):
             if self.name == 'dsz':
                 m = re.match('^[^(]+\(([^)]+)\)$', self[0])
 
