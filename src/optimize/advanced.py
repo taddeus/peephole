@@ -18,7 +18,7 @@ def reg_can_be_used_in(reg, block, start, end):
         elif s.defines(reg):
             return True
 
-    return reg not in block.out_set
+    return reg not in block.live_out
 
 
 def find_free_reg(block, start, end):
@@ -271,7 +271,7 @@ def copy_propagation(block):
             # the list.
             i = 0
 
-            while i  < len(moves_to):
+            while i < len(moves_to):
                 if moves_to[i] == s[0] or moves_to[i] == s[1]:
                     del moves_to[i]
                     del moves_from[i]

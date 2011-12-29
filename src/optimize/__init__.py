@@ -1,9 +1,11 @@
-from src.dataflow import find_basic_blocks, reaching_definitions
+from src.dataflow import find_basic_blocks, generate_flow_graph
+import src.liveness as liveness
+import src.reaching_definitions as reaching_definitions
 
 from redundancies import remove_redundant_jumps, move_1, move_2, move_3, \
         move_4, load, shift, add
 from advanced import eliminate_common_subexpressions, fold_constants, \
-        copy_propagation, algebraic_transformations, eliminate_dead_code
+        copy_propagation, eliminate_dead_code
 
 
 def remove_redundancies(block):
@@ -41,6 +43,7 @@ def optimize(statements, verbose=0):
     """Optimization wrapper function, calls global and basic-block level
     optimization functions."""
     # Optimize on a global level
+    # TODO: only count instructions (no directives)
     o = len(statements)
     remove_redundant_jumps(statements)
     g = len(statements)
@@ -48,8 +51,10 @@ def optimize(statements, verbose=0):
     # Divide into basic blocks
     blocks = find_basic_blocks(statements)
 
-    # Find reaching definitions
-    reaching_definitions(blocks)
+    # Perform dataflow analysis
+    generate_flow_graph(blocks)
+    liveness.create_in_out(blocks)
+    reaching_definitions.create_in_out(blocks)
 
     # Optimize basic blocks
     map(optimize_block, blocks)

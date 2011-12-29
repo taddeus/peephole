@@ -93,25 +93,21 @@ class TestStatement(unittest.TestCase):
         self.assertTrue(S('command', 'addu', '$1', '$2', '$3').is_arith())
         self.assertFalse(S('command', 'foo').is_arith())
         self.assertFalse(S('label', 'addu').is_arith())
-        
+
     def test_get_def(self):
-        self.assertEqual(S('command', 'move', '$1', '$2').get_def(), ['$1'])
-        self.assertEqual(S('command', 'subu', '$1', '$2').get_def(), ['$1'])
-        self.assertEqual(S('command', 'addu','$1','$2','$3').get_def(), ['$1'])
-        self.assertEqual(S('command', 'sll','$1','$2','$3').get_def(), ['$1'])
-        self.assertEqual(S('command', 'srl','$1','$2','$3').get_def(), ['$1'])
-        self.assertEqual(S('command', 'la', '$1','16($fp)').get_def(), ['$1'])
-        self.assertEqual(S('command', 'li', '$1','16($fp)').get_def(), ['$1'])
-        self.assertEqual(S('command','add.d', '$1','$2','$3').get_def(),['$1'])
-        self.assertEqual(S('command','neg.d', '$1','$2').get_def(),['$1'])
-        self.assertEqual(S('command','sub.d','$1','$2', '$3').get_def(),['$1'])
-        self.assertEqual(S('command','slt', '$1','$2').get_def(),['$1'])
-        self.assertEqual(S('command','xori', '$1','$2', '0x0000').get_def(), \
-                                                                     ['$1']) 
-        self.assertEqual(S('command','mov.d', '$1','$2').get_def(), ['$1'])
-        self.assertEqual(S('command','dmfc1', '$1','$f0').get_def(), ['$1'])
-        
-        
-        
-        
-        
+        a = ['a']
+
+        self.assertEqual(S('command', 'move', 'a', 'b').get_def(), a)
+        self.assertEqual(S('command', 'subu', 'a', 'b').get_def(), a)
+        self.assertEqual(S('command', 'addu', 'a', 'b', 'c').get_def(), a)
+        self.assertEqual(S('command', 'sll', 'a', 'b', 'c').get_def(), a)
+        self.assertEqual(S('command', 'srl', 'a', 'b', 'c').get_def(), a)
+        self.assertEqual(S('command', 'la', 'a', '16($fp)').get_def(), a)
+        self.assertEqual(S('command', 'li', 'a', '16($fp)').get_def(), a)
+        self.assertEqual(S('command', 'add.d', 'a', 'b', 'c').get_def(), a)
+        self.assertEqual(S('command', 'neg.d', 'a', 'b').get_def(), a)
+        self.assertEqual(S('command', 'sub.d', 'a', 'b', 'c').get_def(), a)
+        self.assertEqual(S('command', 'slt', 'a', 'b').get_def(), a)
+        self.assertEqual(S('command', 'xori', 'a', 'b', '0x0000').get_def(), a)
+        self.assertEqual(S('command', 'mov.d', 'a', 'b').get_def(), a)
+        self.assertEqual(S('command', 'dmfc1', 'a', '$f0').get_def(), a)

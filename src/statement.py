@@ -107,6 +107,7 @@ class Statement:
         return self.is_command() \
                and re.match('^l(w|a|b|bu|\.d|\.s)|dlw$', \
                             self.name)
+
     def is_logical(self):
         """Check if the statement is a logical operator."""
         return self.is_command() and re.match('^(xor|or|and)i?$', self.name)
@@ -160,7 +161,7 @@ class Statement:
                 or self.is_set_if_less() or self.is_convert() \
                 or self.is_truncate() or self.is_load() \
                 or self.is_command(*instr):
-            return [self[0]]
+            return self[:1]
 
         return []
 
@@ -175,7 +176,9 @@ class Statement:
                 or self.is_command(*['mult', 'div', 'dsz', 'mtc1']):
             if self.name == 'dsz':
                 m = re.match('^\d+\(([^)]+)\)$', self[0])
-                use.append(m)
+
+                if m:
+                    use.append(m.group(1))
             else:
                 use.append(self[0])
         # Case arg1 direct adressing
@@ -188,15 +191,16 @@ class Statement:
         # Case arg1 relative adressing
         if self.is_load_non_immediate() or self.is_store():
             m = re.match('^\d+\(([^)]+)\)$', self[1])
+
             if m:
-                use.append(m)
+                use.append(m.group(1))
             else:
                 use.append(self[1])
         # Case arg2
         if self.is_double_arithmetic() or self.is_set_if_less() \
                 or self.is_logical() \
                 or self.is_command(*['addu', 'subu']):
-            if not isinstance(self[2] , int):
+            if not isinstance(self[2], int):
                     use.append(self[2])
 
         return use
@@ -246,7 +250,7 @@ class Block:
 
     def end(self):
         """Check if the pointer is at the end of the statement list."""
-        return self.pointer == len(self)
+        return self.pointer >= len(self)
 
     def peek(self, count=1):
         """Read the statements until an offset from the current pointer
