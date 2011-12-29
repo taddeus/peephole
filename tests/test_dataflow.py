@@ -24,42 +24,45 @@ class TestDataflow(unittest.TestCase):
                 [B(s[:2]).statements, B(s[2:4]).statements, \
                  B(s[4:]).statements])
 
-#    def test_get_gen(self):
-#        b1 = B([S('command', 'add', '$1', '$2', '$3'), \
-#                S('command', 'add', '$2', '$3', '$4'), \
-#                S('command', 'add', '$1', '$4', '$5')])
-#
-#        self.assertEqual(b1.get_gen(), ['$1', '$2'])
+    def test_defs(self):
+        s1 = S('command', 'add', '$3', '$1', '$2')
+        s2 = S('command', 'move', '$1', '$3')
+        s3 = S('command', 'move', '$3', '$2')
+        s4 = S('command', 'li', '$4', '0x00000001')
+        block = B([s1, s2, s3, s4])
+        self.assertEqual(defs([block]), {
+            '$3': set([s1.sid, s3.sid]),
+            '$1': set([s2.sid]),
+            '$4': set([s4.sid])
+        })
 
-#    def test_get_out(self):
-#        b1 = B([S('command', 'add', '$1', '$2', '$3'), \
-#                S('command', 'add', '$2', '$3', '$4'), \
-#                S('command', 'add', '$1', '$4', '$5'), \
-#                S('command', 'j', 'b2')])
-#
-#        b2 = B([S('command', 'add', '$3', '$5', '$6'), \
-#                S('command', 'add', '$1', '$2', '$3'), \
-#                S('command', 'add', '$6', '$4', '$5')])
-#
-#        blocks = [b1, b2]
-#
-#        # initialize  out[B] = gen[B] for every block
-#        for block in blocks:
-#            block.out_set = block.get_gen()
-#            print 'block.out_set', block.out_set
-#
-#        generate_flow_graph(blocks)
-
-#        change = True
-#        while change:
-#            for i, block in enumerate(blocks):
-#                block.get_in()
-#                oldout = block.out_set
-#                newout = block.get_out()
-#                if (block.out_set == block.get_out()):
-#                    change = False
-
-
+    def test_create_gen_kill(self):
+        s1 = S('command', 'addu', '$3', '$1', '$2')
+        s2 = S('command', 'addu', '$1', '$3', 10)
+        s3 = S('command', 'subu', '$3', '$1', 5)
+        s4 = S('command', 'li', '$4', '0x00000001')
+        block = B([s1, s2, s3, s4])
+        block.create_gen_kill(defs([block]))
+        self.assertEqual(block.gen_set, set([s2.sid, s3.sid, s4.sid]))
+        self.assertEqual(block.kill_set, set([s1.sid]))
+        
+    def test_reaching_definitions(self):
+        s11 = S('command', 'li', 'a', 3)
+        s12 = S('command', 'li', 'b', 5)
+        s13 = S('command', 'li', 'd', 4)
+        s14 = S('command', 'li', 'x', 100)
+        s15 = S('command', 'blt', 'a', 'b', 'L1')
+        block1 = B([s11, s12, s13, s14, s15])
+        s21 = S('command', 'addu', 'c', 'a', 'b')
+        s22 = S('command', 'li', 'd', 2)
+        block2 = B([s21, s22])
+        s31 = S('label', 'L1')
+        s32 = S('command', 'li', 'c', 4)
+        s33 = S('command', 'mult', 'b', 'd')
+        s34 = S('command', 'mflo', 'temp')
+        s35 = S('command', 'addu', 'return', 'temp', 'c')
+        block3 = B([s31, s32, s33, s34, s35])
+        
     def test_generate_flow_graph_simple(self):
         b1 = B([S('command', 'foo'), S('command', 'j', 'b2')])
         b2 = B([S('label', 'b2'), S('command', 'bar')])
@@ -111,46 +114,6 @@ class TestDataflow(unittest.TestCase):
 #                        multnode]
 #
 #        self.assertEqualDag(dag, expect)
-
-    def test_defs(self):
-        s1 = S('command', 'addu', '$3', '$1', '$2')
-        s2 = S('command', 'addu', '$1', '$3', 10)
-        s3 = S('command', 'subu', '$3', '$1', 5)
-        s4 = S('command', 'li', '$4', '0x00000001')
-        block = B([s1, s2, s3, s4])
-        self.assertEqual(defs([block]), {
-            '$3': set([s1.sid, s3.sid]),
-            '$1': set([s2.sid]),
-            '$4': set([s4.sid])
-        })
-
-    def test_defs(self):
-        s1 = S('command', 'add', '$3', '$1', '$2')
-        s2 = S('command', 'move', '$1', '$3')
-        s3 = S('command', 'move', '$3', '$2')
-        s4 = S('command', 'li', '$4', '0x00000001')
-        block = B([s1, s2, s3, s4])
-        self.assertEqual(defs([block]), {
-            '$3': set([s1.sid, s3.sid]),
-            '$1': set([s2.sid]),
-            '$4': set([s4.sid])
-        })
-
-    def test_create_gen_kill_gen(self):
-        s1 = S('command', 'addu', '$3', '$1', '$2')
-        s2 = S('command', 'addu', '$1', '$3', 10)
-        s3 = S('command', 'subu', '$3', '$1', 5)
-        s4 = S('command', 'li', '$4', '0x00000001')
-        block = B([s1, s2, s3, s4])
-        block.create_gen_kill(defs([block]))
-        self.assertEqual(block.gen_set, set([s2.sid, s3.sid, s4.sid]))
-
-    #def test_get_kill_used(self):
-    #    block = B([S('command', 'move', '$1', '$3'),
-    #               S('command', 'add', '$3', '$1', '$2'),
-    #               S('command', 'move', '$1', '$3'),
-    #               S('command', 'move', '$2', '$3')])
-    #    self.assertEqual(block.get_kill(), set())
 
     def assertEqualDag(self, dag1, dag2):
         self.assertEqual(len(dag1.nodes), len(dag2.nodes))

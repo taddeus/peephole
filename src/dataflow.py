@@ -1,5 +1,3 @@
-from copy import copy
-
 from statement import Block
 
 
@@ -86,10 +84,10 @@ def reaching_definitions(blocks):
             for pred in b.edges_from:
                 b.in_set |= pred.out_set
 
-            oldout = copy(p.out_set)
-            p.out_set = b.gen_set | (b.in_set - b.kill_set)
+            new_out = b.gen_set | (b.in_set - b.kill_set)
 
-            if b.out_set != oldout:
+            if new_out != b.out_set:
+                b.out_set = new_out
                 change = True
 
 
