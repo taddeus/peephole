@@ -1,5 +1,5 @@
 BUILD=build/
-CLEAN=src/*.pyc src/optimize/*.pyc
+CLEAN=*.pyc src/*.pyc src/optimize/*.pycrm -f parser.out parsetab.py
 
 # Fix pdflatex search path
 TGT_DIR :=
