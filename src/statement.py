@@ -57,13 +57,13 @@ class Statement:
     def is_jump(self):
         """Check if the statement is a jump."""
         return self.is_command() \
-               and re.match('^j|jal|beq|bne|blez|bgtz|bltz|bgez|bct|bcf$', \
+               and re.match('^j|jal|beq|bne|blez|bgtz|bltz|bgez|bc1t|bc1f$', \
                             self.name)
 
     def is_branch(self):
         """Check if the statement is a branch."""
         return self.is_command() \
-               and re.match('^beq|bne|blez|bgtz|bltz|bgez|bct|bcf$', \
+               and re.match('^beq|bne|blez|bgtz|bltz|bgez|bct|bcf|bc1f|bc1t$',\
                             self.name)
 
     def is_branch_zero(self):
@@ -172,7 +172,9 @@ class Statement:
         use = []
 
         # Case arg0
-        if self.is_branch() or self.is_store() or self.is_compare() \
+        if (self.is_branch() \
+                and not self.is_command(*['bc1f', 'bc1t', 'bct', 'bcf'])) \
+                or self.is_store() or self.is_compare() \
                 or self.is_command(*['mult', 'div', 'dsz', 'mtc1']):
             if self.name == 'dsz':
                 m = re.match('^[^(]+\(([^)]+)\)$', self[0])
@@ -182,7 +184,9 @@ class Statement:
             else:
                 use.append(self[0])
         # Case arg1 direct adressing
-        if (self.is_branch() and not self.is_branch_zero()) or self.is_shift()\
+        if (self.is_branch() and not self.is_branch_zero() \
+                and not self.is_command(*['bc1f', 'bc1t', 'bct', 'bcf'])) \
+                or self.is_shift() \
                 or self.is_double_arithmetic() or self.is_double_unary() \
                 or self.is_logical() or self.is_convert() \
                 or self.is_truncate() or self.is_set_if_less() \
