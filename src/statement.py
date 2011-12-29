@@ -173,7 +173,7 @@ class Statement:
         if self.is_branch() or self.is_store() or self.is_compare() \
                 or self.is_command(*['mult', 'div', 'dsz']):
             if self.name == 'dsz':
-                m = re.match('^\d+\(([^)]+)\)$', self[0])
+                m = re.match('^[^(]+\(([^)]+)\)$', self[0])
 
                 if m:
                     use.append(m.group(1))
@@ -188,7 +188,7 @@ class Statement:
             use.append(self[1])
         # Case arg1 relative adressing
         if self.is_load_non_immediate() or self.is_store():
-            m = re.match('^\d+\(([^)]+)\)$', self[1])
+            m = re.match('^[^(]+\(([^)]+)\)$', self[1])
 
             if m:
                 use.append(m.group(1))
