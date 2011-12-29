@@ -2,7 +2,8 @@ import unittest
 
 from src.statement import Statement as S
 from src.dataflow import BasicBlock as B, find_leaders, find_basic_blocks, \
-        generate_flow_graph, Dag, DagNode, DagLeaf, defs, reaching_definitions
+        generate_flow_graph, Dag, DagNode, DagLeaf, get_defs, \
+        reaching_definitions
 
 
 class TestDataflow(unittest.TestCase):
@@ -24,45 +25,90 @@ class TestDataflow(unittest.TestCase):
                 [B(s[:2]).statements, B(s[2:4]).statements, \
                  B(s[4:]).statements])
 
-    def test_defs(self):
+    def test_get_defs(self):
         s1 = S('command', 'add', '$3', '$1', '$2')
         s2 = S('command', 'move', '$1', '$3')
         s3 = S('command', 'move', '$3', '$2')
         s4 = S('command', 'li', '$4', '0x00000001')
         block = B([s1, s2, s3, s4])
-        self.assertEqual(defs([block]), {
+        self.assertEqual(get_defs([block]), {
             '$3': set([s1.sid, s3.sid]),
             '$1': set([s2.sid]),
             '$4': set([s4.sid])
         })
 
-    def test_create_gen_kill(self):
+    def test_create_gen_kill_simple(self):
         s1 = S('command', 'addu', '$3', '$1', '$2')
         s2 = S('command', 'addu', '$1', '$3', 10)
         s3 = S('command', 'subu', '$3', '$1', 5)
         s4 = S('command', 'li', '$4', '0x00000001')
         block = B([s1, s2, s3, s4])
-        block.create_gen_kill(defs([block]))
+        block.create_gen_kill(get_defs([block]))
         self.assertEqual(block.gen_set, set([s2.sid, s3.sid, s4.sid]))
         self.assertEqual(block.kill_set, set([s1.sid]))
-        
+
+
+    def test_create_gen_kill_between_blocks(self):
+        s11 = S('command', 'li', 'a', 3)
+        s12 = S('command', 'li', 'b', 5)
+        s13 = S('command', 'li', 'd', 4)
+        s14 = S('command', 'li', 'x', 100)
+        s15 = S('command', 'blt', 'a', 'b', 'L1')
+        b1 = B([s11, s12, s13, s14, s15])
+
+        s21 = S('command', 'addu', 'c', 'a', 'b')
+        s22 = S('command', 'li', 'd', 2)
+        b2 = B([s21, s22])
+
+        s31 = S('label', 'L1')
+        s32 = S('command', 'li', 'c', 4)
+        s33 = S('command', 'mult', 'b', 'd')
+        s34 = S('command', 'mflo', 'temp')
+        s35 = S('command', 'addu', 'return', 'temp', 'c')
+        b3 = B([s31, s32, s33, s34, s35])
+
+        defs = get_defs([b1, b2, b3])
+        b1.create_gen_kill(defs)
+        b2.create_gen_kill(defs)
+        b3.create_gen_kill(defs)
+
+        self.assertEqual(b1.gen_set, set([s11.sid, s12.sid, s13.sid, s14.sid]))
+        self.assertEqual(b1.kill_set, set([s22.sid]))
+
+        self.assertEqual(b2.gen_set, set([s21.sid, s22.sid]))
+        self.assertEqual(b2.kill_set, set([s13.sid, s32.sid]))
+
+        self.assertEqual(b3.gen_set, set([s32.sid, s34.sid, s35.sid]))
+        self.assertEqual(b3.kill_set, set([s21.sid]))
+
+
     def test_reaching_definitions(self):
         s11 = S('command', 'li', 'a', 3)
         s12 = S('command', 'li', 'b', 5)
         s13 = S('command', 'li', 'd', 4)
         s14 = S('command', 'li', 'x', 100)
         s15 = S('command', 'blt', 'a', 'b', 'L1')
-        block1 = B([s11, s12, s13, s14, s15])
+        b1 = B([s11, s12, s13, s14, s15])
+
         s21 = S('command', 'addu', 'c', 'a', 'b')
         s22 = S('command', 'li', 'd', 2)
-        block2 = B([s21, s22])
+        b2 = B([s21, s22])
+
         s31 = S('label', 'L1')
         s32 = S('command', 'li', 'c', 4)
         s33 = S('command', 'mult', 'b', 'd')
         s34 = S('command', 'mflo', 'temp')
         s35 = S('command', 'addu', 'return', 'temp', 'c')
-        block3 = B([s31, s32, s33, s34, s35])
-        
+        b3 = B([s31, s32, s33, s34, s35])
+
+        reaching_definitions([b1, b2, b3])
+        self.assertEqual(b1.in_set, set())
+        self.assertEqual(b1.out_set, set([s11.sid, s12.sid, s13.sid]))
+        self.assertEqual(b2.in_set, set([s11.sid, s12.sid]))
+        self.assertEqual(b2.out_set, set([s12.sid, s22.sid]))
+        self.assertEqual(b3.in_set, set([s12.sid, s22.sid]))
+        self.assertEqual(b3.out_set, set())
+
     def test_generate_flow_graph_simple(self):
         b1 = B([S('command', 'foo'), S('command', 'j', 'b2')])
         b2 = B([S('label', 'b2'), S('command', 'bar')])

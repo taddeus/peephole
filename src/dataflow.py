@@ -42,14 +42,10 @@ class BasicBlock(Block):
 
         for reg, statement_ids in defs.iteritems():
             if reg in self_defs:
-                add = statement_ids - set([self_defs[reg]])
-            else:
-                add = statement_ids
-
-            self.kill_set |= add
+                self.kill_set |= statement_ids - set([self_defs[reg]])
 
 
-def defs(blocks):
+def get_defs(blocks):
     # Collect definitions of all registers
     defs = {}
 
@@ -66,8 +62,9 @@ def defs(blocks):
 
 def reaching_definitions(blocks):
     """Generate the `in' and `out' sets of the given blocks using the iterative
-    algorithm from the slides."""
-    defs = defs(blocks)
+    algorithm from the lecture slides."""
+    defs = get_defs(blocks)
+    print 'defs:', defs
 
     for b in blocks:
         b.create_gen_kill(defs)
