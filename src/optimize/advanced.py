@@ -137,7 +137,7 @@ def fold_constants(block):
 
             if reg_from in register:
                 # Other value is also known, copy its value
-                register[reg_to] = register[reg_to]
+                register[reg_to] = register[reg_from]
             else:
                 # Other value is unknown, delete the value
                 del register[reg_to]
