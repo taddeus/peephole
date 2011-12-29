@@ -211,8 +211,9 @@ def copy_propagation(block):
                 if moves_to[i] == s[0]:
                     moves_from[i] = s[1]
                     break
-        elif len(s) == 3 and (s[0] in moves_to or s[0] in moves_from):
-            # One of the registers getss overwritten, so remove the data from
+        elif (len(s) == 3 or s.is_command('mlfo') or s.is_load()) \
+                and (s[0] in moves_to or s[0] in moves_from):
+            # One of the registers gets overwritten, so remove the data from
             # the list.
             i = 0
             while i  < len(moves_to):
