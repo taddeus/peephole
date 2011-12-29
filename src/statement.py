@@ -65,6 +65,11 @@ class Statement:
         return self.is_command() \
                and re.match('^beq|bne|blez|bgtz|bltz|bgez|bct|bcf$', \
                             self.name)
+                            
+    def is_branch_zero(self):
+        """Check if statement is a branch that compares with zero."""
+        return self.is_command() \
+               and re.match('^blez|bgtz|bltz|bgez$', self.name)
 
     def is_shift(self):
         """Check if the statement is a shift operation."""
@@ -74,6 +79,11 @@ class Statement:
         """Check if the statement is a load instruction."""
         return self.is_command() and self.name in ['lw', 'li', 'dlw', 'l.s', \
                                                    'l.d']
+                                                   
+    def is_store(self):
+        """Check if the statement is a store instruction."""
+        return self.is_command() and self.name in ['sw', 's.d', 'dsw', 's.s', \
+                                                   's.b']
                                                    
     def is_arith(self):
         """Check if the statement is an arithmetic operation."""
@@ -102,7 +112,7 @@ class Statement:
         return self.is_command() and re.match('^(xor|or|and)i?$', self.name)
     
     def is_double_aritmethic(self):
-        """Check if the statement is a arithmetic .d operator."""
+        """Check if the statement is a aritmethic .d operator."""
         return self.is_command() and \
                 re.match('^(add|sub|div|mul)\.d$', self.name)
                 
@@ -127,6 +137,10 @@ class Statement:
         """Check if the statement is a convert operator."""
         return self.is_command() and re.match('^trunc\.[a-z\.]*$', self.name)
         
+    def is_compare(self):
+        """Check if the statement is a comparison."""
+        return self.is_command() and re.match('^c\.[a-z\.]*$', self.name)
+        
     def jump_target(self):
         """Get the jump target of this statement."""
         if not self.is_jump():
@@ -136,37 +150,51 @@ class Statement:
     
     def get_def(self):
         """Get the variable that this statement defines, if any."""
-        instr = ['move', 'addu', 'subu', 'li', 'mtc1', 'dmfc1']
+        instr = ['move', 'addu', 'subu', 'li', 'mtc1', 'dmfc1', 'mov.d']
         
         if self.is_load_non_immediate() or self.is_arith() \
-                or self.is_logical() or self.is_double_arithmetic() \
+                or self.is_logical() or self.is_double_aritmethic() \
                 or self.is_move_from_spec() or self.is_double_unary() \
                 or self.is_set_if_less() or self.is_convert() \
                 or self.is_truncate() or self.is_load() \
-                or (self.is_command and self.name in instr):
-            return self[0]
+                or self.is_command(*instr):
+            return [self[0]]
 
         return []
 
     def get_use(self):
-        # TODO: Finish with ALL the available commands!
+        """Get the variables that this statement uses, if any."""
+        instr = ['addu', 'subu', 'mult', 'div', 'move', 'mtc1', 'mov.d', \
+            'dmfc1']
         use = []
 
-        if self.is_binop():
-            use += self[1:]
-        elif self.is_command('move'):
-            use.append(self[1])
-        elif self.is_command('lw', 'sb', 'sw', 'dsw', 's.s', 's.d'):
-            m = re.match('^\d+\(([^)]+)\)$', self[1])
-
-            if m:
-                use.append(m.group(1))
-
-            # 'sw' also uses its first argument
-            if self.name in ['sw', 'dsw']:
+        # Case arg0
+        if self.is_branch() or self.is_store() or self.is_compare()\
+                or self.is_command(*['mult', 'div', 'dsz']):
+            if self.name == 'dsz':
+                m = re.match('^\d+\(([^)]+)\)$', self[0])
+                use.append(m)
+            else:
                 use.append(self[0])
-        elif len(self) == 2:  # FIXME: temporary fix, manually add all commands
+        # Case arg1 direct adressing
+        if (self.is_branch() and not self.is_branch_zero()) or self.is_shift()\
+                or self.is_double_arithmetic() or self.is_double_unary() \
+                or self.is_logical() or self.is_convert() \
+                or self.is_truncate() or self.is_set_if_less() \
+                or self.is_command(*instr):
             use.append(self[1])
+        # Case arg1 relative adressing
+        if self.is_load_non_immediate() or self.is_store():    
+            m = re.match('^\d+\(([^)]+)\)$', self[1])
+            if m:
+                use.append(m)
+            else:
+                use.append(self[1])
+        # Case arg2
+        if self.is_double_arithmetic() or self.is_set_if_less() \
+                or self.is_logical() \
+                or self.is_command(*['addu', 'subu']):
+            use.append(self[2])
 
         return use
 
