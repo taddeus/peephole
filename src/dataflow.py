@@ -63,6 +63,10 @@ def get_defs(blocks):
 def reaching_definitions(blocks):
     """Generate the `in' and `out' sets of the given blocks using the iterative
     algorithm from the lecture slides."""
+    # Generate flow graph
+    generate_flow_graph(blocks)
+
+    # Create gen/kill sets
     defs = get_defs(blocks)
     print 'defs:', defs
 
@@ -76,14 +80,20 @@ def reaching_definitions(blocks):
         change = False
 
         for b in blocks:
+            print 'block:', b
             b.in_set = set()
 
             for pred in b.edges_from:
+                print 'pred:      ', pred
                 b.in_set |= pred.out_set
 
+            print 'b.in_set:  ', b.in_set
+            print 'b.out_set: ', b.out_set
             new_out = b.gen_set | (b.in_set - b.kill_set)
+            print 'new_out:   ', new_out
 
             if new_out != b.out_set:
+                print 'changed'
                 b.out_set = new_out
                 change = True
 
