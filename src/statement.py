@@ -107,6 +107,7 @@ class Statement:
         return self.is_command() \
                and re.match('^l(w|a|b|bu|\.d|\.s)|dlw$', \
                             self.name)
+
     def is_logical(self):
         """Check if the statement is a logical operator."""
         return self.is_command() and re.match('^(xor|or|and)i?$', self.name)
@@ -194,7 +195,7 @@ class Statement:
         if self.is_double_arithmetic() or self.is_set_if_less() \
                 or self.is_logical() \
                 or self.is_command(*['addu', 'subu']):
-            if not isinstance(self[2] , int):
+            if not isinstance(self[2], int):
                     use.append(self[2])
 
         return use
