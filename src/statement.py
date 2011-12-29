@@ -194,7 +194,8 @@ class Statement:
         if self.is_double_arithmetic() or self.is_set_if_less() \
                 or self.is_logical() \
                 or self.is_command(*['addu', 'subu']):
-            use.append(self[2])
+            if not isinstance(self[2] , int):
+                    use.append(self[2])
 
         return use
 
