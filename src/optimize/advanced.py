@@ -18,7 +18,7 @@ def reg_can_be_used_in(reg, block, start, end):
         elif s.defines(reg):
             return True
 
-    return True
+    return reg not in block.out_set
 
 
 def find_free_reg(block, start, end):
@@ -348,13 +348,9 @@ def eliminate_dead_code(block):
     """
     # TODO: Finish
     changed = False
-
-    block.reverse_statements()
     unused = set()
 
-    while not block.end():
-        s = block.read()
-
+    for s in reversed(block):
         for reg in s.get_def():
             if reg in unused:
                 # Statement is redefined later, so this statement is useless
@@ -367,6 +363,5 @@ def eliminate_dead_code(block):
         unused -= set(s.get_use())
 
     block.apply_filter(lambda s: not hasattr(s, 'remove'))
-    block.reverse_statements()
 
     return changed

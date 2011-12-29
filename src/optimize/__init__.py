@@ -1,4 +1,4 @@
-from src.dataflow import find_basic_blocks
+from src.dataflow import find_basic_blocks, reaching_definitions
 
 from redundancies import remove_redundant_jumps, move_1, move_2, move_3, \
         move_4, load, shift, add
@@ -45,9 +45,16 @@ def optimize(statements, verbose=0):
     remove_redundant_jumps(statements)
     g = len(statements)
 
-    # Optimize basic blocks
+    # Divide into basic blocks
     blocks = find_basic_blocks(statements)
+
+    # Find reaching definitions
+    reaching_definitions(blocks)
+
+    # Optimize basic blocks
     map(optimize_block, blocks)
+
+    # Concatenate optimized blocks to obtain
     block_statements = map(lambda b: b.statements, blocks)
     opt_blocks = reduce(lambda a, b: a + b, block_statements)
     b = len(opt_blocks)
