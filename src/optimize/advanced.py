@@ -222,7 +222,7 @@ def copy_propagation(block):
             for i in xrange(len(moves_to)):
                 if moves_to[i] == s[0]:
                     moves_from[i] = s[1]
-                    break
+                    continue
         elif (len(s) == 3 or s.is_command('mlfo') or s.is_load()) \
                 and (s[0] in moves_to or s[0] in moves_from):
             # One of the registers gets overwritten, so remove the data from
@@ -240,11 +240,11 @@ def copy_propagation(block):
             for i in xrange(len(moves_to)):
                 if s[1] == moves_to[i]:
                     s[1] = moves_from[i]
-                    break
+                    continue
 
                 if s[2] == moves_to[i]:
                     s[2] = moves_from[i]
-                    break
+                    continue
 
             changed = True
 
@@ -274,11 +274,11 @@ def algebraic_transformations(block):
                 if s[1] == 1:
                     block.replace(2, [S('command', 'move', next[0], s[0])])
                     changed = True
-                    break
+                    continue
                 elif s[1] == 0:
                     block.replace(2, [S('command', 'li', '$1', to_hex(0))])
                     changed = True
-                    break
+                    continue
 
                 shift_amount = log(s[1], 2)
                 if shift_amount.is_integer():
