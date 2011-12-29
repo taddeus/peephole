@@ -282,7 +282,9 @@ def algebraic_transformations(block):
 
                 shift_amount = log(s[1], 2)
                 if shift_amount.is_integer():
-                    new_command = S('command', 'sll', next[0], s[0], int(shift_amount))
+                    new_command = S('command', 'sll', \
+                                    next[0], s[0], \
+                                    int(shift_amount))
                     block.replace(2, [new_command])
                     changed = True
 
