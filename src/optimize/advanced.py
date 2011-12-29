@@ -74,7 +74,7 @@ def eliminate_common_subexpressions(block):
                     occurrences.append(block.pointer - 1)
 
             if len(occurrences) > 1:
-                new_reg = find_free_reg(block, pointer, occurrences[-1])
+                new_reg = find_free_reg(block, occurrences[0], occurrences[-1])
 
                 # Replace all occurrences with a move statement
                 for occurrence in occurrences:
