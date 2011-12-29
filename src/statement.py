@@ -74,7 +74,7 @@ class Statement:
         """Check if the statement is a load instruction."""
         return self.is_command() and self.name in ['lw', 'li', 'dlw', 'l.s', \
                                                    'l.d']
-
+                                                   
     def is_arith(self):
         """Check if the statement is an arithmetic operation."""
         return self.is_command() \
@@ -91,18 +91,60 @@ class Statement:
     def is_binop(self):
         """Check if the statement is an binary operation."""
         return self.is_command() and len(self) == 3 and not self.is_jump()
-
+        
+    def is_load_non_immediate(self):
+        """Check if the statement is a load statement."""
+        return self.is_command() \
+               and re.match('^l(w|a|b|bu|\.d|\.s)|dlw$', \
+                            self.name)
+    def is_logical(self):
+        """Check if the statement is a logical operator."""
+        return self.is_command() and re.match('^(xor|or|and)i?$', self.name)
+    
+    def is_double_aritmethic(self):
+        """Check if the statement is a arithmetic .d operator."""
+        return self.is_command() and \
+                re.match('^(add|sub|div|mul)\.d$', self.name)
+                
+    def is_double_unary(self):
+        """Check if the statement is a unary .d operator."""
+        return self.is_command() and \
+                re.match('^(abs|neg|mov)\.d$', self.name)
+                
+    def is_move_from_spec(self):
+        """Check if the statement is a move from the result register."""
+        return self.is_command() and self.name in ['mflo', 'mthi']
+        
+    def is_set_if_less(self):
+        """Check if the statement is a shift if less then."""
+        return self.is_command() and self.name in ['slt', 'sltu']
+        
+    def is_convert(self):
+        """Check if the statement is a convert operator."""
+        return self.is_command() and re.match('^cvt\.[a-z\.]*$', self.name)
+        
+    def is_truncate(self):
+        """Check if the statement is a convert operator."""
+        return self.is_command() and re.match('^trunc\.[a-z\.]*$', self.name)
+        
     def jump_target(self):
         """Get the jump target of this statement."""
         if not self.is_jump():
             raise Exception('Command "%s" has no jump target' % self.name)
 
         return self[-1]
-
+    
     def get_def(self):
-        # TODO: Finish
-        if self.is_load() or self.is_arith():
-            return self[:1]
+        """Get the variable that this statement defines, if any."""
+        instr = ['move', 'addu', 'subu', 'li', 'mtc1', 'dmfc1']
+        
+        if self.is_load_non_immediate() or self.is_arith() \
+                or self.is_logical() or self.is_double_arithmetic() \
+                or self.is_move_from_spec() or self.is_double_unary() \
+                or self.is_set_if_less() or self.is_convert() \
+                or self.is_truncate() or self.is_load() \
+                or (self.is_command and self.name in instr):
+            return self[0]
 
         return []
 
