@@ -122,7 +122,7 @@ We now add the instruction above the first use, and write the result in a new
 variable. Then all occurrences of this expression can be replaced by a move of
 from new variable into the original destination variable of the instruction.
 
-This is a less efficient method then the dag, but because the basic blocks are
+This is a less efficient method then the DAG, but because the basic blocks are
 in general not very large and the execution time of the optimizer is not a
 primary concern, this is not a big problem.
 
@@ -168,7 +168,18 @@ removed by the dead code elimination.
 
 \subsubsection*{Algebraic transformations}
 
+Some expression can easily be replaced with more simple once if you look at
+what they are saying algebraically. An example is the statement $x = y + 0$, or
+in Assembly \texttt{addu \$1, \$2, 0}. This can easily be changed into $x = y$
+or \texttt{move \$1, \$2}.
 
+Another case is the multiplication with a power of two. This can be done way
+more efficiently by shifting left a number of times. An example:
+\texttt{mult \$regA, \$regB, 4    ->  sll  \$regA, \$regB, 2}. We perform this
+optimization for any multiplication with a power of two.
+
+There are a number of such cases, all of which are once again stated in
+appendix \ref{opt}. 
 
 \section{Implementation}
 
@@ -205,7 +216,7 @@ The optimizations are done in two different steps. First the global
 optimizations are performed, which are only the optimizations on branch-jump
 constructions. This is done repeatedly until there are no more changes.
 
-After all possible global optimizations are done, the program is seperated into
+After all possible global optimizations are done, the program is separated into
 basic blocks. The algorithm to do this is described earlier, and means all
 jump and branch instructions are called leaders, as are their targets. A basic
 block then goes from leader to leader.
@@ -225,17 +236,57 @@ concatenated again into a list. After this is done, the list is passed on to
 the writer, which writes the instructions back to Assembly and saves the file
 so we can let xgcc compile it.
 
+\section{Testing}
+
+Of course, it has to be guaranteed that the optimized code still functions
+exactly the same as the none-optimized code. To do this, testing is an
+important part of out program. We have two stages of testing. The first stage
+is unit testing. The second stage is to test whether the compiled code has
+exactly the same output.
+
+\subsection{Unit testing}
+
+For almost every piece of important code, unit tests are available. Unit tests
+give the possibility to check whether each small part of the program, for
+instance each small function, is performing as expected. This way bugs are
+found early and very exactly. Otherwise, one would only see that there is a
+mistake in the program, not knowing where this bug is. Naturally, this means
+debugging is a lot easier.
+
+The unit tests can be run by executing \texttt{make test} in the root folder of
+the project. This does require the \texttt{textrunner} module.
+
+Also available is a coverage report. This report shows how much of the code has
+been unit tested. To make this report, the command \texttt{make coverage} can
+be run in the root folder. The report is than added as a folder \emph{coverage}
+in which a \emph{index.html} can be used to see the entire report.
+
+\subsection{Ouput comparison}
+
+In order to check whether the optimization does not change the functioning of
+the program, the output of the provided benchmark programs has to be compared
+to the output after optimization. If any of these outputs is not equal to the
+original output, our optimizations are to aggressive, or there is a bug
+somewhere in the code.
+
 \section{Results}
 
-\subsection{pi.c}
-
-\subsection{acron.c}
-
-\subsection{whet.c}
-
-\subsection{slalom.c}
-
-\subsection{clinpack.c}
+The following results have been obtained:\\
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+Benchmark & Original     & Optimized    & Original & Optimized & Performance \\
+        & Instructions & instructions & cycles   & cycles    &  boost(cycles)\\
+\hline
+pi        &          134 &              &    13011 &           &             \\
+acron     &              &              &  4435687 &           &             \\
+dhrystone &              &              &  2887710 &           &             \\
+whet      &              &              &  2864089 &           &             \\
+slalom    &              &              &    27270 &           &             \\
+clinpack  &              &              &  1547941 &           &             \\
+\hline
+\end{tabular}\\
+\\
+The imput for slalom was 1000 seconds and a minimum of $n = 100$
 
 \section{Conclusion}
 
