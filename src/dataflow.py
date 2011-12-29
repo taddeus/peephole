@@ -36,7 +36,6 @@ class BasicBlock(Block):
         for s in reversed(self):
             for reg in s.get_def():
                 if reg not in self_defs:
-                    print 'Found def:', s
                     self_defs[reg] = s.sid
                     self.gen_set.add(s.sid)
 
