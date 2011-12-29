@@ -33,7 +33,7 @@ def write_statements(statements):
                 else:
                     line += ' '
 
-                line += ','.join(s.args)
+                line += ','.join(map(str, s))
         else:
             raise Exception('Unsupported statement type "%s"' % s.stype)
 

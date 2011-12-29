@@ -17,6 +17,8 @@ def remove_redundancies(block):
     while old_len != len(block):
         old_len = len(block)
 
+        block.reset()
+
         while not block.end():
             s = block.read()
 
@@ -30,20 +32,34 @@ def remove_redundancies(block):
 
 def optimize_block(block):
     """Optimize a basic block."""
+    #changed = True
+
+    #while changed:
+    #    changed = False
+
+    #    if remove_redundancies(block): changed = True
+    #    if eliminate_common_subexpressions(block): changed = True
+    #    if fold_constants(block): changed = True
+    #    if copy_propagation(block): changed = True
+    #    if eliminate_dead_code(block): changed = True
+    #    print 'iteration'
+
     while remove_redundancies(block) \
             | eliminate_common_subexpressions(block) \
             | fold_constants(block) \
             | copy_propagation(block) \
             | eliminate_dead_code(block):
             #| algebraic_transformations(block) \
+        #print 'iteration'
         pass
 
-
+from copy import deepcopy
 def optimize(statements, verbose=0):
     """Optimization wrapper function, calls global and basic-block level
     optimization functions."""
     # Optimize on a global level
     # TODO: only count instructions (no directives)
+    statements = deepcopy(statements)
     o = len(statements)
     remove_redundant_jumps(statements)
     g = len(statements)
@@ -64,18 +80,12 @@ def optimize(statements, verbose=0):
     opt_blocks = reduce(lambda a, b: a + b, block_statements)
     b = len(opt_blocks)
 
-    # - Common subexpression elimination
-    # - Constant folding
-    # - Copy propagation
-    # - Dead-code elimination
-    # - Temporary variable renaming
-    # - Interchange of independent statements
-
+    # Print results
     if verbose:
-        print 'Original statements:             %d' % o
-        print 'After global optimization:       %d' % g
-        print 'After basic blocks optimization: %d' % b
-        print 'Optimization:                    %d (%d%%)' \
+        print 'Original statements:            %d' % o
+        print 'After global optimization:      %d (%d removed)' % (g, o - g)
+        print 'After basic block optimization: %d (%d removed)' % (b, g - b)
+        print 'Statements removed:             %d (%d%%)' \
                 % (o - b, int((o - b) / float(b) * 100))
 
     return opt_blocks
