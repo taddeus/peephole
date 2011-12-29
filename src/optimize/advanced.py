@@ -228,7 +228,7 @@ def fold_constants(block):
                 block.replace(1, [S('command', 'move', rd, s[1])])
         else:
             for reg in s.get_def():
-                if reg in register
+                if reg in register:
                     # Known register is overwritten, remove its value
                     del register[reg]
 

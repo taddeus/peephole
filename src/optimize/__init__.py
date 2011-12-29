@@ -31,9 +31,9 @@ def optimize_block(block):
     while remove_redundancies(block) \
             | eliminate_common_subexpressions(block) \
             | fold_constants(block) \
-            | copy_propagation(block)\
-            #| algebraic_transformations(block) \
+            | copy_propagation(block) \
             | eliminate_dead_code(block):
+            #| algebraic_transformations(block) \
         pass
 
 
