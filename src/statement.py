@@ -178,7 +178,7 @@ class Statement:
                 use.append(self[0])
         # Case arg1 direct adressing
         if (self.is_branch() and not self.is_branch_zero()) or self.is_shift()\
-                or self.is_double_arithmetic() or self.is_double_unary() \
+                or self.is_double_aritmethic() or self.is_double_unary() \
                 or self.is_logical() or self.is_convert() \
                 or self.is_truncate() or self.is_set_if_less() \
                 or self.is_command(*instr):
