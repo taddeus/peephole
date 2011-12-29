@@ -6,7 +6,7 @@
  # -mgas -mgpOPT
 
  # Cc1 arguments (-G value = 8, Cpu = default, ISA = 1):
- # -quiet -dumpbase -o
+ # -quiet -dumpbase -O0 -o
 
 gcc2_compiled.:
 __gnu_compiled_c:
