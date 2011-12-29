@@ -2,11 +2,17 @@ import re
 
 
 class Statement:
+    sid = 1
+
     def __init__(self, stype, name, *args, **kwargs):
         self.stype = stype
         self.name = name
         self.args = list(args)
         self.options = kwargs
+
+        # Assign a unique ID to each satement
+        self.sid = Statement.sid
+        Statement.sid += 1
 
     def __getitem__(self, n):
         """Get an argument."""
@@ -26,8 +32,8 @@ class Statement:
         return len(self.args)
 
     def __str__(self):  # pragma: nocover
-        return '<Statement type=%s name=%s args=%s>' \
-                % (self.stype, self.name, self.args)
+        return '<Statement sid=%d type=%s name=%s args=%s>' \
+                % (self.sid, self.stype, self.name, self.args)
 
     def __repr__(self):  # pragma: nocover
         return str(self)
@@ -64,6 +70,11 @@ class Statement:
         """Check if the statement is a shift operation."""
         return self.is_command() and re.match('^s(ll|rl|ra)$', self.name)
 
+    def is_load(self):
+        """Check if the statement is a load instruction."""
+        return self.is_command() and self.name in ['lw', 'li', 'dlw', 'l.s', \
+                                                   'l.d']
+                                                   
     def is_arith(self):
         """Check if the statement is an arithmetic operation."""
         return self.is_command() \
@@ -81,12 +92,12 @@ class Statement:
         """Check if the statement is an binary operation."""
         return self.is_command() and len(self) == 3 and not self.is_jump()
         
-    def is_load(self):
+    def is_load_non_immediate(self):
         """Check if the statement is a load statement."""
         return self.is_command() \
                and re.match('^l(w|a|b|bu|\.d|\.s)|dlw$', \
                             self.name)
-    def is_logical:
+    def is_logical(self):
         """Check if the statement is a logical operator."""
         return self.is_command() and re.match('^(xor|or|and)i?$', self.name)
     
@@ -108,11 +119,11 @@ class Statement:
         """Check if the statement is a shift if less then."""
         return self.is_command() and self.name in ['slt', 'sltu']
         
-    def self.is_convert(self):
+    def is_convert(self):
         """Check if the statement is a convert operator."""
         return self.is_command() and re.match('^cvt\.[a-z\.]*$', self.name)
         
-    def self.is_truncate(self):
+    def is_truncate(self):
         """Check if the statement is a convert operator."""
         return self.is_command() and re.match('^trunc\.[a-z\.]*$', self.name)
         
@@ -125,12 +136,13 @@ class Statement:
     
     def get_def(self):
         """Get the variable that this statement defines, if any."""
-        inst = ['move', 'addu', 'subu', 'li', 'mtc1', 'dmfc1']
+        instr = ['move', 'addu', 'subu', 'li', 'mtc1', 'dmfc1']
         
-        if self.is_load() or self.is_arith() or self.is_logical() \
-                or self.is_double_arithmetic() or self.is_move_from_spec() \
-                or self.is_double_unary() or self.is_set_if_less() \
-                or self.is_convert() or self.is_truncate() \
+        if self.is_load_non_immediate() or self.is_arith() \
+                or self.is_logical() or self.is_double_arithmetic() \
+                or self.is_move_from_spec() or self.is_double_unary() \
+                or self.is_set_if_less() or self.is_convert() \
+                or self.is_truncate() or self.is_load() \
                 or (self.is_command and self.name in instr):
             return self[0]
 
