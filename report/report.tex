@@ -115,7 +115,7 @@ implementation is a slightly less fancy, but easier to implement.
 We search from the end of the block up for instructions that are eligible for
 CSE. If we find one, we check further up in the code for the same instruction,
 and add that to a temporary storage list. This is done until the beginning of
-the block or until one of the arguments of this expression is assigned. The temporty storage is 
+the block or until one of the arguments of this expression is assigned.
 
 We now add the instruction above the first use, and write the result in a new
 variable. Then all occurrences of this expression can be replaced by a move of
@@ -126,9 +126,14 @@ in general not very large and the execution time of the optimizer is not a
 primary concern, this is not a big problem.
 
 \subsubsection*{Fold constants}
-Constant folding is an optimization where the outcome of arithmetics are calculated at compile time. If a value x is assigned to a certain value, let's say 10, than all next occurences of \texttt{x} are replaced by 10 until a redefinition of x. Arithmetics in Assembly are always preformed between two constants, if this is not the case the calculation is not possible. See the example for a more clear explanation of constant folding(will come). In other words until the current definition of \texttt{x} becomes dead. Therefore reaching definitions analysis is needed.
-
-
+Constant folding is an optimization where the outcome of arithmetics are
+calculated at compile time. If a value x is assigned to a certain value, lets
+say 10, than all next occurences of \texttt{x} are replaced by 10 until a
+redefinition of x. Arithmetics in Assembly are always performed between two
+variables or a variable and a constant. If this is not the case the calculation
+is not possible. See the example for a more clear explanation of constant
+folding(will come). In other words until the current definition of \texttt{x}
+becomes dead. Therefore reaching definitions analysis is needed.
 
 \subsubsection*{Copy propagation}
 
