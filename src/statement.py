@@ -62,7 +62,7 @@ class Statement:
 
     def is_shift(self):
         """Check if the statement is a shift operation."""
-        return self.is_command() and re.match('^s(ll|la|rl|ra)$', self.name)
+        return self.is_command() and re.match('^s(ll|rl|ra)$', self.name)
 
     def is_load(self):
         """Check if the statement is a load instruction."""
@@ -71,7 +71,8 @@ class Statement:
     def is_arith(self):
         """Check if the statement is an arithmetic operation."""
         return self.is_command() \
-               and re.match('^(add|sub|mult|div|abs|neg)(u|\.d)?$', self.name)
+               and re.match('^s(ll|rl|ra)|(add|sub|mflo|abs|neg|slt|sqrt)' \
+                            + '(u|\.s|\.d)?$', self.name)
 
     def is_monop(self):
         """Check if the statement is an unary operation."""

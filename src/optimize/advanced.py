@@ -148,6 +148,7 @@ def fold_constants(block):
             # Usage of variable with constant value
             register[s[0]] = constants[s[1]]
         elif s.name in ['addu', 'subu', 'mult', 'div']:
+            # TODO: implement 'mult' optimization
             # Calculation with constants
             rd, rs, rt = s[0], s[1], s[2]
             rs_known = rs in register
