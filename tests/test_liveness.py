@@ -23,14 +23,14 @@ class TestLiveness(unittest.TestCase):
         create_gen_kill(block)
 
         self.assertEqual(block.live_gen, set(['$1', '$2']))
-        self.assertEqual(block.live_kill, set(['$3', '$1', '$1']))
+        self.assertEqual(block.live_kill, set(['$3', '$1', '$4']))
 
     #def test_create_in_out(self):
     #    s11 = S('command', 'li', 'a', 3)
     #    s12 = S('command', 'li', 'b', 5)
     #    s13 = S('command', 'li', 'd', 4)
     #    s14 = S('command', 'li', 'x', 100)
-    #    s15 = S('command', 'blt', 'a', 'b', 'L1')
+    #    s15 = S('command', 'beq', 'a', 'b', 'L1')
     #    b1 = B([s11, s12, s13, s14, s15])
 
     #    s21 = S('command', 'addu', 'c', 'a', 'b')

@@ -44,7 +44,6 @@ def create_in_out(blocks):
 
     # Create gen/kill sets
     defs = get_defs(blocks)
-    print 'defs:', defs
 
     for b in blocks:
         create_gen_kill(b, defs)
@@ -56,19 +55,13 @@ def create_in_out(blocks):
         change = False
 
         for b in blocks:
-            print 'block:', b
             b.reach_in = set()
 
             for pred in b.edges_from:
-                print 'pred:      ', pred
                 b.reach_in |= pred.reach_out
 
-            print 'b.reach_in:  ', b.reach_in
-            print 'b.reach_out: ', b.reach_out
             new_out = b.reach_gen | (b.reach_in - b.reach_kill)
-            print 'new_out:   ', new_out
 
             if new_out != b.reach_out:
-                print 'changed'
                 b.reach_out = new_out
                 change = True

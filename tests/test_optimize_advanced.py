@@ -4,6 +4,7 @@ from copy import copy
 from src.optimize.advanced import eliminate_common_subexpressions, \
         fold_constants, copy_propagation, algebraic_transformations
 from src.statement import Statement as S, Block as B
+import src.liveness as liveness
 
 
 class TestOptimizeAdvanced(unittest.TestCase):
@@ -22,6 +23,7 @@ class TestOptimizeAdvanced(unittest.TestCase):
         e = [S('command', 'addu', '$8', '$regA', '$regB'), \
              S('command', 'move', '$regC', '$8'), \
              S('command', 'move', '$regD', '$8')]
+        liveness.create_in_out([b])
         eliminate_common_subexpressions(b)
         self.assertEqual(b.statements, e)
 
@@ -30,6 +32,7 @@ class TestOptimizeAdvanced(unittest.TestCase):
                S('command', 'li', '$regA', '0x00000001'),
                S('command', 'addu', '$regD', '$regA', '$regB')])
         e = copy(b.statements)
+        liveness.create_in_out([b])
         eliminate_common_subexpressions(b)
         self.assertEqual(b.statements, e)
 
@@ -49,7 +52,7 @@ class TestOptimizeAdvanced(unittest.TestCase):
                    self.foo,
                    S('command', 'addu', '$3', '$2', '$4'),
                    self.bar])
-                   
+
     def test_copy_propagation_other_arg(self):
         block = B([self.foo,
                    S('command', 'move', '$1', '$2'),

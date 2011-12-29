@@ -18,7 +18,7 @@ def reg_can_be_used_in(reg, block, start, end):
         elif s.defines(reg):
             return True
 
-    return reg not in block.out_set
+    return reg not in block.live_out
 
 
 def find_free_reg(block, start, end):
