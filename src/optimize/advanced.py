@@ -2,22 +2,31 @@ from src.statement import Statement as S
 from math import log
 
 
-def reg_dead_in(var, context):
-    """Check if a register is `dead' in a given list of statements."""
-    # TODO: Finish
-    for s in context:
-        if s.defines(var) or s.uses(var):
+def reg_can_be_used_in(reg, block, start, end):
+    """Check if a register addres safely be used in a block section using local
+    dataflow analysis."""
+    # Check if the register used or defined in the block section
+    for s in block[start:end]:
+        if s.uses(reg) or s.defines(reg):
             return False
+
+    # Check if the register is used inside the block after the specified
+    # section, without having been re-assigned first
+    for s in block[end:]:
+        if s.uses(reg):
+            return False
+        elif s.defines(reg):
+            return True
 
     return True
 
 
-def find_free_reg(context):
+def find_free_reg(block, start, end):
     """Find a temporary register that is free in a given list of statements."""
-    for i in xrange(8):
-        tmp = '$t%d' % i
+    for i in xrange(8, 16):
+        tmp = '$%d' % i
 
-        if reg_dead_in(tmp, context):
+        if reg_can_be_used_in(tmp, block, start, end):
             return tmp
 
     raise Exception('No temporary register is available.')
@@ -35,25 +44,26 @@ def eliminate_common_subexpressions(block):
     - If the statement can be possibly be eliminated, walk further collecting
       all other occurrences of the expression until one of the arguments is
       assigned in a statement, or the start of the block has been reached.
-    - If one or more occurrences were found, insert the expression with a new
-      destination address before the last found occurrence and change all
+    - If one or more occurrences were changed, insert the expression with a new
+      destination address before the last changed occurrence and change all
       occurrences to a move instruction from that address.
     """
-    found = False
-    block.reverse_statements()
+    changed = False
 
     while not block.end():
         s = block.read()
 
         if s.is_arith():
             pointer = block.pointer
-            last = False
-            new_reg = False
+            occurrences = [pointer - 1]
             args = s[1:]
 
             # Collect similar statements
             while not block.end():
                 s2 = block.read()
+
+                if not s2.is_command():
+                    continue
 
                 # Stop if one of the arguments is assigned
                 if len(s2) and s2[0] in args:
@@ -61,26 +71,28 @@ def eliminate_common_subexpressions(block):
 
                 # Replace a similar expression by a move instruction
                 if s2.name == s.name and s2[1:] == args:
-                    if not new_reg:
-                        new_reg = find_free_reg(block[:pointer])
+                    occurrences.append(block.pointer - 1)
 
-                    block.replace(1, [S('command', 'move', s2[0], new_reg)])
-                    last = block.pointer
+            if len(occurrences) > 1:
+                new_reg = find_free_reg(block, pointer, occurrences[-1])
 
-            # Reset pointer to and continue from the original statement
+                # Replace all occurrences with a move statement
+                for occurrence in occurrences:
+                    rd = block[occurrence][0]
+                    block.replace(1, [S('command', 'move', rd, new_reg)], \
+                            start=occurrence)
+
+                # Insert the calculation before the original with the new
+                # destination address
+                block.insert(S('command', s.name, *([new_reg] + args)), \
+                             index=occurrences[0])
+
+                changed = True
+
+            # Reset pointer to continue from the original statement
             block.pointer = pointer
 
-            if last:
-                # Insert an additional expression with a new destination address
-                block.insert(S('command', s.name, *([new_reg] + args)), last)
-
-                # Replace the original expression with a move statement
-                block.replace(1, [S('command', 'move', s[0], new_reg)])
-                found = True
-
-    block.reverse_statements()
-
-    return found
+    return changed
 
 
 def to_hex(value):
@@ -103,7 +115,7 @@ def fold_constants(block):
     - When a variable is used, the following happens:
         lw $reg, VAR    ->  register[$reg] = constants[VAR]
     """
-    found = False
+    changed = False
 
     # Variable values
     constants = {}
@@ -162,23 +174,23 @@ def fold_constants(block):
 
                 block.replace(1, [S('command', 'li', rd, result)])
                 register[rd] = result
-                found = True
+                changed = True
             elif rt_known:
                 # c = 10        ->  b = a + 10
                 # b = c + a
                 s[2] = register[rt]
-                found = True
-            elif rs_known and s.name in ['addu', 'mult']:
+                changed = True
+            elif rs_known and s.name == 'addu':
                 # a = 10        ->  b = c + 10
                 # b = c + a
                 s[1] = rt
                 s[2] = register[rs]
-                found = True
+                changed = True
         elif len(s) and s[0] in register:
             # Known register is overwritten, remove its value
             del register[s[0]]
 
-    return found
+    return changed
 
 
 def copy_propagation(block):

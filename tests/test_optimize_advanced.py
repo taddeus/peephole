@@ -19,9 +19,9 @@ class TestOptimizeAdvanced(unittest.TestCase):
     def test_eliminate_common_subexpressions_simple(self):
         b = B([S('command', 'addu', '$regC', '$regA', '$regB'),
                S('command', 'addu', '$regD', '$regA', '$regB')])
-        e = [S('command', 'addu', '$t0', '$regA', '$regB'), \
-             S('command', 'move', '$regC', '$t0'), \
-             S('command', 'move', '$regD', '$t0')]
+        e = [S('command', 'addu', '$8', '$regA', '$regB'), \
+             S('command', 'move', '$regC', '$8'), \
+             S('command', 'move', '$regD', '$8')]
         eliminate_common_subexpressions(b)
         self.assertEqual(b.statements, e)
 

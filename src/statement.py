@@ -96,7 +96,23 @@ class Statement:
     def uses(self, reg):
         """Check if this statement uses the given register."""
         # TODO: Finish
-        return (self.is_load() or self.is_arith()) and reg in self[1:]
+        if self.is_arith():
+            return reg in self[1:]
+
+        if self.is_command('move'):
+            return self[1] == reg
+
+        if self.is_command('lw', 'sb', 'sw', 'dsw'):
+            m = re.match('^\d+\(([^)]+)\)$', self[1])
+
+            if m:
+                return m.group(1) == reg
+
+            # 'sw' also uses its first argument
+            if self.name in ['sw', 'dsw']:
+                return self[0] == reg
+
+        return False
 
 
 class Block:
