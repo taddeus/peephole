@@ -157,8 +157,8 @@ class Statement:
                 or self.is_move_from_spec() or self.is_double_unary() \
                 or self.is_set_if_less() or self.is_convert() \
                 or self.is_truncate() or self.is_load() \
-                or (self.is_command() and self.name in instr):
-            return self[0]
+                or self.is_command(*instr):
+            return [self[0]]
 
         return []
 
@@ -170,7 +170,7 @@ class Statement:
 
         # Case arg0
         if self.is_branch() or self.is_store() or self.is_compare()\
-                or (self.is_command() and self.name in ['mult', 'div', 'dsz']):
+                or self.is_command(*['mult', 'div', 'dsz']):
             if self.name == 'dsz':
                 m = re.match('^\d+\(([^)]+)\)$', self[0])
                 use.append(m)
@@ -181,7 +181,7 @@ class Statement:
                 or self.is_double_arithmetic() or self.is_double_unary() \
                 or self.is_logical() or self.is_convert() \
                 or self.is_truncate() or self.is_set_if_less() \
-                or (self.is_command() and self.name in instr):
+                or self.is_command(*instr):
             use.append(self[1])
         # Case arg1 relative adressing
         if self.is_load_non_immediate() or self.is_store():    
@@ -193,7 +193,7 @@ class Statement:
         # Case arg2
         if self.is_double_arithmetic() or self.is_set_if_less() \
                 or self.is_logical() \
-                or (self.is_command() and self.name in ['addu', 'subu']) :
+                or self.is_command(*['addu', 'subu']):
             use.append(self[2])
 
         return use
