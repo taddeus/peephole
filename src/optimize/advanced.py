@@ -147,10 +147,27 @@ def fold_constants(block):
         elif s.name == 'lw' and s[1] in constants:
             # Usage of variable with constant value
             register[s[0]] = constants[s[1]]
-        elif s.name in ['addu', 'subu', 'mult', 'div']:
-            # TODO: implement 'mult' optimization
-            # Calculation with constants
-            rd, rs, rt = s[0], s[1], s[2]
+        elif s.name == 'mflo':
+            # Move of `Lo' register to another register
+            register[s[0]] = register['Lo']
+        elif s.name == 'mfhi':
+            # Move of `Hi' register to another register
+            register[s[0]] = register['Hi']
+        elif s.name in ['mult', 'div'] \
+                and s[0] in register and s[1] in register:
+            # Multiplication/division with constants
+            rs, rt = s
+
+            if s.name == 'mult':
+                binary = bin(register[rs] * register[rt])[2:]
+                binary = '0' * (64 - len(binary)) + binary
+                register['Hi'] = int(binary[:32], base=2)
+                register['Lo'] = int(binary[32:], base=2)
+            elif s.name == 'div':
+                register['Lo'], register['Hi'] = divmod(rs, rt)
+        elif s.name in ['addu', 'subu']:
+            # Addition/subtraction with constants
+            rd, rs, rt = s
             rs_known = rs in register
             rt_known = rt in register
 
@@ -167,22 +184,16 @@ def fold_constants(block):
                 if s.name == 'subu':
                     result = to_hex(rs_val - rt_val)
 
-                if s.name == 'mult':
-                    result = to_hex(rs_val * rt_val)
-
-                if s.name == 'div':
-                    result = to_hex(rs_val / rt_val)
-
                 block.replace(1, [S('command', 'li', rd, result)])
                 register[rd] = result
                 changed = True
             elif rt_known:
-                # c = 10        ->  b = a + 10
+                # a = 10        ->  b = c + 10
                 # b = c + a
                 s[2] = register[rt]
                 changed = True
             elif rs_known and s.name == 'addu':
-                # a = 10        ->  b = c + 10
+                # c = 10        ->  b = a + 10
                 # b = c + a
                 s[1] = rt
                 s[2] = register[rs]
