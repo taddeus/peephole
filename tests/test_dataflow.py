@@ -124,17 +124,17 @@ class TestDataflow(unittest.TestCase):
             '$4': set([s4.sid])
         })
 
-    #def test_defs(self):
-    #    s1 = S('command', 'add', '$3', '$1', '$2')
-    #    s2 = S('command', 'move', '$1', '$3')
-    #    s3 = S('command', 'move', '$3', '$2')
-    #    s4 = S('command', 'li', '$4', '0x00000001')
-    #    block = B([s1, s2, s3, s4])
-    #    self.assertEqual(defs([block]), {
-    #        '$3': set([s1.sid, s3.sid]),
-    #        '$1': set([s2.sid]),
-    #        '$4': set([s4.sid])
-    #    })
+    def test_defs(self):
+        s1 = S('command', 'add', '$3', '$1', '$2')
+        s2 = S('command', 'move', '$1', '$3')
+        s3 = S('command', 'move', '$3', '$2')
+        s4 = S('command', 'li', '$4', '0x00000001')
+        block = B([s1, s2, s3, s4])
+        self.assertEqual(defs([block]), {
+            '$3': set([s1.sid, s3.sid]),
+            '$1': set([s2.sid]),
+            '$4': set([s4.sid])
+        })
 
     def test_create_gen_kill_gen(self):
         s1 = S('command', 'addu', '$3', '$1', '$2')
