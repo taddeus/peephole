@@ -2,11 +2,17 @@ import re
 
 
 class Statement:
+    sid = 1
+
     def __init__(self, stype, name, *args, **kwargs):
         self.stype = stype
         self.name = name
         self.args = list(args)
         self.options = kwargs
+
+        # Assign a unique ID to each satement
+        self.sid = Statement.sid
+        Statement.sid += 1
 
     def __getitem__(self, n):
         """Get an argument."""
@@ -26,8 +32,8 @@ class Statement:
         return len(self.args)
 
     def __str__(self):  # pragma: nocover
-        return '<Statement type=%s name=%s args=%s>' \
-                % (self.stype, self.name, self.args)
+        return '<Statement sid=%d type=%s name=%s args=%s>' \
+                % (self.sid, self.stype, self.name, self.args)
 
     def __repr__(self):  # pragma: nocover
         return str(self)
@@ -62,16 +68,21 @@ class Statement:
 
     def is_shift(self):
         """Check if the statement is a shift operation."""
-        return self.is_command() and re.match('^s(ll|la|rl|ra)$', self.name)
+        return self.is_command() and re.match('^s(ll|rl|ra)$', self.name)
 
     def is_load(self):
         """Check if the statement is a load instruction."""
-        return self.is_command() and self.name in ['lw', 'dlw', 'l.s', 'l.d']
-
+        return self.is_command() and self.name in ['lw', 'li', 'dlw', 'l.s', \
+                                                   'l.d']
+                                                   
     def is_arith(self):
         """Check if the statement is an arithmetic operation."""
         return self.is_command() \
-               and re.match('^(add|sub|mult|div|abs|neg)(u|\.d)?$', self.name)
+               and re.match('^s(ll|rl|ra)'
+                            + '|(mfhi|mflo|abs|neg|and|[xn]?or)'
+                            + '|(add|sub|slt)u?'
+                            + '|(add|sub|mult|div|abs|neg|sqrt|c)\.[sd]$', \
+                            self.name)
 
     def is_monop(self):
         """Check if the statement is an unary operation."""
@@ -80,23 +91,92 @@ class Statement:
     def is_binop(self):
         """Check if the statement is an binary operation."""
         return self.is_command() and len(self) == 3 and not self.is_jump()
-
+        
+    def is_load_non_immediate(self):
+        """Check if the statement is a load statement."""
+        return self.is_command() \
+               and re.match('^l(w|a|b|bu|\.d|\.s)|dlw$', \
+                            self.name)
+    def is_logical(self):
+        """Check if the statement is a logical operator."""
+        return self.is_command() and re.match('^(xor|or|and)i?$', self.name)
+    
+    def is_double_aritmethic(self):
+        """Check if the statement is a arithmetic .d operator."""
+        return self.is_command() and \
+                re.match('^(add|sub|div|mul)\.d$', self.name)
+                
+    def is_double_unary(self):
+        """Check if the statement is a unary .d operator."""
+        return self.is_command() and \
+                re.match('^(abs|neg|mov)\.d$', self.name)
+                
+    def is_move_from_spec(self):
+        """Check if the statement is a move from the result register."""
+        return self.is_command() and self.name in ['mflo', 'mthi']
+        
+    def is_set_if_less(self):
+        """Check if the statement is a shift if less then."""
+        return self.is_command() and self.name in ['slt', 'sltu']
+        
+    def is_convert(self):
+        """Check if the statement is a convert operator."""
+        return self.is_command() and re.match('^cvt\.[a-z\.]*$', self.name)
+        
+    def is_truncate(self):
+        """Check if the statement is a convert operator."""
+        return self.is_command() and re.match('^trunc\.[a-z\.]*$', self.name)
+        
     def jump_target(self):
         """Get the jump target of this statement."""
         if not self.is_jump():
             raise Exception('Command "%s" has no jump target' % self.name)
 
         return self[-1]
+    
+    def get_def(self):
+        """Get the variable that this statement defines, if any."""
+        instr = ['move', 'addu', 'subu', 'li', 'mtc1', 'dmfc1']
+        
+        if self.is_load_non_immediate() or self.is_arith() \
+                or self.is_logical() or self.is_double_arithmetic() \
+                or self.is_move_from_spec() or self.is_double_unary() \
+                or self.is_set_if_less() or self.is_convert() \
+                or self.is_truncate() or self.is_load() \
+                or (self.is_command and self.name in instr):
+            return self[0]
+
+        return []
+
+    def get_use(self):
+        # TODO: Finish with ALL the available commands!
+        use = []
+
+        if self.is_binop():
+            use += self[1:]
+        elif self.is_command('move'):
+            use.append(self[1])
+        elif self.is_command('lw', 'sb', 'sw', 'dsw', 's.s', 's.d'):
+            m = re.match('^\d+\(([^)]+)\)$', self[1])
+
+            if m:
+                use.append(m.group(1))
+
+            # 'sw' also uses its first argument
+            if self.name in ['sw', 'dsw']:
+                use.append(self[0])
+        elif len(self) == 2:  # FIXME: temporary fix, manually add all commands
+            use.append(self[1])
+
+        return use
 
     def defines(self, reg):
         """Check if this statement defines the given register."""
-        # TODO: Finish
-        return (self.is_load() or self.is_arith()) and self[0] == reg
+        return reg in self.get_def()
 
     def uses(self, reg):
         """Check if this statement uses the given register."""
-        # TODO: Finish
-        return (self.is_load() or self.is_arith()) and reg in self[1:]
+        return reg in self.get_use()
 
 
 class Block:

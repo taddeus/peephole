@@ -3,7 +3,7 @@ from src.dataflow import find_basic_blocks
 from redundancies import remove_redundant_jumps, move_1, move_2, move_3, \
         move_4, load, shift, add
 from advanced import eliminate_common_subexpressions, fold_constants, \
-        copy_propagation, algebraic_transformations
+        copy_propagation, algebraic_transformations, eliminate_dead_code
 
 
 def remove_redundancies(block):
@@ -32,7 +32,8 @@ def optimize_block(block):
             | eliminate_common_subexpressions(block) \
             | fold_constants(block) \
             | copy_propagation(block)\
-            | algebraic_transformations(block):
+            | algebraic_transformations(block) \
+            | eliminate_dead_code(block):
         pass
 
 
@@ -63,6 +64,6 @@ def optimize(statements, verbose=0):
         print 'After global optimization:       %d' % g
         print 'After basic blocks optimization: %d' % b
         print 'Optimization:                    %d (%d%%)' \
-                % (b - o, int((b - o) / float(o) * 100))
+                % (o - b, int((o - b) / float(b) * 100))
 
     return opt_blocks

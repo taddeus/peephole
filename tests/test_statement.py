@@ -90,6 +90,6 @@ class TestStatement(unittest.TestCase):
         self.assertFalse(S('label', 'lw').is_load())
 
     def test_is_arith(self):
-        self.assertTrue(S('command', 'add', '$1', '$2', '$3').is_arith())
+        self.assertTrue(S('command', 'addu', '$1', '$2', '$3').is_arith())
         self.assertFalse(S('command', 'foo').is_arith())
-        self.assertFalse(S('label', 'add').is_arith())
+        self.assertFalse(S('label', 'addu').is_arith())

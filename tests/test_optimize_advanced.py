@@ -19,9 +19,9 @@ class TestOptimizeAdvanced(unittest.TestCase):
     def test_eliminate_common_subexpressions_simple(self):
         b = B([S('command', 'addu', '$regC', '$regA', '$regB'),
                S('command', 'addu', '$regD', '$regA', '$regB')])
-        e = [S('command', 'addu', '$t0', '$regA', '$regB'), \
-             S('command', 'move', '$regC', '$t0'), \
-             S('command', 'move', '$regD', '$t0')]
+        e = [S('command', 'addu', '$8', '$regA', '$regB'), \
+             S('command', 'move', '$regC', '$8'), \
+             S('command', 'move', '$regD', '$8')]
         eliminate_common_subexpressions(b)
         self.assertEqual(b.statements, e)
 
@@ -48,6 +48,20 @@ class TestOptimizeAdvanced(unittest.TestCase):
                    S('command', 'move', '$1', '$2'),
                    self.foo,
                    S('command', 'addu', '$3', '$2', '$4'),
+                   self.bar])
+                   
+    def test_copy_propagation_other_arg(self):
+        block = B([self.foo,
+                   S('command', 'move', '$1', '$2'),
+                   self.foo,
+                   S('command', 'addu', '$3', '$4', '$1'),
+                   self.bar])
+
+        self.assertTrue(copy_propagation(block))
+        self.assertEqual(block.statements, [self.foo,
+                   S('command', 'move', '$1', '$2'),
+                   self.foo,
+                   S('command', 'addu', '$3', '$4', '$2'),
                    self.bar])
 
     def test_copy_propagation_overwrite(self):
@@ -125,7 +139,8 @@ class TestOptimizeAdvanced(unittest.TestCase):
 
     def test_algebraic_transforms_mult0(self):
         block = B([self.foo,
-                   S('command', 'mult', '$1', '$2', 0),
+                   S('command', 'mult', '$2', 0),
+                   S('command', 'mflo', '$1'),
                    self.bar])
 
         self.assertTrue(algebraic_transformations(block))
@@ -135,7 +150,8 @@ class TestOptimizeAdvanced(unittest.TestCase):
 
     def test_algebraic_transforms_mult1(self):
         block = B([self.foo,
-                   S('command', 'mult', '$1', '$2', 1),
+                   S('command', 'mult', '$2', 1),
+                   S('command', 'mflo', '$1'),
                    self.bar])
 
         self.assertTrue(algebraic_transformations(block))
@@ -145,7 +161,8 @@ class TestOptimizeAdvanced(unittest.TestCase):
 
     def test_algebraic_transforms_mult2(self):
         block = B([self.foo,
-                   S('command', 'mult', '$1', '$2', 2),
+                   S('command', 'mult', '$2', 2),
+                   S('command', 'mflo', '$1'),
                    self.bar])
 
         self.assertTrue(algebraic_transformations(block))
@@ -155,7 +172,8 @@ class TestOptimizeAdvanced(unittest.TestCase):
 
     def test_algebraic_transforms_mult16(self):
         block = B([self.foo,
-                   S('command', 'mult', '$1', '$2', 16),
+                   S('command', 'mult', '$2', 16),
+                   S('command', 'mflo', '$1'),
                    self.bar])
 
         self.assertTrue(algebraic_transformations(block))
@@ -165,7 +183,8 @@ class TestOptimizeAdvanced(unittest.TestCase):
 
     def test_algebraic_transforms_mult3(self):
         arguments = [self.foo,
-                     S('command', 'mult', '$1', '$2', 3),
+                     S('command', 'mult', '$2', 3),
+                     S('command', 'mflo', '$1'),
                      self.bar]
         block = B(arguments)
 

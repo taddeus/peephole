@@ -1,4 +1,4 @@
-#from copy import copy
+from copy import copy
 
 from statement import Block
 
@@ -25,40 +25,85 @@ class BasicBlock(Block):
         if block not in self.dominates:
             self.dominates.append(block)
             block.dominated_by.append(self)
-            
-    
-#    def get_gen(self):
-#        for s in self.statements:       
-#            if s.is_arith():
-#                self.gen_set.add(s[0])
-#                print 'added: ', s[0]
-#        
-#        return self.gen_set
-#        
-#    def get_kill(self):
-##        if self.edges_from != []:
-#    
-#        for backw in self.edges_from:
-#            self.kill_set = self.gen_set & backw.kill_set
-#            
-#        self.kill_set = self.kill_set - self.get_gen()
-#        print 'get_kill_set', self.kill_set
-#        return self.kill_set
 
-#    def get_in(self):
-#        for backw in self.edges_from:
-#            self.in_set = self.in_set | backw.out_set
-#        print 'in_set', self.in_set
-#        return self.in_set
+    def create_gen_kill(self, defs):
+        used = set()
+        self_defs = {}
 
-#    def get_out(self):
-#        print 'gen_set', self.gen_set
-#        print 'get_in', self.get_in()
-#        print 'get_kill', self.get_kill()
-#        self.out_set = self.gen_set | (self.get_in() - self.get_kill())
-        
+        # Get the last of each definition series and put in in the `def' set
+        self.gen_set = set()
 
-    
+        for s in reversed(self):
+            for reg in s.get_def():
+                if reg not in self_defs:
+                    print 'Found def:', s
+                    self_defs[reg] = s.sid
+                    self.gen_set.add(s.sid)
+
+        # Generate kill set
+        self.kill_set = set()
+
+        for reg, statement_ids in defs.iteritems():
+            if reg in self_defs:
+                add = statement_ids - set([self_defs[reg]])
+            else:
+                add = statement_ids
+
+            self.kill_set |= add
+
+
+def defs(blocks):
+    # Collect definitions of all registers
+    defs = {}
+
+    for b in blocks:
+        for s in b:
+            for reg in s.get_def():
+                if reg not in defs:
+                    defs[reg] = set([s.sid])
+                else:
+                    defs[reg].add(s.sid)
+
+    return defs
+
+
+def reaching_definitions(blocks):
+    """Generate the `in' and `out' sets of the given blocks using the iterative
+    algorithm from the slides."""
+    defs = defs(blocks)
+
+    for b in blocks:
+        b.create_gen_kill(defs)
+        b.out_set = b.gen_set
+
+    change = True
+
+    while change:
+        change = False
+
+        for b in blocks:
+            b.in_set = set()
+
+            for pred in b.edges_from:
+                b.in_set |= pred.out_set
+
+            oldout = copy(p.out_set)
+            p.out_set = b.gen_set | (b.in_set - b.kill_set)
+
+            if b.out_set != oldout:
+                change = True
+
+
+def pred(n, known=[]):
+    """Recursively find all predecessors of a node."""
+    direct = filter(lambda b: b not in known, n.edges_from)
+    p = copy(direct)
+
+    for ancestor in direct:
+        p += pred(ancestor, direct)
+
+    return p
+
 
 def find_leaders(statements):
     """Determine the leaders, which are:
