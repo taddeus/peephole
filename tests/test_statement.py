@@ -95,8 +95,23 @@ class TestStatement(unittest.TestCase):
         self.assertFalse(S('label', 'addu').is_arith())
         
     def test_get_def(self):
-#        print S('command', 'addu', '$1', '$2', '$3').get_def()
-        #self.assertEqual(S('command', 'addu', '$1', '$2', '$3'), '$1')
+        self.assertEqual(S('command', 'move', '$1', '$2').get_def(), ['$1'])
+        self.assertEqual(S('command', 'subu', '$1', '$2').get_def(), ['$1'])
+        self.assertEqual(S('command', 'addu','$1','$2','$3').get_def(), ['$1'])
+        self.assertEqual(S('command', 'sll','$1','$2','$3').get_def(), ['$1'])
+        self.assertEqual(S('command', 'srl','$1','$2','$3').get_def(), ['$1'])
+        self.assertEqual(S('command', 'la', '$1','16($fp)').get_def(), ['$1'])
+        self.assertEqual(S('command', 'li', '$1','16($fp)').get_def(), ['$1'])
+        self.assertEqual(S('command','add.d', '$1','$2','$3').get_def(),['$1'])
+        self.assertEqual(S('command','neg.d', '$1','$2').get_def(),['$1'])
+        self.assertEqual(S('command','sub.d','$1','$2', '$3').get_def(),['$1'])
+        self.assertEqual(S('command','slt', '$1','$2').get_def(),['$1'])
+        self.assertEqual(S('command','xori', '$1','$2', '0x0000').get_def(), \
+                                                                     ['$1']) 
+        self.assertEqual(S('command','mov.d', '$1','$2').get_def(), ['$1'])
+        self.assertEqual(S('command','dmfc1', '$1','$f0').get_def(), ['$1'])
+        
+        
         
         
         
