@@ -111,8 +111,8 @@ class Statement:
         """Check if the statement is a logical operator."""
         return self.is_command() and re.match('^(xor|or|and)i?$', self.name)
     
-    def is_double_aritmethic(self):
-        """Check if the statement is a aritmethic .d operator."""
+    def is_double_arithmetic(self):
+        """Check if the statement is a arithmetic .d operator."""
         return self.is_command() and \
                 re.match('^(add|sub|div|mul)\.d$', self.name)
                 
@@ -153,7 +153,7 @@ class Statement:
         instr = ['move', 'addu', 'subu', 'li', 'mtc1', 'dmfc1', 'mov.d']
         
         if self.is_load_non_immediate() or self.is_arith() \
-                or self.is_logical() or self.is_double_aritmethic() \
+                or self.is_logical() or self.is_double_arithmetic() \
                 or self.is_move_from_spec() or self.is_double_unary() \
                 or self.is_set_if_less() or self.is_convert() \
                 or self.is_truncate() or self.is_load() \
