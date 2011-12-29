@@ -43,7 +43,7 @@ class TestOptimize(unittest.TestCase):
     def test_optimize_block_movinst_false(self):
         statements = [self.foo, \
                       S('command', 'move', '$regA', '$regB'), \
-                      S('command', 'addu', '$regA', '$regC', 2), \
+                      S('command', 'addu', '$regD', '$regC', 2), \
                       self.bar]
 
         block = B(statements)
