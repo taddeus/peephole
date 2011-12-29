@@ -40,7 +40,7 @@ def eliminate_common_subexpressions(block):
                             y = u
 
     The algorithm used is as follows:
-    - Traverse through the statements in reverse order.
+    - Traverse through the statements.
     - If the statement can be possibly be eliminated, walk further collecting
       all other occurrences of the expression until one of the arguments is
       assigned in a statement, or the start of the block has been reached.
@@ -290,5 +290,42 @@ def algebraic_transformations(block):
                                     int(shift_amount))
                     block.replace(2, [new_command])
                     changed = True
+
+    return changed
+
+
+def eliminate_dead_code(block):
+    """
+    Dead code elimination:
+    TODO: example...
+
+    The algorithm used is as follows:
+    - Traverse through the statements in reverse order.
+    - If the statement definition is dead, remove it. A variable is dead if it
+      is not used in the rest of the block, and is not in the `out' set of the
+      block.
+    """
+    # TODO: Finish
+    changed = False
+
+    block.reverse_statements()
+    unused = set()
+
+    while not block.end():
+        s = block.read()
+
+        for reg in s.get_def():
+            if reg in unused:
+                # Statement is redefined later, so this statement is useless
+                s.remove = True
+                #print 'reg %s is in %s, remove:' % (reg, unused), \
+                #        block.pointer - 1, s
+            else:
+                unused.add(reg)
+
+        unused -= set(s.get_use())
+
+    block.apply_filter(lambda s: not hasattr(s, 'remove'))
+    block.reverse_statements()
 
     return changed

@@ -71,8 +71,11 @@ class Statement:
     def is_arith(self):
         """Check if the statement is an arithmetic operation."""
         return self.is_command() \
-               and re.match('^s(ll|rl|ra)|(add|sub|mflo|abs|neg|slt|sqrt)' \
-                            + '(u|\.s|\.d)?$', self.name)
+               and re.match('^s(ll|rl|ra)'
+                            + '|(mfhi|mflo|abs|neg|and|[xn]?or)'
+                            + '|(add|sub|slt)u?'
+                            + '|(add|sub|mult|div|abs|neg|sqrt|c)\.[sd]$', \
+                            self.name)
 
     def is_monop(self):
         """Check if the statement is an unary operation."""
@@ -89,31 +92,42 @@ class Statement:
 
         return self[-1]
 
-    def defines(self, reg):
-        """Check if this statement defines the given register."""
+    def get_def(self):
         # TODO: Finish
-        return (self.is_load() or self.is_arith()) and self[0] == reg
+        if self.is_load() or self.is_arith():
+            return self[:1]
 
-    def uses(self, reg):
-        """Check if this statement uses the given register."""
-        # TODO: Finish
-        if self.is_arith():
-            return reg in self[1:]
+        return []
 
-        if self.is_command('move'):
-            return self[1] == reg
+    def get_use(self):
+        # TODO: Finish with ALL the available commands!
+        use = []
 
-        if self.is_command('lw', 'sb', 'sw', 'dsw'):
+        if self.is_binop():
+            use += self[1:]
+        elif self.is_command('move'):
+            use.append(self[1])
+        elif self.is_command('lw', 'sb', 'sw', 'dsw', 's.s', 's.d'):
             m = re.match('^\d+\(([^)]+)\)$', self[1])
 
             if m:
-                return m.group(1) == reg
+                use.append(m.group(1))
 
             # 'sw' also uses its first argument
             if self.name in ['sw', 'dsw']:
-                return self[0] == reg
+                use.append(self[0])
+        elif len(self) == 2:  # FIXME: temporary fix, manually add all commands
+            use.append(self[1])
 
-        return False
+        return use
+
+    def defines(self, reg):
+        """Check if this statement defines the given register."""
+        return reg in self.get_def()
+
+    def uses(self, reg):
+        """Check if this statement uses the given register."""
+        return reg in self.get_use()
 
 
 class Block:
