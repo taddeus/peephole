@@ -2,11 +2,17 @@ import re
 
 
 class Statement:
+    sid = 1
+
     def __init__(self, stype, name, *args, **kwargs):
         self.stype = stype
         self.name = name
         self.args = list(args)
         self.options = kwargs
+
+        # Assign a unique ID to each satement
+        self.sid = Statement.sid
+        Statement.sid += 1
 
     def __getitem__(self, n):
         """Get an argument."""
@@ -26,8 +32,8 @@ class Statement:
         return len(self.args)
 
     def __str__(self):  # pragma: nocover
-        return '<Statement type=%s name=%s args=%s>' \
-                % (self.stype, self.name, self.args)
+        return '<Statement sid=%d type=%s name=%s args=%s>' \
+                % (self.sid, self.stype, self.name, self.args)
 
     def __repr__(self):  # pragma: nocover
         return str(self)
@@ -66,7 +72,8 @@ class Statement:
 
     def is_load(self):
         """Check if the statement is a load instruction."""
-        return self.is_command() and self.name in ['lw', 'dlw', 'l.s', 'l.d']
+        return self.is_command() and self.name in ['lw', 'li', 'dlw', 'l.s', \
+                                                   'l.d']
 
     def is_arith(self):
         """Check if the statement is an arithmetic operation."""
