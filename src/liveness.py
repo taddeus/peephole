@@ -29,13 +29,14 @@ def create_use_def(block):
 
 def succ(block, known=[]):
     """Recursively find all successors of a node."""
-    direct = filter(lambda b: b not in known, block.edges_to)
-    p = copy(direct)
+    direct = filter(lambda b: b != block and b not in known, block.edges_to)
+    s = copy(direct)
 
     for successor in direct:
-        p += succ(successor, direct)
+        s += succ(successor, known + direct)
+        return s
 
-    return p
+    return s
 
 
 def create_in_out(blocks):
