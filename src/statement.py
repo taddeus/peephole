@@ -82,8 +82,8 @@ class Statement:
 
     def is_store(self):
         """Check if the statement is a store instruction."""
-        return self.is_command() and self.name in ['sw', 's.d', 'dsw', 's.s', \
-                                                   's.b']
+        return self.is_command() and self.name in ['sw', 'sb', 's.d', 'dsw', \
+                                                   's.s', 's.b']
 
     def is_arith(self):
         """Check if the statement is an arithmetic operation."""
@@ -186,7 +186,7 @@ class Statement:
                 or self.is_double_arithmetic() or self.is_double_unary() \
                 or self.is_logical() or self.is_convert() \
                 or self.is_truncate() or self.is_set_if_less() \
-                or self.is_command(*instr):
+                or self.is_compare() or self.is_command(*instr):
             use.append(self[1])
         # Case arg1 relative adressing
         if self.is_load_non_immediate() or self.is_store():
@@ -198,7 +198,7 @@ class Statement:
                 use.append(self[1])
         # Case arg2
         if self.is_double_arithmetic() or self.is_set_if_less() \
-                or self.is_logical() \
+                or self.is_logical() or self.is_truncate() \
                 or self.is_command(*['addu', 'subu']):
             if not isinstance(self[2], int):
                     use.append(self[2])
