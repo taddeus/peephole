@@ -94,8 +94,9 @@ class TestStatement(unittest.TestCase):
         self.assertFalse(S('command', 'foo').is_arith())
         self.assertFalse(S('label', 'addu').is_arith())
         
-#    def test_get_def(self):
-#        self.assertEqual(S('command', 'addu', '$1', '$2', '$3'), '$1')
-#        
+    def test_get_def(self):
+#        print S('command', 'addu', '$1', '$2', '$3').get_def()
+        #self.assertEqual(S('command', 'addu', '$1', '$2', '$3'), '$1')
+        
         
         
