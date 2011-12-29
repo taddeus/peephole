@@ -118,7 +118,21 @@ primary concern, this is not a big problem.
 
 \subsubsection*{Constant folding}
 
+Another optimization is to do constant folding. Constant folding is replacing
+a expensive step like addition with a more simple step like loading a constant.
+Of course, this is not always possible. It is possible in cases where you apply
+an operation on two constants, or a constant and a variable of which you know
+for sure that it always has a certain value at that point. For example:
+\begin{verbatim}
+li   $regA, 1               li $regA, 1
+addu $regB, $regA, 2    ->  li $regB, 3
+\end{verbatim}
+Of course, if \texttt{\$regA} is not used after this, it can be removed, which
+will be done by the dead code elimination.
 
+One problem we encountered with this is that the use of a \texttt{li} is that
+the program often also stores this in the memory, so we had to check whether
+this was necessary here as well.
 
 \subsubsection*{Copy propagation}
 
@@ -145,12 +159,11 @@ of the move operation.
 
 An example would be the following:
 \begin{verbatim}
-move $regA, $regB           move $regA, $regB
-...                         ...
-Code not writing $regA, ->  ...
-$regB                       ...
-...                         ...
-addu $regC, $regA, ...      addu $regC, $regB, ...
+move $regA, $regB                   move $regA, $regB
+...                                 ...
+Code not writing $regA, $regB   ->  ...
+...                                 ...
+addu $regC, $regA, ...              addu $regC, $regB, ...
 \end{verbatim}
 This code shows that \texttt{\$regA} is replaced with \texttt{\$regB}. This
 way, the move instruction might have become useless, and it will then be
