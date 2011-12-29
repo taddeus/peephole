@@ -159,7 +159,7 @@ class Statement:
                 or self.is_set_if_less() or self.is_convert() \
                 or self.is_truncate() or self.is_load() \
                 or self.is_command(*instr):
-            return [self[0]]
+            return self[:1]
 
         return []
 
@@ -170,11 +170,13 @@ class Statement:
         use = []
 
         # Case arg0
-        if self.is_branch() or self.is_store() or self.is_compare()\
+        if self.is_branch() or self.is_store() or self.is_compare() \
                 or self.is_command(*['mult', 'div', 'dsz']):
             if self.name == 'dsz':
                 m = re.match('^\d+\(([^)]+)\)$', self[0])
-                use.append(m)
+
+                if m:
+                    use.append(m.group(1))
             else:
                 use.append(self[0])
         # Case arg1 direct adressing
@@ -187,8 +189,9 @@ class Statement:
         # Case arg1 relative adressing
         if self.is_load_non_immediate() or self.is_store():
             m = re.match('^\d+\(([^)]+)\)$', self[1])
+
             if m:
-                use.append(m)
+                use.append(m.group(1))
             else:
                 use.append(self[1])
         # Case arg2
