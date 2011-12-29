@@ -229,6 +229,7 @@ def copy_propagation(block):
             # One of the registers gets overwritten, so remove the data from
             # the list.
             i = 0
+
             while i  < len(moves_to):
                 if moves_to[i] == s[0] or moves_to[i] == s[1]:
                     del moves_to[i]
@@ -270,10 +271,11 @@ def algebraic_transformations(block):
             block.replace(1, [S('command', 'move', s[0], s[1])])
             changed = True
         elif s.is_command('mult'):
-            next = block.peek()
-            if next.is_command('mflo'):
+            mflo = block.peek()
+
+            if mflo.is_command('mflo'):
                 if s[1] == 1:
-                    block.replace(2, [S('command', 'move', next[0], s[0])])
+                    block.replace(2, [S('command', 'move', mflo[0], s[0])])
                     changed = True
                     continue
                 elif s[1] == 0:
@@ -284,7 +286,7 @@ def algebraic_transformations(block):
                 shift_amount = log(s[1], 2)
                 if shift_amount.is_integer():
                     new_command = S('command', 'sll', \
-                                    next[0], s[0], \
+                                    mflo[0], s[0], \
                                     int(shift_amount))
                     block.replace(2, [new_command])
                     changed = True
