@@ -1,4 +1,4 @@
-from src.dataflow import find_basic_blocks
+from src.dataflow import find_basic_blocks, generate_flow_graph
 import src.liveness as liveness
 import src.reaching_definitions as reaching_definitions
 
@@ -51,6 +51,7 @@ def optimize(statements, verbose=0):
     blocks = find_basic_blocks(statements)
 
     # Perform dataflow analysis
+    generate_flow_graph(blocks)
     liveness.create_in_out(blocks)
     reaching_definitions.create_in_out(blocks)
 

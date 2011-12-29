@@ -271,7 +271,7 @@ def copy_propagation(block):
             # the list.
             i = 0
 
-            while i  < len(moves_to):
+            while i < len(moves_to):
                 if moves_to[i] == s[0] or moves_to[i] == s[1]:
                     del moves_to[i]
                     del moves_from[i]

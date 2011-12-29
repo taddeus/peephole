@@ -1,7 +1,8 @@
 import unittest
 
 from src.statement import Statement as S
-from src.dataflow import BasicBlock as B, find_basic_blocks
+from src.dataflow import BasicBlock as B, find_basic_blocks, \
+        generate_flow_graph
 from src.reaching_definitions import get_defs, create_gen_kill, create_in_out
 
 
@@ -35,8 +36,8 @@ class TestReachingDefinitions(unittest.TestCase):
 
         create_gen_kill(block, get_defs([block]))
 
-        self.assertEqual(block.reach_gen, set([s2.sid, s3.sid, s4.sid]))
-        self.assertEqual(block.reach_kill, set([s1.sid]))
+        self.assertEqual(block.gen_set, set([s2.sid, s3.sid, s4.sid]))
+        self.assertEqual(block.kill_set, set([s1.sid]))
 
     def test_create_in_out(self):
         s11 = S('command', 'li', 'a', 3)
@@ -57,15 +58,16 @@ class TestReachingDefinitions(unittest.TestCase):
         b1, b2, b3 = find_basic_blocks([s11, s12, s13, s14, s15, s21, s22, \
                                         s31, s32, s33, s34, s35])
 
+        generate_flow_graph([b1, b2, b3])
         create_in_out([b1, b2, b3])
 
-        self.assertEqual(b1.reach_gen, set([s11.sid, s12.sid, s13.sid,
+        self.assertEqual(b1.gen_set, set([s11.sid, s12.sid, s13.sid,
                                             s14.sid]))
-        self.assertEqual(b1.reach_kill, set([s22.sid]))
-        self.assertEqual(b2.reach_gen, set([s21.sid, s22.sid]))
-        self.assertEqual(b2.reach_kill, set([s13.sid, s32.sid]))
-        self.assertEqual(b3.reach_gen, set([s32.sid, s34.sid, s35.sid]))
-        self.assertEqual(b3.reach_kill, set([s21.sid]))
+        self.assertEqual(b1.kill_set, set([s22.sid]))
+        self.assertEqual(b2.gen_set, set([s21.sid, s22.sid]))
+        self.assertEqual(b2.kill_set, set([s13.sid, s32.sid]))
+        self.assertEqual(b3.gen_set, set([s32.sid, s34.sid, s35.sid]))
+        self.assertEqual(b3.kill_set, set([s21.sid]))
 
         self.assertEqual(b1.reach_in, set())
         self.assertEqual(b1.reach_out, set([s11.sid, s12.sid, s13.sid,

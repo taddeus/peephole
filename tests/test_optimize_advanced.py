@@ -3,7 +3,8 @@ from copy import copy
 
 from src.optimize.advanced import eliminate_common_subexpressions, \
         fold_constants, copy_propagation, algebraic_transformations
-from src.statement import Statement as S, Block as B
+from src.statement import Statement as S
+from src.dataflow import BasicBlock as B, generate_flow_graph
 import src.liveness as liveness
 
 
