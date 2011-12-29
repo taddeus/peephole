@@ -245,7 +245,7 @@ class Block:
 
     def end(self):
         """Check if the pointer is at the end of the statement list."""
-        return self.pointer == len(self)
+        return self.pointer >= len(self)
 
     def peek(self, count=1):
         """Read the statements until an offset from the current pointer
