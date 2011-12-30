@@ -38,11 +38,14 @@ class Statement:
     def __repr__(self):  # pragma: nocover
         return str(self)
 
+    def set_inline_comment(self, comment):
+        self.options['comment'] = comment
+
+    def has_inline_comment(self):
+        return 'comment' in self.options and len(self.options['comment'])
+
     def is_comment(self):
         return self.stype == 'comment'
-
-    def is_inline_comment(self):
-        return self.is_comment() and self.options['inline']
 
     def is_directive(self):
         return self.stype == 'directive'
@@ -57,13 +60,13 @@ class Statement:
     def is_jump(self):
         """Check if the statement is a jump."""
         return self.is_command() \
-               and re.match('^j|jal|beq|bne|blez|bgtz|bltz|bgez|bct|bcf$', \
+               and re.match('^j|jal|beq|bne|blez|bgtz|bltz|bgez|bc1t|bc1f$', \
                             self.name)
 
     def is_branch(self):
         """Check if the statement is a branch."""
         return self.is_command() \
-               and re.match('^beq|bne|blez|bgtz|bltz|bgez|bct|bcf$', \
+               and re.match('^beq|bne|blez|bgtz|bltz|bgez|bct|bcf|bc1f|bc1t$',\
                             self.name)
 
     def is_branch_zero(self):
@@ -82,8 +85,8 @@ class Statement:
 
     def is_store(self):
         """Check if the statement is a store instruction."""
-        return self.is_command() and self.name in ['sw', 's.d', 'dsw', 's.s', \
-                                                   's.b']
+        return self.is_command() and self.name in ['sw', 'sb', 's.d', 'dsw', \
+                                                   's.s', 's.b']
 
     def is_arith(self):
         """Check if the statement is an arithmetic operation."""
@@ -107,6 +110,7 @@ class Statement:
         return self.is_command() \
                and re.match('^l(w|a|b|bu|\.d|\.s)|dlw$', \
                             self.name)
+
     def is_logical(self):
         """Check if the statement is a logical operator."""
         return self.is_command() and re.match('^(xor|or|and)i?$', self.name)
@@ -150,51 +154,60 @@ class Statement:
 
     def get_def(self):
         """Get the variable that this statement defines, if any."""
-        instr = ['move', 'addu', 'subu', 'li', 'mtc1', 'dmfc1', 'mov.d']
+        instr = ['move', 'addu', 'subu', 'li', 'dmfc1', 'mov.d']
 
+        if self.is_command('mtc1'):
+            return [self[1]]
         if self.is_load_non_immediate() or self.is_arith() \
                 or self.is_logical() or self.is_double_arithmetic() \
                 or self.is_move_from_spec() or self.is_double_unary() \
                 or self.is_set_if_less() or self.is_convert() \
                 or self.is_truncate() or self.is_load() \
                 or self.is_command(*instr):
-            return [self[0]]
+            return self[:1]
 
         return []
 
     def get_use(self):
         """Get the variables that this statement uses, if any."""
-        instr = ['addu', 'subu', 'mult', 'div', 'move', 'mtc1', 'mov.d', \
+        instr = ['addu', 'subu', 'mult', 'div', 'move', 'mov.d', \
             'dmfc1']
         use = []
 
         # Case arg0
-        if self.is_branch() or self.is_store() or self.is_compare()\
-                or self.is_command(*['mult', 'div', 'dsz']):
+        if (self.is_branch() \
+                and not self.is_command(*['bc1f', 'bc1t', 'bct', 'bcf'])) \
+                or self.is_store() or self.is_compare() \
+                or self.is_command(*['mult', 'div', 'dsz', 'mtc1']):
             if self.name == 'dsz':
-                m = re.match('^\d+\(([^)]+)\)$', self[0])
-                use.append(m)
+                m = re.match('^[^(]+\(([^)]+)\)$', self[0])
+
+                if m:
+                    use.append(m.group(1))
             else:
                 use.append(self[0])
         # Case arg1 direct adressing
-        if (self.is_branch() and not self.is_branch_zero()) or self.is_shift()\
+        if (self.is_branch() and not self.is_branch_zero() \
+                and not self.is_command(*['bc1f', 'bc1t', 'bct', 'bcf'])) \
+                or self.is_shift() \
                 or self.is_double_arithmetic() or self.is_double_unary() \
                 or self.is_logical() or self.is_convert() \
                 or self.is_truncate() or self.is_set_if_less() \
-                or self.is_command(*instr):
+                or self.is_compare() or self.is_command(*instr):
             use.append(self[1])
         # Case arg1 relative adressing
         if self.is_load_non_immediate() or self.is_store():
-            m = re.match('^\d+\(([^)]+)\)$', self[1])
+            m = re.match('^[^(]+\(([^)]+)\)$', self[1])
+
             if m:
-                use.append(m)
+                use.append(m.group(1))
             else:
                 use.append(self[1])
         # Case arg2
         if self.is_double_arithmetic() or self.is_set_if_less() \
-                or self.is_logical() \
+                or self.is_logical() or self.is_truncate() \
                 or self.is_command(*['addu', 'subu']):
-            if not isinstance(self[2] , int):
+            if not isinstance(self[2], int):
                     use.append(self[2])
 
         return use
@@ -211,13 +224,15 @@ class Statement:
 class Block:
     bid = 1
 
-    def __init__(self, statements=[]):
+    def __init__(self, statements=[], debug=False):
         self.statements = statements
         self.pointer = 0
 
         # Assign a unique ID to each block for printing purposes
         self.bid = Block.bid
         Block.bid += 1
+
+        self.debug = debug
 
     def __str__(self):
         return '<Block bid=%d statements=%d>' % (self.bid, len(self))
@@ -244,7 +259,7 @@ class Block:
 
     def end(self):
         """Check if the pointer is at the end of the statement list."""
-        return self.pointer == len(self)
+        return self.pointer >= len(self)
 
     def peek(self, count=1):
         """Read the statements until an offset from the current pointer
@@ -255,7 +270,7 @@ class Block:
         return self.statements[self.pointer] if count == 1 \
                else self.statements[self.pointer:self.pointer + count]
 
-    def replace(self, count, replacement, start=None):
+    def replace(self, count, replacement, start=None, message=''):
         """Replace the given range start-(start + count) with the given
         statement list, and move the pointer to the first statement after the
         replacement."""
@@ -265,14 +280,34 @@ class Block:
         if start == None:
             start = self.pointer - 1
 
+        # Add a message in inline comments
+        if self.debug:
+            if len(message):
+                message = ' ' + message
+
+                if len(replacement):
+                    replacement[0].set_inline_comment(message)
+
+                    for s in replacement[1:]:
+                        s.set_inline_comment('|')
+                else:
+                    replacement = [Statement('comment', message)]
+            elif not len(replacement):
+                # Statement is removed, comment it
+                replacement = [Statement('comment', str(b)) \
+                               for b in self.statements[start:start + count]]
+
         before = self.statements[:start]
         after = self.statements[start + count:]
         self.statements = before + replacement + after
         self.pointer = start + len(replacement)
 
-    def insert(self, statement, index=None):
+    def insert(self, statement, index=None, message=''):
         if index == None:
             index = self.pointer
+
+        if self.debug and len(message):
+            statement.set_inline_comment(' ' + message)
 
         self.statements.insert(index, statement)
 
@@ -284,4 +319,8 @@ class Block:
     def reverse_statements(self):
         """Reverse the statement list and reset the pointer."""
         self.statements = self.statements[::-1]
+        self.reset()
+
+    def reset(self):
+        """Reset the internal pointer."""
         self.pointer = 0

@@ -36,9 +36,10 @@ class TestStatement(unittest.TestCase):
         self.assertFalse(S('comment', 'foo', inline=False).is_label())
         self.assertFalse(S('directive', 'foo').is_command())
 
-    def test_is_inline_comment(self):
-        self.assertTrue(S('comment', 'foo', inline=True).is_inline_comment())
-        self.assertFalse(S('comment', 'foo', inline=False).is_inline_comment())
+    def test_has_inline_comment(self):
+        self.assertTrue(S('comment', 'foo', comment='a').has_inline_comment())
+        self.assertFalse(S('comment', 'foo', comment='').has_inline_comment())
+        self.assertFalse(S('comment', 'foo').has_inline_comment())
 
     def test_jump_target(self):
         self.assertEqual(S('command', 'j', 'foo').jump_target(), 'foo')
@@ -93,20 +94,76 @@ class TestStatement(unittest.TestCase):
         self.assertTrue(S('command', 'addu', '$1', '$2', '$3').is_arith())
         self.assertFalse(S('command', 'foo').is_arith())
         self.assertFalse(S('label', 'addu').is_arith())
-        
-    def test_get_def(self):
-        self.assertEqual(S('command', 'move', '$1', '$2').get_def(), ['$1'])
-        self.assertEqual(S('command', 'subu', '$1', '$2').get_def(), ['$1'])
-        self.assertEqual(S('command', 'addu','$1','$2','$3').get_def(), ['$1'])
-        self.assertEqual(S('command', 'sll','$1','$2','$3').get_def(), ['$1'])
-        self.assertEqual(S('command', 'srl','$1','$2','$3').get_def(), ['$1'])
-        self.assertEqual(S('command', 'la', '$1','16($fp)').get_def(), ['$1'])
-        self.assertEqual(S('command', 'li', '$1','16($fp)').get_def(), ['$1'])
-        self.assertEqual(S('command','add.d', '$1','$2','$3').get_def(),['$1'])
-        self.assertEqual(S('command','neg.d', '$1','$2').get_def(),['$1'])
-        self.assertEqual(S('command','sub.d','$1','$2', '$3').get_def(),['$1'])
-        self.assertEqual(S('command','slt', '$1','$2').get_def(),['$1'])
-        self.assertEqual(S('command','xori', '$1','$2', '0x0000').get_def(), \
-                                                                     ['$1']) 
-        self.assertEqual(S('command','mov.d', '$1','$2').get_def(), ['$1'])
-        self.assertEqual(S('command','dmfc1', '$1','$f0').get_def(), ['$1'])
+
+    def test_get_def_true(self):
+        a = ['a']
+
+        self.assertEqual(S('command', 'move', 'a', 'b').get_def(), a)
+        self.assertEqual(S('command', 'subu', 'a', 'b').get_def(), a)
+        self.assertEqual(S('command', 'addu', 'a', 'b', 'c').get_def(), a)
+        self.assertEqual(S('command', 'sll', 'a', 'b', 'c').get_def(), a)
+        self.assertEqual(S('command', 'srl', 'a', 'b', 'c').get_def(), a)
+        self.assertEqual(S('command', 'la', 'a', '16($fp)').get_def(), a)
+        self.assertEqual(S('command', 'li', 'a', '16($fp)').get_def(), a)
+        self.assertEqual(S('command', 'lw', 'a', 'b').get_def(), a)
+        self.assertEqual(S('command', 'l.d', 'a', 'b').get_def(), a)
+        self.assertEqual(S('command', 'add.d', 'a', 'b', 'c').get_def(), a)
+        self.assertEqual(S('command', 'neg.d', 'a', 'b').get_def(), a)
+        self.assertEqual(S('command', 'sub.d', 'a', 'b', 'c').get_def(), a)
+        self.assertEqual(S('command', 'slt', 'a', 'b').get_def(), a)
+        self.assertEqual(S('command', 'xori', 'a', 'b', '0x0000').get_def(), a)
+        self.assertEqual(S('command', 'mov.d', 'a', 'b').get_def(), a)
+        self.assertEqual(S('command', 'dmfc1', 'a', '$f0').get_def(), a)
+        self.assertEqual(S('command', 'mtc1', 'b', 'a').get_def(), a)
+        self.assertEqual(S('command', 'trunc.w.d', 'a', 'b', 'c').get_def(), a)
+
+    def test_get_def_false(self):
+        self.assertEqual(S('command', 'bne', 'a', 'b', 'L1').get_def(), [])
+        self.assertEqual(S('command', 'beq', 'a', 'b', 'L1').get_def(), [])
+
+    def test_get_use_true(self):
+        arg1 = ['$1']
+        arg2 = ['$1', '$2']
+
+        self.assertEqual(S('command', 'addu', '$3', '$1', '$2').get_use(), \
+                arg2)
+        self.assertEqual(S('command', 'subu', '$3', '$1', '$2').get_use(), \
+                arg2)
+        self.assertEqual(S('command', 'mult', '$1', '$2').get_use(), arg2)
+        self.assertEqual(S('command', 'div', '$1', '$2').get_use(), arg2)
+        self.assertEqual(S('command', 'move', '$2', '$1').get_use(), arg1)
+        self.assertEqual(S('command', 'beq', '$1', '$2', '$L1').get_use(), \
+                arg2)
+        self.assertEqual(S('command', 'bne', '$1', '$2', '$L1').get_use(), \
+                arg2)
+        self.assertEqual(S('command', 'sll', '$2', '$1', 2).get_use(), arg1)
+        self.assertEqual(S('command', 'lb', '$2', '10($1)').get_use(), arg1)
+        self.assertEqual(S('command', 'lw', '$2', '10($1)').get_use(), arg1)
+        self.assertEqual(S('command', 'la', '$2', '10($1)').get_use(), arg1)
+        self.assertEqual(S('command', 'lb', '$2', 'n.7').get_use(), ['n.7'])
+        self.assertEqual(S('command', 'lbu', '$2', '10($1)').get_use(), arg1)
+        self.assertEqual(S('command', 'l.d', '$2', '10($1)').get_use(), arg1)
+        self.assertEqual(S('command', 's.d', '$1', '10($2)').get_use(), \
+                arg2)
+        self.assertEqual(S('command', 's.s', '$1', '10($2)').get_use(), \
+                arg2)
+        self.assertEqual(S('command', 'sb', '$1', '10($2)').get_use(), \
+                arg2)
+        self.assertEqual(S('command', 'mtc1', '$1', '$2').get_use(), arg1)
+        self.assertEqual(S('command', 'add.d', '$3', '$1', '$2').get_use(), \
+                arg2)
+        self.assertEqual(S('command', 'sub.d', '$3', '$1', '$2').get_use(), \
+                arg2)
+        self.assertEqual(S('command', 'div.d', '$3', '$1', '$2').get_use(), \
+                arg2)
+        self.assertEqual(S('command', 'mul.d', '$3', '$1', '$2').get_use(), \
+                arg2)
+        self.assertEqual(S('command', 'neg.d', '$2', '$1').get_use(), arg1)
+        self.assertEqual(S('command', 'abs.d', '$2', '$1').get_use(), arg1)
+        self.assertEqual(S('command', 'dsz', '10($1)', '$2').get_use(), arg1)
+        self.assertEqual(S('command', 'dsw', '$1', '10($2)').get_use(), arg2)
+        self.assertEqual(S('command', 'c.lt.d', '$1', '$2').get_use(), arg2)
+        self.assertEqual(S('command', 'bgez', '$1', '$2').get_use(), arg1)
+        self.assertEqual(S('command', 'bltz', '$1', '$2').get_use(), arg1)
+        self.assertEqual(S('command', 'trunc.w.d', '$3', '$1', '$2').get_use(),
+                         arg2)

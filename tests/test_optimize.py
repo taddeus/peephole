@@ -1,8 +1,19 @@
 import unittest
 
 from src.optimize.redundancies import remove_redundant_jumps
-from src.optimize import optimize_block
+from src.program import Program
 from src.statement import Statement as S, Block as B
+
+
+def optimize_block(block):
+    """Optimize a basic block using a Program object."""
+    program = Program([])
+
+    program.blocks = [block]
+    del program.statements
+    program.optimize_blocks()
+
+    return program.blocks
 
 
 class TestOptimize(unittest.TestCase):

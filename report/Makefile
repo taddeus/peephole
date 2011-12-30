@@ -1,6 +1,6 @@
 RM=rm -rf
 
-all: report.pdf
+report: report.pdf
 
 %.pdf: %.tex
 	pdflatex $^
