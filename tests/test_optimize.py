@@ -1,6 +1,7 @@
 import unittest
 
-from src.optimize.redundancies import remove_redundancies, remove_redundant_jumps
+from src.optimize.redundancies import remove_redundancies, \
+    remove_redundant_jumps, remove_redundant_branch_jumps
 from src.program import Program
 from src.statement import Statement as S, Block as B
 
@@ -172,55 +173,7 @@ class TestOptimize(unittest.TestCase):
         self.assertEquals(block.statements, arguments)
         self.assertEquals(block2.statements, arguments2)
         self.assertEquals(block3.statements, arguments3)
-
-    def test_remove_redundant_jumps_beq_j_true(self):
-        block = B([self.foo,
-                   S('command', 'beq', '$regA', '$regB', '$Lx'),
-                   S('command', 'j', '$Ly'),
-                   S('label', '$Lx'),
-                   self.bar])
-        remove_redundant_jumps(block)
-
-        self.assertEquals(block.statements, [self.foo,
-                   S('command', 'bne', '$regA', '$regB', '$Ly'),
-                   S('label', '$Lx'),
-                   self.bar])
-
-    def test_remove_redundant_jumps_beq_j_false(self):
-        arguments = [self.foo, \
-                     S('command', 'beq', '$regA', '$regB', '$Lz'), \
-                     S('command', 'j', '$Ly'), \
-                     S('label', '$Lx'), \
-                     self.bar]
-        block = B(arguments)
-        remove_redundant_jumps(block)
-
-        self.assertEquals(block.statements, arguments)
-
-    def test_remove_redundant_jumps_bne_j_true(self):
-        block = B([self.foo,
-                   S('command', 'bne', '$regA', '$regB', '$Lx'),
-                   S('command', 'j', '$Ly'),
-                   S('label', '$Lx'),
-                   self.bar])
-        remove_redundant_jumps(block)
-
-        self.assertEquals(block.statements, [self.foo,
-                   S('command', 'beq', '$regA', '$regB', '$Ly'),
-                   S('label', '$Lx'),
-                   self.bar])
-
-    def test_remove_redundant_jumps_bne_j_false(self):
-        arguments = [self.foo, \
-                     S('command', 'bne', '$regA', '$regB', '$Lz'), \
-                     S('command', 'j', '$Ly'), \
-                     S('label', '$Lx'), \
-                     self.bar]
-        block = B(arguments)
-        remove_redundant_jumps(block)
-
-        self.assertEquals(block.statements, arguments)
-
+        
     def test_optimize_block_move_move_true(self):
         block = B([self.foo,
                    S('command', 'move', '$regA', '$regB'),
@@ -239,5 +192,76 @@ class TestOptimize(unittest.TestCase):
                      self.bar]
         block = B(arguments)
         remove_redundancies(block)
+
+        self.assertEquals(block.statements, arguments)
+        
+    def test_remove_redundant_jumps_true(self):
+        block = B([self.foo,
+                   S('command', 'j', '$L1'),
+                   S('label', '$L1'),
+                   self.bar])
+        
+        remove_redundant_jumps(block)
+       
+        self.assertEqual(block.statements, [self.foo, 
+                                             S('label', '$L1'),
+                                             self.bar])
+                                             
+    def test_remove_redundant_jumps_false(self):
+        arguments = [self.foo,
+                   S('command', 'j', '$L1'),
+                   S('label', '$L2'),
+                   self.bar]
+        block = B(arguments)
+                   
+        remove_redundant_jumps(block)
+       
+        self.assertEqual(block.statements, arguments)
+        
+    def test_remove_redundant_branch_jumps_beq_j_true(self):
+        block = B([self.foo,
+                   S('command', 'beq', '$regA', '$regB', '$Lx'),
+                   S('command', 'j', '$Ly'),
+                   S('label', '$Lx'),
+                   self.bar])
+        remove_redundant_branch_jumps(block)
+
+        self.assertEquals(block.statements, [self.foo,
+                   S('command', 'bne', '$regA', '$regB', '$Ly'),
+                   S('label', '$Lx'),
+                   self.bar])
+
+    def test_remove_redundant_branch_jumps_beq_j_false(self):
+        arguments = [self.foo, \
+                     S('command', 'beq', '$regA', '$regB', '$Lz'), \
+                     S('command', 'j', '$Ly'), \
+                     S('label', '$Lx'), \
+                     self.bar]
+        block = B(arguments)
+        remove_redundant_branch_jumps(block)
+
+        self.assertEquals(block.statements, arguments)
+
+    def test_remove_redundant_branch_jumps_bne_j_true(self):
+        block = B([self.foo,
+                   S('command', 'bne', '$regA', '$regB', '$Lx'),
+                   S('command', 'j', '$Ly'),
+                   S('label', '$Lx'),
+                   self.bar])
+        remove_redundant_branch_jumps(block)
+
+        self.assertEquals(block.statements, [self.foo,
+                   S('command', 'beq', '$regA', '$regB', '$Ly'),
+                   S('label', '$Lx'),
+                   self.bar])
+
+    def test_remove_redundant_branch_jumps_bne_j_false(self):
+        arguments = [self.foo, \
+                     S('command', 'bne', '$regA', '$regB', '$Lz'), \
+                     S('command', 'j', '$Ly'), \
+                     S('label', '$Lx'), \
+                     self.bar]
+        block = B(arguments)
+        remove_redundant_branch_jumps(block)
 
         self.assertEquals(block.statements, arguments)

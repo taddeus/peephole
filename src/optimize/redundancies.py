@@ -123,29 +123,46 @@ def add_lw(add, statements):
 
             return True
 
-
 def remove_redundant_jumps(statements):
+    """Remove jump if label follows immediately."""
+    changed = False
+        
+    statements.reset()
+    while not statements.end():
+        s = statements.read()
+
+        #     j $Lx     ->             $Lx:
+        # $Lx:
+        if s.is_command('j'):
+            following = statements.peek()
+            
+            if following.is_label(s[0]):
+                statements.replace(1, [])
+                changed = True
+                    
+    return True
+                        
+def remove_redundant_branch_jumps(statements):
     """Optimize statement sequences on a global level."""
-    old_len = -1
-
-    while old_len != len(statements):
-        old_len = len(statements)
-
-        while not statements.end():
-            s = statements.read()
-
-            #     beq/bne ..., $Lx      ->      bne/beq ..., $Ly
-            #     j $Ly                     $Lx:
-            # $Lx:
-            if s.is_command('beq', 'bne'):
-                following = statements.peek(2)
-
-                if len(following) == 2:
-                    j, label = following
-
-                    if j.is_command('j') and label.is_label(s[2]):
-                        s.name = 'bne' if s.is_command('beq') else 'beq'
-                        s[2] = j[0]
-                        statements.replace(3, [s, label])
+    changed = False
 
     statements.reset()
+    while not statements.end():
+        s = statements.read()
+
+        #     beq/bne ..., $Lx      ->      bne/beq ..., $Ly
+        #     j $Ly                     $Lx:
+        # $Lx:
+        if s.is_command('beq', 'bne'):
+            following = statements.peek(2)
+
+            if len(following) == 2:
+                j, label = following
+
+                if j.is_command('j') and label.is_label(s[2]):
+                    s.name = 'bne' if s.is_command('beq') else 'beq'
+                    s[2] = j[0]
+                    statements.replace(3, [s, label])
+                    changed = True
+                        
+    return changed

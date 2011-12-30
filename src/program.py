@@ -1,6 +1,7 @@
 from statement import Statement as S, Block
 from dataflow import find_basic_blocks, generate_flow_graph
-from optimize.redundancies import remove_redundant_jumps, remove_redundancies
+from optimize.redundancies import remove_redundant_jumps, remove_redundancies,\
+        remove_redundant_branch_jumps
 from optimize.advanced import eliminate_common_subexpressions, \
         fold_constants, copy_propagation, eliminate_dead_code
 from writer import write_statements
@@ -63,6 +64,7 @@ class Program(Block):
     def optimize_global(self):
         """Optimize on a global level."""
         remove_redundant_jumps(self)
+        remove_redundant_branch_jumps(self)
 
     def optimize_blocks(self):
         """Optimize on block level. Keep executing all optimizations until no
