@@ -53,13 +53,11 @@ def optimize_block(block):
         #print 'iteration'
         pass
 
-from copy import deepcopy
 def optimize(statements, verbose=0):
     """Optimization wrapper function, calls global and basic-block level
     optimization functions."""
     # Optimize on a global level
     # TODO: only count instructions (no directives)
-    statements = deepcopy(statements)
     o = len(statements)
     remove_redundant_jumps(statements)
     g = len(statements)
