@@ -1,1 +1,7 @@
 * Apart python script maken die de generator genereert dmv config file
+
+Gaat fout:
+
+li  $5,0x00008000  ->  l.d  $f0,32768($4)
+addu    $4,$4,$5
+l.d $f0,0($4)
