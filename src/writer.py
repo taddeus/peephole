@@ -54,9 +54,12 @@ def write_statements(statements):
             diff = start - len(line.expandtabs(TABSIZE))
 
             # The comment must not be directly adjacent to the command itself
-            tabs = int(ceil(diff / float(TABSIZE))) + 1 if diff > 0 else  1
+            if diff > 0:
+                tabs = '\t' * (int(ceil(diff / float(TABSIZE))) + 1)
+            else:
+                tabs = '  '
 
-            line += '\t' * tabs + '#' + s.options['comment']
+            line += tabs + '#' + s.options['comment']
 
         # Add newline at end of command
         line += '\n'
