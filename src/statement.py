@@ -118,7 +118,7 @@ class Statement:
     def is_double_arithmetic(self):
         """Check if the statement is a arithmetic .d operator."""
         return self.is_command() and \
-                re.match('^(add|sub|div|mul)\.d$', self.name)
+                re.match('^(add|sub|div|mul)\.[sd]$', self.name)
 
     def is_double_unary(self):
         """Check if the statement is a unary .d operator."""
@@ -172,7 +172,7 @@ class Statement:
     def get_use(self):
         """Get the variables that this statement uses, if any."""
         instr = ['addu', 'subu', 'mult', 'div', 'move', 'mov.d', \
-            'dmfc1']
+            'dmfc1', 'div.s']
         use = set()
 
         # Jump to register addres uses register
