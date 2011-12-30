@@ -9,13 +9,6 @@ import reaching_definitions
 
 
 class Program(Block):
-    def __init__(self, statements):
-        """Start with a given statement list."""
-        Block.__init__(self, statements)
-
-    def __iter__(self):
-        return iter(self.blocks)
-
     def __len__(self):
         """Get the number of statements in the program."""
         return len(self.statements) if hasattr(self, 'statements') \
