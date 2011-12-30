@@ -3,7 +3,7 @@ import re
 
 def remove_redundancies(block):
     """Execute all functions that remove redundant statements."""
-    callbacks = [move_aa, move_inst, instr_move_jal, move_move, sw_ld, shift, 
+    callbacks = [move_aa, move_inst, instr_move_jal, move_move, sw_ld, shift,
                  add_lw]
     old_len = -1
     changed = False
@@ -126,8 +126,9 @@ def add_lw(add, statements):
 def remove_redundant_jumps(statements):
     """Remove jump if label follows immediately."""
     changed = False
-        
+
     statements.reset()
+
     while not statements.end():
         s = statements.read()
 
@@ -135,18 +136,19 @@ def remove_redundant_jumps(statements):
         # $Lx:
         if s.is_command('j'):
             following = statements.peek()
-            
+
             if following.is_label(s[0]):
                 statements.replace(1, [])
                 changed = True
-                    
-    return True
-                        
+
+    return changed
+
 def remove_redundant_branch_jumps(statements):
     """Optimize statement sequences on a global level."""
     changed = False
 
     statements.reset()
+
     while not statements.end():
         s = statements.read()
 
@@ -164,5 +166,5 @@ def remove_redundant_branch_jumps(statements):
                     s[2] = j[0]
                     statements.replace(3, [s, label])
                     changed = True
-                        
+
     return changed

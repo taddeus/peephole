@@ -12,13 +12,21 @@ def optimize(program, verbose=0):
     o = program.count_instructions()
 
     changed = True
+    iterations = 0
 
     while changed:
-        print 'main iteration'
+        iterations += 1
+
+        if verbose > 1:
+            print 'main iteration %d', iterations
+
         changed = False
 
         # Optimize on a global level
         if program.optimize_global():
+            if verbose > 1:
+                print 'changed on global level'
+
             changed = True
 
         # Perform dataflow analysis on new blocks
@@ -26,6 +34,9 @@ def optimize(program, verbose=0):
 
         # Optimize basic blocks
         if program.optimize_blocks():
+            if verbose > 1:
+                print 'changed on block level'
+
             changed = True
 
     # Count number of instructions after optimization

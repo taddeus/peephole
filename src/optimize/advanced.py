@@ -274,7 +274,7 @@ def fold_constants(block):
                     del register[reg]
                     known.append((reg, 'unknown'))
 
-        if block.debug and len(known):
+        if block.verbose and len(known):
             s.set_inline_comment(','.join([' %s = %s' % k for k in known]))
 
     return changed
@@ -401,7 +401,7 @@ def eliminate_dead_code(block):
         for reg in s.get_def():
             if is_reg_dead_after(reg, block, n):
                 # Statement is redefined later, so this statement is useless
-                if block.debug:
+                if block.verbose:
                     s.stype = 'comment'
                     s.options['block'] = False
                     s.set_inline_comment(' dead register %s' % reg)
@@ -411,7 +411,7 @@ def eliminate_dead_code(block):
 
                 changed = True
 
-    if not block.debug:
+    if not block.verbose:
         block.apply_filter(lambda s: not hasattr(s, 'remove'))
 
     return changed

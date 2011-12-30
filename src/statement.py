@@ -231,7 +231,7 @@ class Statement:
 class Block:
     bid = 1
 
-    def __init__(self, statements=[], debug=False):
+    def __init__(self, statements=[], verbose=False):
         self.statements = statements
         self.pointer = 0
 
@@ -239,7 +239,7 @@ class Block:
         self.bid = Block.bid
         Block.bid += 1
 
-        self.debug = debug
+        self.verbose = verbose
 
     def __str__(self):
         return '<Block bid=%d statements=%d>' % (self.bid, len(self))
@@ -288,7 +288,7 @@ class Block:
             start = self.pointer - 1
 
         # Add a message in inline comments
-        if self.debug:
+        if self.verbose:
             if len(message):
                 message = ' ' + message
 
@@ -313,7 +313,7 @@ class Block:
         if index == None:
             index = self.pointer
 
-        if self.debug and len(message):
+        if self.verbose and len(message):
             statement.set_inline_comment(' ' + message)
 
         self.statements.insert(index, statement)
