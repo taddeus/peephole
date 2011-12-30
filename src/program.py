@@ -62,7 +62,10 @@ class Program(Block):
 
     def optimize_global(self):
         """Optimize on a global level."""
-        remove_redundant_jumps(self)
+        if not hasattr(self, 'statements'):
+            self.statements = self.get_statements()
+
+        return remove_redundant_jumps(self)
 
     def optimize_blocks(self):
         """Optimize on block level. Keep executing all optimizations until no

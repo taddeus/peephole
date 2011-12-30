@@ -11,23 +11,27 @@ def optimize(program, verbose=0):
     # Remember original number of statements
     o = program.count_instructions()
 
-    # Optimize on a global level
-    program.optimize_global()
-    g = program.count_instructions()
+    changed = True
 
-    # Perform dataflow analysis
-    program.perform_dataflow_analysis()
+    while changed:
+        changed = False
 
-    # Optimize basic blocks
-    program.optimize_blocks()
+        # Optimize on a global level
+        if program.optimize_global():
+            changed = True
 
-    # Concatenate optimized blocks to obtain
+        # Perform dataflow analysis on new blocks
+        program.perform_dataflow_analysis()
+
+        # Optimize basic blocks
+        if program.optimize_blocks():
+            changed = True
+
+    # Count number of instructions after optimization
     b = program.count_instructions()
 
     # Print results
     if verbose:
         print 'Original statements:            %d' % o
-        print 'After global optimization:      %d (%d removed)' % (g, o - g)
-        print 'After basic block optimization: %d (%d removed)' % (b, g - b)
         print 'Statements removed:             %d (%d%%)' \
                 % (o - b, int((o - b) / float(b) * 100))
