@@ -28,10 +28,26 @@ class Program(Block):
             for b in self.blocks:
                 message = ' Block %d (%d statements), edges from: %s' \
                           % (b.bid, len(b), map(get_id, b.edges_from))
+
+                if hasattr(b, 'live_in'):
+                    message += ', LIVE_in: %s' % list(b.live_in)
+
+                if hasattr(b, 'reach_in'):
+                    message += ', REACH_in: %s' % list(b.reach_in)
+
                 statements.append(S('comment', message, block=False))
+
                 statements += b.statements
+
                 message = ' End of block %d, edges to: %s' \
                           % (b.bid, map(get_id, b.edges_to))
+
+                if hasattr(b, 'live_out'):
+                    message += ', LIVE_out: %s' % list(b.live_out)
+
+                if hasattr(b, 'reach_out'):
+                    message += ', REACH_out: %s' % list(b.reach_out)
+
                 statements.append(S('comment', message, block=False))
 
             return statements
