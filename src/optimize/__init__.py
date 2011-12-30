@@ -45,5 +45,5 @@ def optimize(program, verbose=0):
     # Print results
     if verbose:
         print 'Original statements: %d' % o
-        print 'Statements removed:  %d (%d%%)'
+        print 'Statements removed:  %d (%d%%)' \
               % (o - b, int((o - b) / float(b) * 100))
