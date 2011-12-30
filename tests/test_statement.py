@@ -36,9 +36,10 @@ class TestStatement(unittest.TestCase):
         self.assertFalse(S('comment', 'foo', inline=False).is_label())
         self.assertFalse(S('directive', 'foo').is_command())
 
-    def test_is_inline_comment(self):
-        self.assertTrue(S('comment', 'foo', inline=True).is_inline_comment())
-        self.assertFalse(S('comment', 'foo', inline=False).is_inline_comment())
+    def test_has_inline_comment(self):
+        self.assertTrue(S('comment', 'foo', comment='bar').has_inline_comment())
+        self.assertFalse(S('comment', 'foo', comment='').has_inline_comment())
+        self.assertFalse(S('comment', 'foo').has_inline_comment())
 
     def test_jump_target(self):
         self.assertEqual(S('command', 'j', 'foo').jump_target(), 'foo')
@@ -115,16 +116,16 @@ class TestStatement(unittest.TestCase):
         self.assertEqual(S('command', 'dmfc1', 'a', '$f0').get_def(), a)
         self.assertEqual(S('command', 'mtc1', 'b', 'a').get_def(), a)
         self.assertEqual(S('command', 'trunc.w.d', 'a', 'b', 'c').get_def(), a)
-        
+
     def test_get_def_false(self):
         a = []
 
         self.assertEqual(S('command', 'bne', 'a', 'b', 'L1').get_def(), a)
-    
+
     def test_get_use_true(self):
         arg1 = ['$1']
         arg2 = ['$1', '$2']
-        
+
         self.assertEqual(S('command', 'addu', '$3', '$1', '$2').get_use(), \
                 arg2)
         self.assertEqual(S('command', 'subu', '$3', '$1', '$2').get_use(), \
@@ -165,5 +166,5 @@ class TestStatement(unittest.TestCase):
         self.assertEqual(S('command', 'c.lt.d', '$1', '$2').get_use(), arg2)
         self.assertEqual(S('command', 'bgez', '$1', '$2').get_use(), arg1)
         self.assertEqual(S('command', 'bltz', '$1', '$2').get_use(), arg1)
-        self.assertEqual(S('command', 'trunc.w.d', '$3', '$1', '$2').get_use()\
-                , arg2)
+        self.assertEqual(S('command', 'trunc.w.d', '$3', '$1', '$2').get_use(),
+                         arg2)

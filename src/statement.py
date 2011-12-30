@@ -38,11 +38,11 @@ class Statement:
     def __repr__(self):  # pragma: nocover
         return str(self)
 
+    def has_inline_comment(self):
+        return 'comment' in self.options and len(self.options['comment'])
+
     def is_comment(self):
         return self.stype == 'comment'
-
-    def is_inline_comment(self):
-        return self.is_comment() and self.options['inline']
 
     def is_directive(self):
         return self.stype == 'directive'
@@ -152,7 +152,7 @@ class Statement:
     def get_def(self):
         """Get the variable that this statement defines, if any."""
         instr = ['move', 'addu', 'subu', 'li', 'dmfc1', 'mov.d']
-        
+
         if self.is_command('mtc1'):
             return [self[1]]
         if self.is_load_non_immediate() or self.is_arith() \

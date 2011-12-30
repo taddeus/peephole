@@ -79,11 +79,12 @@ def p_line_instruction(p):
 
 def p_line_comment(p):
     'line : COMMENT NEWLINE'
-    statements.append(S('comment', p[1], inline=False))
+    statements.append(S('comment', p[1]))
 
 def p_line_inline_comment(p):
     'line : instruction COMMENT NEWLINE'
-    statements.append(S('comment', p[2], inline=True))
+    # Add the inline comment to the last parsed statement
+    statements[-1].options['comment'] = p[2]
 
 def p_instruction_command(p):
     'instruction : command'
