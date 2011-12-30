@@ -23,55 +23,59 @@ class BasicBlock(Block):
             block.dominated_by.append(self)
 
 
-def find_leaders(statements):
-    """Determine the leaders, which are:
-       1. The first statement.
-       2. Any statement that is the target of a jump.
-       3. Any statement that follows directly follows a jump."""
+def find_leaders(statements, return_jump_targets=False):
+    """
+    - Determine the leaders, which are:
+      1. The first statement.
+      2. Any statement that is the target of a jump.
+      3. Any statement that follows directly follows a jump.
+    - To determine the leaders, a list of known jump targets is created. This
+      list can also be returned for later use.
+    """
     leaders = [0]
-    jump_target_labels = []
+    jump_targets = []
 
     # Append statements following jumps and save jump target labels
     for i, statement in enumerate(statements[1:]):
         if statement.is_jump():
             leaders.append(i + 2)
-            jump_target_labels.append(statement[-1])
+            jump_targets.append(statement[-1])
 
     # Append jump targets
     for i, statement in enumerate(statements[1:]):
         if i + 1 not in leaders \
                 and statement.is_label() \
-                and statement.name in jump_target_labels:
+                and statement.name in jump_targets:
             leaders.append(i + 1)
 
     leaders.sort()
 
-    return leaders
+    return (leaders, jump_targets) if return_jump_targets else leaders
 
 
-def find_basic_blocks(statements):
+def find_basic_blocks(statements, return_jump_targets=False):
     """Divide a statement list into basic blocks. Returns a list of basic
     blocks, which are also statement lists."""
-    leaders = find_leaders(statements)
+    leaders, jump_targets = find_leaders(statements, True)
     blocks = []
 
-    for i in range(len(leaders) - 1):
+    for i in xrange(len(leaders) - 1):
         blocks.append(BasicBlock(statements[leaders[i]:leaders[i + 1]]))
 
     blocks.append(BasicBlock(statements[leaders[-1]:]))
 
     # Add a target block for unknown jump targets
-    blocks.append(BasicBlock([], dummy=True))
+    #blocks.append(BasicBlock([], dummy=True))
 
-    return blocks
+    return (blocks, jump_targets) if return_jump_targets else blocks
 
 
 def generate_flow_graph(blocks):
     """Add flow graph edge administration of an ordered sequence of basic
     blocks."""
-    dummy_block = blocks[-1]
+    #dummy_block = blocks[-1]
 
-    for i, b in enumerate(blocks[:-1]):
+    for i, b in enumerate(blocks):
         last_statement = b[-1]
 
         if last_statement.is_jump():
@@ -81,15 +85,15 @@ def generate_flow_graph(blocks):
             # label matches the jump target
             target_found = False
 
-            for other in blocks[:-1]:
+            for other in blocks:
                 if other[0].is_label(target):
                     b.add_edge_to(other)
                     target_found = True
 
             # If the jump target is outside the program, add an edge to the
             # dummy block
-            if not target_found:
-                b.add_edge_to(dummy_block)
+            #if not target_found:
+            #    b.add_edge_to(dummy_block)
 
             # A branch and jump-and-line instruction also creates an edge to
             # the next block

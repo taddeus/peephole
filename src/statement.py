@@ -207,7 +207,7 @@ class Statement:
 
             if m:
                 use.add(m.group(1))
-            else:
+            elif not re.match('^\$LC\d+$', self[1]):
                 use.add(self[1])
 
         # Case arg2

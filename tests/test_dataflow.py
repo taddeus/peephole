@@ -1,6 +1,7 @@
 import unittest
 
 from src.statement import Statement as S
+from src.program import Program as P
 from src.dataflow import BasicBlock as B, find_leaders, find_basic_blocks, \
         generate_flow_graph
 
@@ -20,11 +21,8 @@ class TestDataflow(unittest.TestCase):
 
     def test_find_basic_blocks(self):
         s = self.statements
-        self.assertEqual(
-                map(lambda b: b.statements, find_basic_blocks(s)[:-1]),
-                [B(s[:2]).statements, B(s[2:4]).statements,
-                    B(s[4:]).statements]
-        )
+        statements = map(lambda b: b.statements, find_basic_blocks(s))
+        self.assertEqual(statements, [s[:2], s[2:4], s[4:]])
 
     def test_generate_flow_graph_simple(self):
         b1 = B([S('command', 'foo'), S('command', 'j', 'b2')])

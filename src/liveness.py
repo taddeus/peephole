@@ -2,11 +2,20 @@ from copy import copy
 
 
 RESERVED_REGISTERS = ['$fp', '$sp', '$31']
+RESERVED_USE = ['$%d' % i  for i in range(2, 8)] \
+               + ['$f%d' % i  for i in range(32)]
+RESERVED_DEF = ['$2', '$3']
 
 
-def is_reg_dead_after(reg, block, index):
+def is_reg_dead_after(reg, block, index, known_jump_targets=[]):
     """Check if a register is dead after a certain point in a basic block."""
     if reg in RESERVED_REGISTERS:
+        return False
+
+    # If the block jumps to an unknown jump target, make sure that definitions
+    # of reserved argument registers are not removed
+    if reg in RESERVED_USE and block[-1].is_command('jal') \
+            and block[-1][0] not in known_jump_targets:
         return False
 
     if index < len(block) - 1:
@@ -25,16 +34,15 @@ def is_reg_dead_after(reg, block, index):
 
 
 def create_use_def(block):
+    #if block.dummy:
+    #    block.use_set = set(RESERVED_USE)
+    #    block.def_set = set(RESERVED_DEF)
+    #    return
+
+    # Get the last of each definition series and put in in the `def' set
     used = set()
     defined = set()
 
-    if block.dummy:
-        block.use_set = set(['$4', '$5', '$6', '$7', \
-            '$f0', '$f3', '$f4', '$f12', '$2'])
-        block.def_set = set(['$2', '$3'])
-        return
-
-    # Get the last of each definition series and put in in the `def' set
     block.use_set = set()
     block.def_set = set()
 

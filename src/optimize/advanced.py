@@ -4,31 +4,32 @@ from src.statement import Statement as S
 from src.liveness import is_reg_dead_after
 
 
-def reg_can_be_used_in(reg, block, start, end):
-    """Check if a register addres safely be used in a block section using local
-    dataflow analysis."""
-    # Check if the register used or defined in the block section
-    for s in block[start:end]:
-        if s.uses(reg) or s.defines(reg):
-            return False
+#def reg_can_be_used_in(reg, block, start, end):
+#    """Check if a register addres safely be used in a block section using local
+#    dataflow analysis."""
+#    # Check if the register used or defined in the block section
+#    for s in block[start:end]:
+#        if s.uses(reg) or s.defines(reg):
+#            return False
+#
+#    # Check if the register is used inside the block after the specified
+#    # section, without having been re-assigned first
+#    for s in block[end:]:
+#        if s.uses(reg):
+#            return False
+#        elif s.defines(reg):
+#            return True
+#
+#    return reg not in block.live_out
 
-    # Check if the register is used inside the block after the specified
-    # section, without having been re-assigned first
-    for s in block[end:]:
-        if s.uses(reg):
-            return False
-        elif s.defines(reg):
-            return True
 
-    return reg not in block.live_out
-
-
-def find_free_reg(block, start, end):
+def find_free_reg(block, start):
     """Find a temporary register that is free in a given list of statements."""
     for i in xrange(8, 16):
         tmp = '$%d' % i
 
-        if reg_can_be_used_in(tmp, block, start, end):
+        #if reg_can_be_used_in(tmp, block, start, end):
+        if is_reg_dead_after(tmp, block, start):
             return tmp
 
     raise Exception('No temporary register is available.')
@@ -78,7 +79,7 @@ def eliminate_common_subexpressions(block):
                     occurrences.append(block.pointer - 1)
 
             if len(occurrences) > 1:
-                new_reg = find_free_reg(block, occurrences[0], occurrences[-1])
+                new_reg = find_free_reg(block, occurrences[0])
 
                 # Replace all occurrences with a move statement
                 message = 'Common subexpression reference: %s %s' \
@@ -337,49 +338,6 @@ def copy_propagation(block):
                     continue
 
             changed = True
-
-    return changed
-
-
-def algebraic_transformations(block):
-    """
-    Change ineffective or useless algebraic expressions. Handled are:
-    - x = y + 0 -> x = y
-    - x = y - 0 -> x = y
-    - x = y * 1 -> x = y
-    - x = y * 0 -> x = 0
-    - x = y * 2 -> x = x << 1
-    """
-    changed = False
-
-    block.reset()
-
-    while not block.end():
-        s = block.read()
-
-        if (s.is_command('addu') or s.is_command('subu')) and s[2] == 0:
-            block.replace(1, [S('command', 'move', s[0], s[1])])
-            changed = True
-        elif s.is_command('mult'):
-            mflo = block.peek()
-
-            if mflo.is_command('mflo'):
-                if s[1] == 1:
-                    block.replace(2, [S('command', 'move', mflo[0], s[0])])
-                    changed = True
-                    continue
-                elif s[1] == 0:
-                    block.replace(2, [S('command', 'li', '$1', to_hex(0))])
-                    changed = True
-                    continue
-
-                shift_amount = log(s[1], 2)
-                if shift_amount.is_integer():
-                    new_command = S('command', 'sll', \
-                                    mflo[0], s[0], \
-                                    int(shift_amount))
-                    block.replace(2, [new_command])
-                    changed = True
 
     return changed
 

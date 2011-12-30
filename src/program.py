@@ -92,7 +92,6 @@ class Program(Block):
         for b in self.blocks:
             b.verbose = self.verbose
 
-        # Remove the old statement list, since it will probably change
         del self.statements
 
     def perform_dataflow_analysis(self):
