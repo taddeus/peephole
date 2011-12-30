@@ -61,8 +61,7 @@ class TestReachingDefinitions(unittest.TestCase):
         generate_flow_graph([b1, b2, b3])
         create_in_out([b1, b2, b3])
 
-        self.assertEqual(b1.gen_set, set([s11.sid, s12.sid, s13.sid,
-                                            s14.sid]))
+        self.assertEqual(b1.gen_set, set([s11.sid, s12.sid, s13.sid, s14.sid]))
         self.assertEqual(b1.kill_set, set([s22.sid]))
         self.assertEqual(b2.gen_set, set([s21.sid, s22.sid]))
         self.assertEqual(b2.kill_set, set([s13.sid, s32.sid]))
