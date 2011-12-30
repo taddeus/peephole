@@ -1,6 +1,29 @@
 from copy import copy
 
 
+RESERVED_REGISTERS = ['$fp', '$sp']
+
+
+def is_reg_dead_after(reg, block, index):
+    """Check if a register is dead after a certain point in a basic block."""
+    if reg in RESERVED_REGISTERS:
+        return False
+
+    if index < len(block) - 1:
+        for s in block[index + 1:]:
+            # If used, the previous definition is live
+            if s.uses(reg):
+                return False
+
+            # If redefined, the previous definition is dead
+            if s.defines(reg):
+                return True
+
+    # If dead within the same block, check if the register is in the block's
+    # live_out set
+    return reg not in block.live_out
+
+
 def create_use_def(block):
     used = set()
     defined = set()
