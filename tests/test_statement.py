@@ -96,7 +96,8 @@ class TestStatement(unittest.TestCase):
         self.assertFalse(S('label', 'addu').is_arith())
 
     def test_get_def_true(self):
-        a = ['a']
+        a = set()
+        a.add('a')
 
         self.assertEqual(S('command', 'move', 'a', 'b').get_def(), a)
         self.assertEqual(S('command', 'subu', 'a', 'b', 'c').get_def(), a)
@@ -119,8 +120,9 @@ class TestStatement(unittest.TestCase):
         self.assertEqual(S('command', 'trunc.w.d', 'a', 'b', 'c').get_def(), a)
 
     def test_get_def_false(self):
-        self.assertEqual(S('command', 'bne', 'a', 'b', 'L1').get_def(), [])
-        self.assertEqual(S('command', 'beq', 'a', 'b', 'L1').get_def(), [])
+        arg = set()
+        self.assertEqual(S('command', 'bne', 'a', 'b', 'L1').get_def(), arg)
+        self.assertEqual(S('command', 'beq', 'a', 'b', 'L1').get_def(), arg)
 
     def test_get_use_true(self):
         arg1 = set()
@@ -128,6 +130,8 @@ class TestStatement(unittest.TestCase):
         arg2 = set()
         arg2.add('$1')
         arg2.add('$2')
+        arg3 = set()
+        arg3.add('n.7')
 
         self.assertEqual(S('command', 'addu', '$3', '$1', '$2').get_use(), \
                 arg2)
@@ -144,7 +148,7 @@ class TestStatement(unittest.TestCase):
         self.assertEqual(S('command', 'lb', '$2', '10($1)').get_use(), arg1)
         self.assertEqual(S('command', 'lw', '$2', '10($1)').get_use(), arg1)
         self.assertEqual(S('command', 'la', '$2', '10($1)').get_use(), arg1)
-        self.assertEqual(S('command', 'lb', '$2', 'n.7').get_use(), ['n.7'])
+        self.assertEqual(S('command', 'lb', '$2', 'n.7').get_use(), arg3)
         self.assertEqual(S('command', 'lbu', '$2', '10($1)').get_use(), arg1)
         self.assertEqual(S('command', 'l.d', '$2', '10($1)').get_use(), arg1)
         self.assertEqual(S('command', 's.d', '$1', '10($2)').get_use(), \
