@@ -5,21 +5,16 @@ def remove_redundancies(block):
     """Execute all functions that remove redundant statements."""
     callbacks = [move_aa, move_inst, instr_move_jal, move_move, sw_ld, shift,
                  add_lw]
-    old_len = -1
     changed = False
 
-    while old_len != len(block):
-        old_len = len(block)
+    block.reset()
 
-        block.reset()
+    while not block.end():
+        s = block.read()
 
-        while not block.end():
-            s = block.read()
-
-            for callback in callbacks:
-                if callback(s, block):
-                    changed = True
-                    break
+        for callback in callbacks:
+            if callback(s, block):
+                changed = True
 
     return changed
 

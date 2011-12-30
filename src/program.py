@@ -68,6 +68,7 @@ class Program(Block):
 
         return remove_redundant_jumps(self) \
                | remove_redundant_branch_jumps(self)
+        return False
 
     def optimize_blocks(self):
         """Optimize on block level. Keep executing all optimizations until no
@@ -80,7 +81,7 @@ class Program(Block):
                     | fold_constants(block) \
                     | copy_propagation(block) \
                     | eliminate_dead_code(block):
-                changed = True
+                 changed = True
 
         return changed
 

@@ -15,11 +15,14 @@ def optimize(program, verbose=0):
     iterations = 0
 
     while changed:
+<<<<<<< HEAD
         iterations += 1
 
         if verbose > 1:
             print 'main iteration %d', iterations
 
+=======
+>>>>>>> 98c43ff02c474a62e42ac89ba9fe20be98f9eccd
         changed = False
 
         # Optimize on a global level

@@ -41,12 +41,12 @@ class TestLiveness(unittest.TestCase):
         s33 = S('command', 'mult', 'b', 'd')
         s34 = S('command', 'mflo', 'temp')
         s35 = S('command', 'addu', 'return', 'temp', 'c')
-
-        b1, b2, b3 = find_basic_blocks([s11, s12, s13, s14, s15, s21, s22, \
+        
+        b1, b2, b3, b4 = find_basic_blocks([s11, s12, s13, s14, s15, s21, s22, \
                                         s31, s32, s33, s34, s35])
 
-        generate_flow_graph([b1, b2, b3])
-        create_in_out([b1, b2, b3])
+        generate_flow_graph([b1, b2, b3, b4])
+        create_in_out([b1, b2, b3, b4])
 
         self.assertEqual(b1.use_set, set())
         self.assertEqual(b1.def_set, set(['a', 'b', 'd', 'x']))
@@ -57,55 +57,51 @@ class TestLiveness(unittest.TestCase):
         self.assertEqual(b3.use_set, set(['b', 'd']))
         self.assertEqual(b3.def_set, set(['c', 'temp', 'return']))
 
-        self.assertEqual(b1.live_in, set())
-        self.assertEqual(b1.live_out, set(['a', 'b', 'd']))
-        self.assertEqual(b2.live_in, set(['a', 'b']))
-        self.assertEqual(b2.live_out, set(['b', 'd']))
-        self.assertEqual(b3.live_in, set(['b', 'd']))
-        self.assertEqual(b3.live_out, set())
+        self.assertEqual(b1.live_in, set(['$4', '$5', '$6', '$7']))
+        self.assertEqual(b1.live_out, set(['a', 'b', 'd', '$4', '$5', '$6', '$7']))
+        self.assertEqual(b2.live_in, set(['a', 'b', '$4', '$5', '$6', '$7']))
+        self.assertEqual(b2.live_out, set(['b', 'd', '$4', '$5', '$6', '$7']))
+        self.assertEqual(b3.live_in, set(['b', 'd', '$4', '$5', '$6', '$7']))
+        self.assertEqual(b3.live_out, set(['$4', '$5', '$6', '$7']))
         
 #    def test_create_in_out_two(self):    
 #        s11 = S('command', 'subu', 'i', 'm', '0x00000001')
 #        s12 = S('command', 'move', 'j', 'n')
 #        s13 = S('command', 'move', 'a', 'u1')
-#        s14 = S('command', 'subu', 'i', 'm', '0x00000001')
+#        s14 = S('command', 'subu', 'i', 'm', '0x00000005')
 #        s15 = S('command', 'j', 'L1')
-#        s16 = S('')
 #        
 #        s21 = S('label', 'L1')
 #        s22 = S('command', 'addi', 'i', '0x00000001')
-#        s23 = S('command', 'subi', 'j', '0x00000001')
-#        s24 = S('command', 'j', 'L2')
+#        s23 = S('command', 'subi', 'j', '0x00000002')
+#        s24 = S('command', 'bne', 'i', 'j', 'L2')
 #        
-#        s31 = S('label', 'L2')
-#        s32 = S('command', 'move', 'a', 'u2')
-#        s33 = S('command', 'j', 'L1')        
+#        s31 = S('command', 'move', 'a', 'u2')
+#        s32 = S('command', 'j', 'L1')        
 
-#        s41 = S('label', 'L3')
+#        s41 = S('label', 'L2')
 #        s42 = S('command', 'move', 'i', 'u3')
-#        s43 = S('command', 'beq', 'g', 'd', 'L4')
+#        s43 = S('command', 'beq', 'i', 'j', 'L3')
 #        
-#        s51 = S('label', 'L4')
+#        s51 = S('label', 'L3')
 #        s52 = S('command', 'addu', 'b', 'i', 'a')
 #        
-#        b1, b2, b3, b4 = find_basic_blocks([s11, s12, s13, s14, s15, s21, s22,\
-#                                s31, s32, s33, s41, s42, s43, s51])
-
-#        generate_flow_graph([b1, b2, b3, b4, b5])
-#        create_in_out([b1, b2, b3, b4, b5])
+#        blocks = find_basic_blocks([s11, s12, s13, s14, s15, 
+#        s21, s22, s23, s24, s31, s32, s41, s42, s43, s51, s52])
+#    
+#        generate_flow_graph(blocks)
+#        create_in_out(blocks)
 #        
-#        
+#        for i, block in enumerate(blocks):
+#            print 'block ', i,':\n\t in:', block.live_in
+#            print  '\t out:', block.live_out
+#            
+#        #print blocks[-1].live_in
         
-        #self.assertEqual(b1.)
+        
+        
+        
+        
+        
+        
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
