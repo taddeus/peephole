@@ -2,13 +2,15 @@ from statement import Block
 
 
 class BasicBlock(Block):
-    def __init__(self, statements=[]):
+    def __init__(self, statements=[], dummy=False):
         Block.__init__(self, statements)
         self.edges_to = []
         self.edges_from = []
 
         self.dominates = []
         self.dominated_by = []
+
+        self.dummy = dummy
 
     def add_edge_to(self, block):
         if block not in self.edges_to:
@@ -58,13 +60,18 @@ def find_basic_blocks(statements):
 
     blocks.append(BasicBlock(statements[leaders[-1]:]))
 
+    # Add a target block for unknown jump targets
+    blocks.append(BasicBlock([], dummy=True))
+
     return blocks
 
 
 def generate_flow_graph(blocks):
     """Add flow graph edge administration of an ordered sequence of basic
     blocks."""
-    for i, b in enumerate(blocks):
+    dummy_block = blocks[-1]
+
+    for i, b in enumerate(blocks[:-1]):
         last_statement = b[-1]
 
         if last_statement.is_jump():
@@ -72,9 +79,17 @@ def generate_flow_graph(blocks):
 
             # Compare the target to all leading labels, add an edge if the
             # label matches the jump target
-            for other in blocks:
+            target_found = False
+
+            for other in blocks[:-1]:
                 if other[0].is_label(target):
                     b.add_edge_to(other)
+                    target_found = True
+
+            # If the jump target is outside the program, add an edge to the
+            # dummy block
+            if not target_found:
+                b.add_edge_to(dummy_block)
 
             # A branch and jump-and-line instruction also creates an edge to
             # the next block

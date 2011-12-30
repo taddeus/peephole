@@ -28,6 +28,11 @@ def create_use_def(block):
     used = set()
     defined = set()
 
+    if block.dummy:
+        block.use_set = set(['$4', '$5', '$6', '$7'])
+        block.def_set = set(['$2', '$3'])
+        return
+
     # Get the last of each definition series and put in in the `def' set
     block.use_set = set()
     block.def_set = set()
