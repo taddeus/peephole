@@ -1,6 +1,28 @@
 import re
 
 
+def remove_redundancies(block):
+    """Execute all functions that remove redundant statements."""
+    callbacks = [move_1, move_2, move_3, move_4, load, shift, add]
+    old_len = -1
+    changed = False
+
+    while old_len != len(block):
+        old_len = len(block)
+
+        block.reset()
+
+        while not block.end():
+            s = block.read()
+
+            for callback in callbacks:
+                if callback(s, block):
+                    changed = True
+                    break
+
+    return changed
+
+
 def move_1(mov, statements):
     """
     mov $regA, $regA          ->  --- remove it
@@ -124,3 +146,5 @@ def remove_redundant_jumps(statements):
                         s.name = 'bne' if s.is_command('beq') else 'beq'
                         s[2] = j[0]
                         statements.replace(3, [s, label])
+
+    statements.reset()

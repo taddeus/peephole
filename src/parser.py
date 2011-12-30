@@ -1,7 +1,8 @@
 import ply.lex as lex
 import ply.yacc as yacc
 
-from statement import Statement as S, Block
+from statement import Statement as S
+from program import Program
 
 
 # Global statements administration
@@ -126,4 +127,4 @@ def parse_file(filename):
     except IOError:
         raise Exception('File "%s" could not be opened' % filename)
 
-    return Block(statements)
+    return Program(statements)
