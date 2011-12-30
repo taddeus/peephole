@@ -404,7 +404,8 @@ def eliminate_dead_code(block):
                 if block.debug:
                     s.stype = 'comment'
                     s.options['block'] = False
-                    s.name = ' Dead:\t%s\t%s (dead register %s)' \
+                    s.options[''] = False
+                    s.name = ' Dead:\t%s\t%s\t(dead register %s)' \
                             % (s.name, ','.join(map(str, s)), reg)
                 else:
                     s.remove = True
