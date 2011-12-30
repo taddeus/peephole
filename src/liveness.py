@@ -38,7 +38,8 @@ def is_reg_dead_after(reg, block, index, known_jump_targets=[]):
 
     # If dead within the same block, check if the register is in the block's
     # live_out set
-    return reg not in RESERVED_OUT and reg not in block.live_out
+    #return reg not in RESERVED_OUT and reg not in block.live_out
+    return reg not in block.live_out
 
 
 def create_use_def(block):
@@ -97,6 +98,7 @@ def create_in_out(blocks):
     for b in blocks:
         if b.edges_from and not b.edges_to:
             work_list.add(b)
+            b.live_out = set(RESERVED_OUT)
 
     while len(work_list):
         b = work_list.pop()
