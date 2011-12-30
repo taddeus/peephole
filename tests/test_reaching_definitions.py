@@ -55,11 +55,11 @@ class TestReachingDefinitions(unittest.TestCase):
         s34 = S('command', 'mflo', 'temp')
         s35 = S('command', 'addu', 'return', 'temp', 'c')
 
-        b1, b2, b3, b4 = find_basic_blocks([s11, s12, s13, s14, s15, s21, s22, \
+        b1, b2, b3 = find_basic_blocks([s11, s12, s13, s14, s15, s21, s22, \
                                         s31, s32, s33, s34, s35])
 
-        generate_flow_graph([b1, b2, b3, b4])
-        create_in_out([b1, b2, b3, b4])
+        generate_flow_graph([b1, b2, b3])
+        create_in_out([b1, b2, b3])
 
         self.assertEqual(b1.gen_set, set([s11.sid, s12.sid, s13.sid,
                                             s14.sid]))
