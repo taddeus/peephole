@@ -168,12 +168,18 @@ removed by the dead code elimination.
 
 \subsubsection*{Algebraic transformations}
 
+Some expression can easily be replaced with more simple once if you look at
+what they are saying algebraically. An example is the statement $x = y + 0$, or
+in Assembly \texttt{addu \$1, \$2, 0}. This can easily be changed into $x = y$
+or \texttt{move \$1, \$2}.
 
-<<<<<<< HEAD
-=======
+Another case is the multiplication with a power of two. This can be done way
+more efficiently by shifting left a number of times. An example:
+\texttt{mult \$regA, \$regB, 4    ->  sll  \$regA, \$regB, 2}. We perform this
+optimization for any multiplication with a power of two.
+
 There are a number of such cases, all of which are once again stated in
 appendix \ref{opt}.
->>>>>>> fd46a3140a9b8bd0e5e542e57b57bfe87ff7556d
 
 \section{Implementation}
 
