@@ -1,10 +1,14 @@
 from copy import copy
 
 
+RETURN_REGS = ['$2', '$3']
+ARGUMENT_REGISTERS = ['$4', '$5', '$6', '$7']
+FLOATING_POINT_REGS = ['$f%d' % i  for i in range(32)]
+
 RESERVED_REGISTERS = ['$fp', '$sp', '$31']
-RESERVED_USE = ['$%d' % i  for i in range(2, 8)] \
-               + ['$f%d' % i  for i in range(32)]
-RESERVED_DEF = ['$2', '$3']
+RESERVED_USE = RETURN_REGS + ARGUMENT_REGISTERS + FLOATING_POINT_REGS
+RESERVED_DEF = RETURN_REGS
+RESERVED_OUT = RETURN_REGS + FLOATING_POINT_REGS
 
 
 def is_reg_dead_after(reg, block, index, known_jump_targets=[]):
@@ -34,7 +38,7 @@ def is_reg_dead_after(reg, block, index, known_jump_targets=[]):
 
     # If dead within the same block, check if the register is in the block's
     # live_out set
-    return reg not in RESERVED_DEF and reg not in block.live_out
+    return reg not in RESERVED_OUT and reg not in block.live_out
 
 
 def create_use_def(block):
