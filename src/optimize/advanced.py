@@ -1,5 +1,7 @@
-from src.statement import Statement as S
 from math import log
+
+from src.statement import Statement as S
+from src.liveness import is_reg_dead_after
 
 
 def reg_can_be_used_in(reg, block, start, end):
@@ -393,25 +395,41 @@ def eliminate_dead_code(block):
       is not used in the rest of the block, and is not in the `out' set of the
       block.
     """
-    # TODO: Finish
     changed = False
-    unused = set()
 
-    for s in reversed(block):
+    for n, s in enumerate(block):
         for reg in s.get_def():
-            if reg in unused:
+            if is_reg_dead_after(reg, block, n):
                 # Statement is redefined later, so this statement is useless
                 if block.debug:
                     s.stype = 'comment'
                     s.options['block'] = False
-                    s.name = ' Dead code: %s %s' \
-                            % (s.name, ', '.join(map(str, s)))
+                    s.name = ' Dead:\t%s\t%s' \
+                            % (s.name, ','.join(map(str, s)))
                 else:
                     s.remove = True
-            else:
-                unused.add(reg)
 
-        unused -= set(s.get_use())
+                changed = True
+
+    #unused = set()
+
+    #for s in reversed(block):
+    #    for reg in s.get_def():
+    #        if reg in unused:
+    #            # Statement is redefined later, so this statement is useless
+    #            if block.debug:
+    #                s.stype = 'comment'
+    #                s.options['block'] = False
+    #                s.name = ' Dead:\t%s\t%s' \
+    #                        % (s.name, ','.join(map(str, s)))
+    #            else:
+    #                s.remove = True
+
+    #            changed = True
+    #        else:
+    #            unused.add(reg)
+
+    #    unused -= set(s.get_use())
 
     if not block.debug:
         block.apply_filter(lambda s: not hasattr(s, 'remove'))
