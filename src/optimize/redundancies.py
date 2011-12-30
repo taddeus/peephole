@@ -3,7 +3,8 @@ import re
 
 def remove_redundancies(block):
     """Execute all functions that remove redundant statements."""
-    callbacks = [move_1, move_2, move_3, move_4, load, shift, add]
+    callbacks = [move_aa, move_inst, instr_move_jal, move_move, sw_ld, shift, 
+                 add_lw]
     old_len = -1
     changed = False
 
@@ -23,9 +24,9 @@ def remove_redundancies(block):
     return changed
 
 
-def move_1(mov, statements):
+def move_aa(mov, statements):
     """
-    mov $regA, $regA          ->  --- remove it
+    move $regA, $regA          ->  --- remove it
     """
     if mov.is_command('move') and mov[0] == mov[1]:
         statements.replace(1, [])
@@ -33,9 +34,9 @@ def move_1(mov, statements):
         return True
 
 
-def move_2(mov, statements):
+def move_inst(mov, statements):
     """
-    mov $regA, $regB          ->  instr $regA, $regB, ...
+    move $regA, $regB          ->  instr $regA, $regB, ...
     instr $regA, $regA, ...
     """
     if mov.is_command('move'):
@@ -48,10 +49,10 @@ def move_2(mov, statements):
             return True
 
 
-def move_3(ins, statements):
+def instr_move_jal(ins, statements):
     """
     instr $regA, ...          ->  instr $4, ...
-    mov $4, $regA                 jal XX
+    move $4, $regA                 jal XX
     jal XX
     """
     if ins.is_command() and len(ins):
@@ -69,10 +70,10 @@ def move_3(ins, statements):
                 return True
 
 
-def move_4(mov1, statements):
+def move_move(mov1, statements):
     """
-    mov $RegA, $RegB         ->  move $RegA, $RegB
-    mov $RegB, $RegA
+    move $RegA, $RegB         ->  move $RegA, $RegB
+    move $RegB, $RegA
     """
     if mov1.is_command('move'):
         mov2 = statements.peek()
@@ -84,7 +85,7 @@ def move_4(mov1, statements):
             return True
 
 
-def load(sw, statements):
+def sw_ld(sw, statements):
     """
     sw $regA, XX              ->  sw $regA, XX
     ld $regA, XX
@@ -108,7 +109,7 @@ def shift(shift, statements):
         return True
 
 
-def add(add, statements):
+def add_lw(add, statements):
     """
     add $regA, $regA, X       ->  lw ..., X($regA)
     lw ..., 0($regA)

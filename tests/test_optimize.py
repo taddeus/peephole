@@ -1,17 +1,23 @@
 import unittest
 
-from src.optimize.redundancies import remove_redundant_jumps
+from src.optimize.redundancies import remove_redundancies, remove_redundant_jumps
 from src.program import Program
 from src.statement import Statement as S, Block as B
 
 
 def optimize_block(block):
     """Optimize a basic block using a Program object."""
-    program = Program([])
+#    program = Program([])
 
-    program.blocks = [block]
-    del program.statements
-    program.optimize_blocks()
+#    program.blocks = [block]
+#    del program.statements
+    
+#   program.optimize_blocks()
+
+    remove_redundancies(block)
+    eliminate_common_subexpressions(block)
+    fold_constants(block)
+    copy_propagation(block)
 
     return program.blocks
 
@@ -30,7 +36,7 @@ class TestOptimize(unittest.TestCase):
         block = B([self.foo,
                    S('command', 'move', '$regA', '$regA'),
                    self.bar])
-        optimize_block(block)
+        remove_redundancies(block)
         self.assertEquals(block.statements, [self.foo, self.bar])
 
     def test_optimize_block_movab(self):
@@ -38,7 +44,7 @@ class TestOptimize(unittest.TestCase):
         block = B([self.foo,
                    move,
                    self.bar])
-        optimize_block(block)
+        remove_redundancies(block)
         self.assertEquals(block.statements, [self.foo, move, self.bar])
 
     def test_optimize_block_movinst_true(self):
@@ -46,7 +52,7 @@ class TestOptimize(unittest.TestCase):
                    S('command', 'move', '$regA', '$regB'),
                    S('command', 'addu', '$regA', '$regA', 2),
                    self.bar])
-        optimize_block(block)
+        remove_redundancies(block)
         self.assertEquals(block.statements, [self.foo,
                    S('command', 'addu', '$regA', '$regB', 2),
                    self.bar])
@@ -58,7 +64,7 @@ class TestOptimize(unittest.TestCase):
                       self.bar]
 
         block = B(statements)
-        optimize_block(block)
+        remove_redundancies(block)
         self.assertEquals(block.statements, statements)
 
     def test_optimize_block_instr_mov_jal_true(self):
@@ -67,7 +73,7 @@ class TestOptimize(unittest.TestCase):
                    S('command', 'move', '$4', '$regA'),
                    S('command', 'jal', 'L1'),
                    self.bar])
-        optimize_block(block)
+        remove_redundancies(block)
 
         self.assertEquals(block.statements, [self.foo,
                    S('command', 'addu', '$4', '$regC', 2),
@@ -81,7 +87,7 @@ class TestOptimize(unittest.TestCase):
                      S('command', 'jal', 'L1'), \
                      self.bar]
         block = B(arguments)
-        optimize_block(block)
+        remove_redundancies(block)
 
         self.assertEquals(block.statements, arguments)
 
@@ -90,7 +96,7 @@ class TestOptimize(unittest.TestCase):
                    S('command', 'sw', '$regA', '$regB'),
                    S('command', 'lw', '$regA', '$regB'),
                    self.bar])
-        optimize_block(block)
+        remove_redundancies(block)
 
         self.assertEquals(block.statements, [self.foo,
                    S('command', 'sw', '$regA', '$regB'),
@@ -102,7 +108,7 @@ class TestOptimize(unittest.TestCase):
                      S('command', 'lw', '$regD', '$regC'), \
                      self.bar]
         block = B(arguments)
-        optimize_block(block)
+        remove_redundancies(block)
 
         self.assertEquals(block.statements, arguments)
 
@@ -110,7 +116,7 @@ class TestOptimize(unittest.TestCase):
         block = B([self.foo,
                    S('command', 'sll', '$regA', '$regA', 0),
                    self.bar])
-        optimize_block(block)
+        remove_redundancies(block)
 
         self.assertEquals(block.statements, [self.foo, self.bar])
 
@@ -119,7 +125,7 @@ class TestOptimize(unittest.TestCase):
                      S('command', 'sll', '$regA', '$regB', 0), \
                      self.bar]
         block = B(arguments)
-        optimize_block(block)
+        remove_redundancies(block)
 
         self.assertEquals(block.statements, arguments)
 
@@ -127,7 +133,7 @@ class TestOptimize(unittest.TestCase):
                      S('command', 'sll', '$regA', '$regA', 1), \
                      self.bar]
         block2 = B(arguments2)
-        optimize_block(block2)
+        remove_redundancies(block2)
 
         self.assertEquals(block2.statements, arguments2)
 
@@ -136,7 +142,7 @@ class TestOptimize(unittest.TestCase):
                    S('command', 'addu', '$regA', '$regA', 10),
                    S('command', 'lw', '$regB', '0($regA)'),
                    self.bar])
-        optimize_block(block)
+        remove_redundancies(block)
 
         self.assertEquals(block.statements, [self.foo,
                    S('command', 'lw', '$regB', '10($regA)'),
@@ -148,7 +154,7 @@ class TestOptimize(unittest.TestCase):
                      S('command', 'lw', '$regB', '0($regC)'), \
                      self.bar]
         block = B(arguments)
-        optimize_block(block)
+        remove_redundancies(block)
 
         arguments2 = [self.foo, \
                      S('command', 'addu', '$regA', '$regB', 10), \
@@ -161,7 +167,7 @@ class TestOptimize(unittest.TestCase):
                      S('command', 'lw', '$regB', '1($regA)'), \
                      self.bar]
         block3 = B(arguments3)
-        optimize_block(block3)
+        remove_redundancies(block3)
 
         self.assertEquals(block.statements, arguments)
         self.assertEquals(block2.statements, arguments2)
@@ -220,7 +226,7 @@ class TestOptimize(unittest.TestCase):
                    S('command', 'move', '$regA', '$regB'),
                    S('command', 'move', '$regB', '$regA'),
                    self.bar])
-        optimize_block(block)
+        remove_redundancies(block)
 
         self.assertEquals(block.statements, [self.foo,
                    S('command', 'move', '$regA', '$regB'),
@@ -232,6 +238,6 @@ class TestOptimize(unittest.TestCase):
                      S('command', 'move', '$regB', '$regC'), \
                      self.bar]
         block = B(arguments)
-        optimize_block(block)
+        remove_redundancies(block)
 
         self.assertEquals(block.statements, arguments)
