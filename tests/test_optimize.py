@@ -1,6 +1,7 @@
 import unittest
 
-from src.optimize.redundancies import remove_redundancies, remove_redundant_jumps
+from src.optimize.redundancies import remove_redundancies, \
+    remove_redundant_jumps, remove_redundant_branch_jumps
 from src.program import Program
 from src.statement import Statement as S, Block as B
 
@@ -199,12 +200,12 @@ class TestOptimize(unittest.TestCase):
                    S('command', 'j', '$L1'),
                    S('label', '$L1'),
                    self.bar])
-                   
-       remove_redundancies(block)
+        
+        remove_redundant_jumps(block)
        
-       self.assertEqual(block.statements, B([self.foo, 
-                                             S('command', 'j', '$L1'),
-                                             self.bar]))
+        self.assertEqual(block.statements, [self.foo, 
+                                             S('label', '$L1'),
+                                             self.bar])
                                              
     def test_remove_redundant_jumps_false(self):
         arguments = [self.foo,
@@ -213,9 +214,9 @@ class TestOptimize(unittest.TestCase):
                    self.bar]
         block = B(arguments)
                    
-       remove_redundancies(block)
+        remove_redundant_jumps(block)
        
-       self.assertEqual(block.statements, arguments)
+        self.assertEqual(block.statements, arguments)
         
     def test_remove_redundant_branch_jumps_beq_j_true(self):
         block = B([self.foo,
