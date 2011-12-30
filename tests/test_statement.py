@@ -123,8 +123,11 @@ class TestStatement(unittest.TestCase):
         self.assertEqual(S('command', 'beq', 'a', 'b', 'L1').get_def(), [])
 
     def test_get_use_true(self):
-        arg1 = ['$1']
-        arg2 = ['$1', '$2']
+        arg1 = set()
+        arg1.add('$1')
+        arg2 = set()
+        arg2.add('$1')
+        arg2.add('$2')
 
         self.assertEqual(S('command', 'addu', '$3', '$1', '$2').get_use(), \
                 arg2)
