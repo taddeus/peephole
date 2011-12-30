@@ -20,9 +20,11 @@ class TestDataflow(unittest.TestCase):
 
     def test_find_basic_blocks(self):
         s = self.statements
-        self.assertEqual(map(lambda b: b.statements, find_basic_blocks(s)), \
-                [B(s[:2]).statements, B(s[2:4]).statements, \
-                 B(s[4:]).statements])
+        self.assertEqual(
+                map(lambda b: b.statements, find_basic_blocks(s)[:-1]),
+                [B(s[:2]).statements, B(s[2:4]).statements,
+                    B(s[4:]).statements]
+        )
 
     def test_generate_flow_graph_simple(self):
         b1 = B([S('command', 'foo'), S('command', 'j', 'b2')])
