@@ -99,8 +99,9 @@ class TestStatement(unittest.TestCase):
         a = ['a']
 
         self.assertEqual(S('command', 'move', 'a', 'b').get_def(), a)
-        self.assertEqual(S('command', 'subu', 'a', 'b').get_def(), a)
+        self.assertEqual(S('command', 'subu', 'a', 'b', 'c').get_def(), a)
         self.assertEqual(S('command', 'addu', 'a', 'b', 'c').get_def(), a)
+        self.assertEqual(S('command', 'div', 'a', 'b', 'c').get_def(), a)
         self.assertEqual(S('command', 'sll', 'a', 'b', 'c').get_def(), a)
         self.assertEqual(S('command', 'srl', 'a', 'b', 'c').get_def(), a)
         self.assertEqual(S('command', 'la', 'a', '16($fp)').get_def(), a)
@@ -130,7 +131,7 @@ class TestStatement(unittest.TestCase):
         self.assertEqual(S('command', 'subu', '$3', '$1', '$2').get_use(), \
                 arg2)
         self.assertEqual(S('command', 'mult', '$1', '$2').get_use(), arg2)
-        self.assertEqual(S('command', 'div', '$1', '$2').get_use(), arg2)
+        self.assertEqual(S('command', 'div', '$3', '$1', '$2').get_use(), arg2)
         self.assertEqual(S('command', 'move', '$2', '$1').get_use(), arg1)
         self.assertEqual(S('command', 'beq', '$1', '$2', '$L1').get_use(), \
                 arg2)
