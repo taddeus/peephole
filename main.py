@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
     # Parse file
     program = parse_file(argv[1])
-    program.debug = True
+    program.verbose = 1
 
     if len(argv) > 3:
         # Save input assembly in new file for easy comparison

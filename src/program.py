@@ -21,8 +21,8 @@ class Program(Block):
         if hasattr(self, 'statements'):
             return self.statements
 
-        # Only add block start and end comments when in debug mode
-        if add_block_comments and self.debug:
+        # Only add block start and end comments when in verbose mode
+        if add_block_comments and self.verbose:
             get_id = lambda b: b.bid
             statements = []
 
@@ -90,7 +90,7 @@ class Program(Block):
         self.blocks = find_basic_blocks(self.statements)
 
         for b in self.blocks:
-            b.debug = self.debug
+            b.verbose = self.verbose
 
         # Remove the old statement list, since it will probably change
         del self.statements
