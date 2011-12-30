@@ -1,5 +1,7 @@
-from src.statement import Statement as S
 from math import log
+
+from src.statement import Statement as S
+from src.liveness import is_reg_dead_after
 
 
 def reg_can_be_used_in(reg, block, start, end):
@@ -173,50 +175,45 @@ def fold_constants(block):
             # Move of `Hi' register to another register
             register[s[0]] = register['$hi']
             known.append((s[0], register[s[0]]))
-        elif s.name in ['mult', 'div'] \
-                and s[0]in register and s[1] in register:
+        elif s.name == 'mult' and s[0]in register and s[1] in register:
             # Multiplication/division with constants
-            print s
             rs, rt = s
             a, b = register[rs], register[rt]
 
-            if s.name == 'mult':
-                if not a or not b:
-                    # Multiplication by 0
-                    hi = lo = to_hex(0)
-                    message = 'Multiplication by 0: %d * 0' % (b if a else a)
-                elif a == 1:
-                    # Multiplication by 1
-                    hi = to_hex(0)
-                    lo = to_hex(b)
-                    message = 'Multiplication by 1: %d * 1' % b
-                elif b == 1:
-                    # Multiplication by 1
-                    hi = to_hex(0)
-                    lo = to_hex(a)
-                    message = 'Multiplication by 1: %d * 1' % a
-                else:
-                    # Calculate result and fill Hi/Lo registers
-                    result = a * b
-                    binary = bin(result)[2:]
-                    binary = '0' * (64 - len(binary)) + binary
-                    hi = int(binary[:32], base=2)
-                    lo = int(binary[32:], base=2)
-                    message = 'Constant multiplication: %d * %d = %d' \
-                              % (a, b, result)
+            if not a or not b:
+                # Multiplication by 0
+                hi = lo = to_hex(0)
+                message = 'Multiplication by 0: %d * 0' % (b if a else a)
+            elif a == 1:
+                # Multiplication by 1
+                hi = to_hex(0)
+                lo = to_hex(b)
+                message = 'Multiplication by 1: %d * 1' % b
+            elif b == 1:
+                # Multiplication by 1
+                hi = to_hex(0)
+                lo = to_hex(a)
+                message = 'Multiplication by 1: %d * 1' % a
+            else:
+                # Calculate result and fill Hi/Lo registers
+                result = a * b
+                binary = bin(result)[2:]
+                binary = '0' * (64 - len(binary)) + binary
+                hi = int(binary[:32], base=2)
+                lo = int(binary[32:], base=2)
+                message = 'Constant multiplication: %d * %d = %d' \
+                            % (a, b, result)
 
-                # Replace the multiplication with two immidiate loads to the
-                # Hi/Lo registers
-                block.replace(1, [S('command', 'li', '$hi', hi),
-                                  S('command', 'li', '$lo', li)],
-                              message=message)
-            elif s.name == 'div':
-                lo, hi = divmod(rs, rt)
+            # Replace the multiplication with two immidiate loads to the
+            # Hi/Lo registers
+            block.replace(1, [S('command', 'li', '$hi', hi),
+                                S('command', 'li', '$lo', li)],
+                            message=message)
 
             register['$lo'], register['$hi'] = lo, hi
             known += [('$lo', lo), ('$hi', hi)]
             changed = True
-        elif s.name in ['addu', 'subu']:
+        elif s.name in ['addu', 'subu', 'div']:
             # Addition/subtraction with constants
             rd, rs, rt = s
             rs_known = rs in register
@@ -233,12 +230,17 @@ def fold_constants(block):
                 if s.name == 'addu':
                     result = rs_val + rt_val
                     message = 'Constant addition: %d + %d = %d' \
-                            % (rs_val, rt_val, result)
+                              % (rs_val, rt_val, result)
 
                 if s.name == 'subu':
                     result = rs_val - rt_val
                     message = 'Constant subtraction: %d - %d = %d' \
-                            % (rs_val, rt_val, result)
+                              % (rs_val, rt_val, result)
+
+                if s.name == 'div':
+                    result = rs_val / rt_val
+                    message = 'Constant division: %d - %d = %d' \
+                              % (rs_val, rt_val, result)
 
                 block.replace(1, [S('command', 'li', rd, to_hex(result))],
                               message=message)
@@ -393,25 +395,42 @@ def eliminate_dead_code(block):
       is not used in the rest of the block, and is not in the `out' set of the
       block.
     """
-    # TODO: Finish
     changed = False
-    unused = set()
 
-    for s in reversed(block):
+    for n, s in enumerate(block):
         for reg in s.get_def():
-            if reg in unused:
+            if is_reg_dead_after(reg, block, n):
                 # Statement is redefined later, so this statement is useless
                 if block.debug:
                     s.stype = 'comment'
                     s.options['block'] = False
-                    s.name = ' Dead code: %s %s' \
-                            % (s.name, ', '.join(map(str, s)))
+                    s.options[''] = False
+                    s.name = ' Dead:\t%s\t%s\t(dead register %s)' \
+                            % (s.name, ','.join(map(str, s)), reg)
                 else:
                     s.remove = True
-            else:
-                unused.add(reg)
 
-        unused -= set(s.get_use())
+                changed = True
+
+    #unused = set()
+
+    #for s in reversed(block):
+    #    for reg in s.get_def():
+    #        if reg in unused:
+    #            # Statement is redefined later, so this statement is useless
+    #            if block.debug:
+    #                s.stype = 'comment'
+    #                s.options['block'] = False
+    #                s.name = ' Dead:\t%s\t%s' \
+    #                        % (s.name, ','.join(map(str, s)))
+    #            else:
+    #                s.remove = True
+
+    #            changed = True
+    #        else:
+    #            unused.add(reg)
+
+    #    unused -= set(s.get_use())
 
     if not block.debug:
         block.apply_filter(lambda s: not hasattr(s, 'remove'))
