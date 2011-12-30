@@ -12,3 +12,5 @@ parsetab.py
 coverage/
 build/
 src/Makefile_old
+in.s
+out.s

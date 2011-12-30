@@ -1,0 +1,2 @@
+#!/bin/sh
+python main.py benchmarks/build/$1.s out.s in.s && meld in.s out.s

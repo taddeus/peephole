@@ -1,22 +1,17 @@
 \documentclass[10pt,a4paper]{article}
 \usepackage[latin1]{inputenc}
-\usepackage{amsmath}
-\usepackage{amsfonts}
-\usepackage{amssymb}
-\usepackage{booktabs}
-\usepackage{graphicx}
-\usepackage{listings}
-\usepackage{subfigure}
-\usepackage{float}
-\usepackage{hyperref}
+\usepackage{amsmath,amsfonts,amssymb,booktabs,graphicx,listings,subfigure}
+\usepackage{float,hyperref}
 
 \title{Peephole Optimizer}
 \author{Jayke Meijer (6049885), Richard Torenvliet (6138861), Tadde\"us Kroes
     (6054129)}
 
 \begin{document}
+
 \maketitle
 \tableofcontents
+
 \pagebreak
 
 \section{Introduction}
@@ -35,7 +30,7 @@ the keywords in to an action.
 
 \section{Design}
 
-There are two general types of of optimizations of the assembly code, global
+There are two general types of optimizations of the assembly code, global
 optimizations and optimizations on a so-called basic block. These optimizations
 will be discussed separately
 
@@ -57,8 +52,7 @@ of course be done for the opposite case, where a \texttt{bne} is changed into a
 \texttt{beq}.
 
 Since this optimization is done between two series of codes with jumps and
-labels, we can not perform this code during the basic block optimizations. The
-reason for this will become clearer in the following section.
+labels, we can not perform this code during the basic block optimizations.
 
 \subsection{Basic Block Optimizations}
 
@@ -81,7 +75,7 @@ These are optimizations that simply look for a certain statement or pattern of
 statements, and optimize these. For example,
 \begin{verbatim}
 mov $regA,$regB
-instr $regA, $regA,... 
+instr $regA, $regA,...
 \end{verbatim}
 can be optimized into
 \begin{verbatim}
@@ -99,6 +93,15 @@ Appendix \ref{opt}.
 A more advanced optimization is common subexpression elimination. This means
 that expensive operations as a multiplication or addition are performed only
 once and the result is then `copied' into variables where needed.
+\begin{verbatim}
+
+addu	$2,$4,$3              addu = $t1, $4, $3
+...                        mov = $2, $t1
+...                   ->   ...
+...                        ...
+addu	$5,$4,$3              mov = $4, $t1
+
+\end{verbatim}
 
 A standard method for doing this is the creation of a DAG or Directed Acyclic
 Graph. However, this requires a fairly advanced implementation. Our
@@ -112,27 +115,34 @@ We now add the instruction above the first use, and write the result in a new
 variable. Then all occurrences of this expression can be replaced by a move of
 from new variable into the original destination variable of the instruction.
 
-This is a less efficient method then the DAG, but because the basic blocks are
+This is a less efficient method then the dag, but because the basic blocks are
 in general not very large and the execution time of the optimizer is not a
 primary concern, this is not a big problem.
 
-\subsubsection*{Constant folding}
+\subsubsection*{Fold constants}
+Constant folding is an optimization where the outcome of arithmetics are
+calculated at compile time. If a value x is assigned to a certain value, lets
+say 10, than all next occurences of \texttt{x} are replaced by 10 until a
+redefinition of x. Arithmetics in Assembly are always performed between two
+variables or a variable and a constant. If this is not the case the calculation
+is not possible. See \ref{opt} for an example. In other words until the current
+definition of \texttt{x} becomes dead. Therefore reaching definitions analysis
+is needed. Reaching definitions is a form of liveness analysis, we use the
+liveness analysis within a block and not between blocks.
 
-Another optimization is to do constant folding. Constant folding is replacing
-a expensive step like addition with a more simple step like loading a constant.
-Of course, this is not always possible. It is possible in cases where you apply
-an operation on two constants, or a constant and a variable of which you know
-for sure that it always has a certain value at that point. For example:
-\begin{verbatim}
-li   $regA, 1               li $regA, 1
-addu $regB, $regA, 2    ->  li $regB, 3
-\end{verbatim}
-Of course, if \texttt{\$regA} is not used after this, it can be removed, which
-will be done by the dead code elimination.
+During the constant folding, so-called algebraic transformations are performed
+as well. Some expression can easily be replaced with more simple once if you
+look at what they are saying algebraically. An example is the statement
+$x = y + 0$, or in Assembly \texttt{addu \$1, \$2, 0}. This can easily be
+changed into $x = y$ or \texttt{move \$1, \$2}.
 
-One problem we encountered with this is that the use of a \texttt{li} is that
-the program often also stores this in the memory, so we had to check whether
-this was necessary here as well.
+Another case is the multiplication with a power of two. This can be done way
+more efficiently by shifting left a number of times. An example:
+\texttt{mult \$regA, \$regB, 4    ->  sll  \$regA, \$regB, 2}. We perform this
+optimization for any multiplication with a power of two.
+
+There are a number of such cases, all of which are once again stated in
+appendix \ref{opt}.
 
 \subsubsection*{Copy propagation}
 
@@ -159,30 +169,29 @@ of the move operation.
 
 An example would be the following:
 \begin{verbatim}
-move $regA, $regB                   move $regA, $regB
-...                                 ...
-Code not writing $regA, $regB   ->  ...
-...                                 ...
-addu $regC, $regA, ...              addu $regC, $regB, ...
+move $regA, $regB           move $regA, $regB
+...                         ...
+Code not writing $regA, ->  ...
+$regB                       ...
+...                         ...
+addu $regC, $regA, ...      addu $regC, $regB, ...
 \end{verbatim}
 This code shows that \texttt{\$regA} is replaced with \texttt{\$regB}. This
 way, the move instruction might have become useless, and it will then be
 removed by the dead code elimination.
 
-\subsubsection*{Algebraic transformations}
+\subsection{Dead code elimination}
 
-Some expression can easily be replaced with more simple once if you look at
-what they are saying algebraically. An example is the statement $x = y + 0$, or
-in Assembly \texttt{addu \$1, \$2, 0}. This can easily be changed into $x = y$
-or \texttt{move \$1, \$2}.
+The final optimization that is performed is dead code elimination. This means
+that when an instruction is executed, but the result is never used, that
+instruction can be removed.
 
-Another case is the multiplication with a power of two. This can be done way
-more efficiently by shifting left a number of times. An example:
-\texttt{mult \$regA, \$regB, 4    ->  sll  \$regA, \$regB, 2}. We perform this
-optimization for any multiplication with a power of two.
-
-There are a number of such cases, all of which are once again stated in
-appendix \ref{opt}. 
+To be able to properly perform dead code elimination, we need to know whether a
+variable will be used, before it is overwritten again. If it does, we call the
+variable live, otherwise the variable is dead. The technique to find out if a
+variable is live is called liveness analysis. We implemented this for the
+entire code, by analyzing each block, and using the variables that come in the
+block live as the variables that exit its predecessor live.
 
 \section{Implementation}
 
@@ -206,7 +215,7 @@ languages like we should do otherwise since Lex and Yacc are coupled with C.
 
 The decision was made to not recognize exactly every possible instruction in
 the parser, but only if something is for example a command, a comment or a gcc
-directive. We then transform per line to a object called a Statement. A
+directive. We then transform per line to an object called a Statement. A
 statement has a type, a name and optionally a list of arguments. These
 statements together form a statement list, which is placed in another object
 called a Block. In the beginning there is one block for the entire program, but
@@ -219,7 +228,7 @@ The optimizations are done in two different steps. First the global
 optimizations are performed, which are only the optimizations on branch-jump
 constructions. This is done repeatedly until there are no more changes.
 
-After all possible global optimizations are done, the program is separated into
+After all possible global optimizations are done, the program is seperated into
 basic blocks. The algorithm to do this is described earlier, and means all
 jump and branch instructions are called leaders, as are their targets. A basic
 block then goes from leader to leader.
@@ -231,26 +240,71 @@ steps can be done to optimize something.
 \subsection{Writing}
 
 Once all the optimizations have been done, the IR needs to be rewritten into
-Assembly code, so the xgcc cross compiler can make binary code out of it.
+Assembly code. After this step the xgcc crosscompiler can make binary code from
+the generated Assembly code.
 
 The writer expects a list of statements, so first the blocks have to be
 concatenated again into a list. After this is done, the list is passed on to
 the writer, which writes the instructions back to Assembly and saves the file
-so we can let xgcc compile it.
+so we can let xgcc compile it. We also write the original statements to a file,
+so differences in tabs, spaces and newlines do not show up when we check the
+differences between the optimized and non-optimized files.
+
+\subsection{Execution}
+
+To execute the optimizer, the following command can be given:\\
+\texttt{./main <original file> <optimized file> <rewritten original file>}
+
+\section{Testing}
+
+Of course, it has to be guaranteed that the optimized code still functions
+exactly the same as the none-optimized code. To do this, testing is an
+important part of out program. We have two stages of testing. The first stage
+is unit testing. The second stage is to test whether the compiled code has
+exactly the same output.
+
+\subsection{Unit testing}
+
+For almost every piece of important code, unit tests are available. Unit tests
+give the possibility to check whether each small part of the program, for
+instance each small function, is performing as expected. This way bugs are
+found early and very exactly. Otherwise, one would only see that there is a
+mistake in the program, not knowing where this bug is. Naturally, this means
+debugging is a lot easier.
+
+The unit tests can be run by executing \texttt{make test} in the root folder of
+the project. This does require the \texttt{textrunner} module.
+
+Also available is a coverage report. This report shows how much of the code has
+been unit tested. To make this report, the command \texttt{make coverage} can
+be run in the root folder. The report is than added as a folder \emph{coverage}
+in which a \emph{index.html} can be used to see the entire report.
+
+\subsection{Ouput comparison}
+
+In order to check whether the optimization does not change the functioning of
+the program, the output of the provided benchmark programs has to be compared
+to the output after optimization. If any of these outputs is not equal to the
+original output, our optimizations are to aggressive, or there is a bug
+somewhere in the code.
 
 \section{Results}
 
-\subsection{pi.c}
+The following results have been obtained:\\
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+Benchmark & Original     & Optimized    & Original & Optimized & Performance \\
+        & Instructions & instructions & cycles   & cycles    &  boost(cycles)\\
+\hline
+pi        &          134 &              &          &           &             \\
+acron     &              &              &          &           &             \\
+dhrystone &              &              &          &           &             \\
+whet      &              &              &          &           &             \\
+slalom    &              &              &          &           &             \\
+clinpack  &              &              &          &           &             \\
+\hline
+\end{tabular}
 
-\subsection{acron.c}
-
-\subsection{whet.c}
-
-\subsection{slalom.c}
-
-\subsection{clinpack.c}
-
-\section{Conclusion}
 
 \appendix
 
@@ -307,7 +361,13 @@ addu $regC, $regB, 4        move $regC, $regD
 
 
 # Constant folding
-
+li $regA, constA                ""       
+sw $regA, 16($fp)               ""
+li $regA, constB        ->      ""
+sw $regA, 20($fp)               ""	
+lw $regA, 16($fp)               "" 
+lw $regB, 20($fp)               ""
+addu $regA, $regA, $regA        $li regA, (constA + constB) at compile time
 
 # Copy propagation
 move $regA, $regB           move $regA, $regB
@@ -329,4 +389,5 @@ mult $regA, $regB, 0    ->  li   $regA, 0
 
 mult $regA, $regB, 2    ->  sll  $regA, $regB, 1
 \end{verbatim}
+
 \end{document}

@@ -1,5 +1,7 @@
-from src.statement import Statement as S
 from math import log
+
+from src.statement import Statement as S
+from src.liveness import is_reg_dead_after
 
 
 def reg_can_be_used_in(reg, block, start, end):
@@ -18,7 +20,7 @@ def reg_can_be_used_in(reg, block, start, end):
         elif s.defines(reg):
             return True
 
-    return True
+    return reg not in block.live_out
 
 
 def find_free_reg(block, start, end):
@@ -50,6 +52,8 @@ def eliminate_common_subexpressions(block):
     """
     changed = False
 
+    block.reset()
+
     while not block.end():
         s = block.read()
 
@@ -77,15 +81,20 @@ def eliminate_common_subexpressions(block):
                 new_reg = find_free_reg(block, occurrences[0], occurrences[-1])
 
                 # Replace all occurrences with a move statement
+                message = 'Common subexpression reference: %s %s' \
+                        % (s.name, ', '.join(map(str, [new_reg] + s[1:])))
+
                 for occurrence in occurrences:
                     rd = block[occurrence][0]
                     block.replace(1, [S('command', 'move', rd, new_reg)], \
-                            start=occurrence)
+                            start=occurrence, message=message)
 
                 # Insert the calculation before the original with the new
                 # destination address
+                message = 'Common subexpression: %s %s' \
+                        % (s.name, ', '.join(map(str, s)))
                 block.insert(S('command', s.name, *([new_reg] + args)), \
-                             index=occurrences[0])
+                             index=occurrences[0], message=message)
 
                 changed = True
 
@@ -123,71 +132,124 @@ def fold_constants(block):
     # Current known values in register
     register = {}
 
+    block.reset()
+
     while not block.end():
         s = block.read()
+        known = []
 
         if not s.is_command():
             continue
 
         if s.name == 'li':
             # Save value in register
-            register[s[0]] = int(s[1], 16)
+            if not isinstance(s[1], int): # Negative numbers are stored as int
+                register[s[0]] = int(s[1], 16)
+            else:
+                register[s[0]] = s[1]
+            known.append((s[0], register[s[0]]))
         elif s.name == 'move' and s[0] in register:
             reg_to, reg_from = s
 
             if reg_from in register:
                 # Other value is also known, copy its value
                 register[reg_to] = register[reg_from]
+                known.append((reg_to, register[reg_to]))
             else:
                 # Other value is unknown, delete the value
                 del register[reg_to]
+                known.append((reg_to, 'unknown'))
         elif s.name == 'sw' and s[0] in register:
             # Constant variable definition, e.g. 'int a = 1;'
             constants[s[1]] = register[s[0]]
+            known.append((s[1], register[s[0]]))
         elif s.name == 'lw' and s[1] in constants:
             # Usage of variable with constant value
             register[s[0]] = constants[s[1]]
-        elif s.name == 'mflo':
+            known.append((s[0], register[s[0]]))
+        elif s.name == 'mflo' and '$lo' in register:
             # Move of `Lo' register to another register
-            register[s[0]] = register['Lo']
-        elif s.name == 'mfhi':
+            register[s[0]] = register['$lo']
+            known.append((s[0], register[s[0]]))
+        elif s.name == 'mfhi' and '$hi' in register:
             # Move of `Hi' register to another register
-            register[s[0]] = register['Hi']
-        elif s.name in ['mult', 'div'] \
-                and s[0] in register and s[1] in register:
+            register[s[0]] = register['$hi']
+            known.append((s[0], register[s[0]]))
+        elif s.name == 'mult' and s[0]in register and s[1] in register:
             # Multiplication/division with constants
             rs, rt = s
+            a, b = register[rs], register[rt]
 
-            if s.name == 'mult':
-                binary = bin(register[rs] * register[rt])[2:]
+            if not a or not b:
+                # Multiplication by 0
+                hi = lo = to_hex(0)
+                message = 'Multiplication by 0: %d * 0' % (b if a else a)
+            elif a == 1:
+                # Multiplication by 1
+                hi = to_hex(0)
+                lo = to_hex(b)
+                message = 'Multiplication by 1: %d * 1' % b
+            elif b == 1:
+                # Multiplication by 1
+                hi = to_hex(0)
+                lo = to_hex(a)
+                message = 'Multiplication by 1: %d * 1' % a
+            else:
+                # Calculate result and fill Hi/Lo registers
+                result = a * b
+                binary = bin(result)[2:]
                 binary = '0' * (64 - len(binary)) + binary
-                register['Hi'] = int(binary[:32], base=2)
-                register['Lo'] = int(binary[32:], base=2)
-            elif s.name == 'div':
-                register['Lo'], register['Hi'] = divmod(rs, rt)
-        elif s.name in ['addu', 'subu']:
+                hi = int(binary[:32], base=2)
+                lo = int(binary[32:], base=2)
+                message = 'Constant multiplication: %d * %d = %d' \
+                            % (a, b, result)
+
+            # Replace the multiplication with two immidiate loads to the
+            # Hi/Lo registers
+            block.replace(1, [S('command', 'li', '$hi', hi),
+                                S('command', 'li', '$lo', li)],
+                            message=message)
+
+            register['$lo'], register['$hi'] = lo, hi
+            known += [('$lo', lo), ('$hi', hi)]
+            changed = True
+        elif s.name in ['addu', 'subu', 'div']:
             # Addition/subtraction with constants
             rd, rs, rt = s
             rs_known = rs in register
             rt_known = rt in register
 
-            if rs_known and rt_known:
+            if (rs_known or isinstance(rs, int)) and \
+                    (rt_known or isinstance(rt, int)):
                 # a = 5         ->  b = 15
                 # c = 10
                 # b = a + c
-                rs_val = register[rs]
-                rt_val = register[rt]
+                rs_val = register[rs] if rs_known else rs
+                rt_val = register[rt] if rt_known else rt
 
                 if s.name == 'addu':
-                    result = to_hex(rs_val + rt_val)
+                    result = rs_val + rt_val
+                    message = 'Constant addition: %d + %d = %d' \
+                              % (rs_val, rt_val, result)
 
                 if s.name == 'subu':
-                    result = to_hex(rs_val - rt_val)
+                    result = rs_val - rt_val
+                    message = 'Constant subtraction: %d - %d = %d' \
+                              % (rs_val, rt_val, result)
 
-                block.replace(1, [S('command', 'li', rd, result)])
+                if s.name == 'div':
+                    result = rs_val / rt_val
+                    message = 'Constant division: %d - %d = %d' \
+                              % (rs_val, rt_val, result)
+
+                block.replace(1, [S('command', 'li', rd, to_hex(result))],
+                              message=message)
                 register[rd] = result
+                known.append((rd, result))
                 changed = True
-            elif rt_known:
+                continue
+
+            if rt_known:
                 # a = 10        ->  b = c + 10
                 # b = c + a
                 s[2] = register[rt]
@@ -198,9 +260,22 @@ def fold_constants(block):
                 s[1] = rt
                 s[2] = register[rs]
                 changed = True
-        elif len(s) and s[0] in register:
-            # Known register is overwritten, remove its value
-            del register[s[0]]
+
+            if s[2] == 0:
+                # Addition/subtraction by 0
+                message = '%s by 0: %s * 1' % ('Addition' if s.name == 'addu' \
+                                               else 'Substraction', s[1])
+                block.replace(1, [S('command', 'move', rd, s[1])], \
+                              message=message)
+        else:
+            for reg in s.get_def():
+                if reg in register:
+                    # Known register is overwritten, remove its value
+                    del register[reg]
+                    known.append((reg, 'unknown'))
+
+        if block.debug and len(known):
+            s.set_inline_comment(','.join([' %s = %s' % k for k in known]))
 
     return changed
 
@@ -222,6 +297,8 @@ def copy_propagation(block):
     moves_to = []
     changed = False
 
+    block.reset()
+
     while not block.end():
         s = block.read()
 
@@ -241,7 +318,7 @@ def copy_propagation(block):
             # the list.
             i = 0
 
-            while i  < len(moves_to):
+            while i < len(moves_to):
                 if moves_to[i] == s[0] or moves_to[i] == s[1]:
                     del moves_to[i]
                     del moves_from[i]
@@ -274,6 +351,8 @@ def algebraic_transformations(block):
     - x = y * 2 -> x = x << 1
     """
     changed = False
+
+    block.reset()
 
     while not block.end():
         s = block.read()
@@ -316,27 +395,44 @@ def eliminate_dead_code(block):
       is not used in the rest of the block, and is not in the `out' set of the
       block.
     """
-    # TODO: Finish
     changed = False
 
-    block.reverse_statements()
-    unused = set()
-
-    while not block.end():
-        s = block.read()
-
+    for n, s in enumerate(block):
         for reg in s.get_def():
-            if reg in unused:
+            if is_reg_dead_after(reg, block, n):
                 # Statement is redefined later, so this statement is useless
-                s.remove = True
-                #print 'reg %s is in %s, remove:' % (reg, unused), \
-                #        block.pointer - 1, s
-            else:
-                unused.add(reg)
+                if block.debug:
+                    s.stype = 'comment'
+                    s.options['block'] = False
+                    s.set_inline_comment(' dead register %s' % reg)
+                    s.name = ' Dead:\t%s\t%s' \
+                            % (s.name, ','.join(map(str, s)))
+                else:
+                    s.remove = True
 
-        unused -= set(s.get_use())
+                changed = True
 
-    block.apply_filter(lambda s: not hasattr(s, 'remove'))
-    block.reverse_statements()
+    #unused = set()
+
+    #for s in reversed(block):
+    #    for reg in s.get_def():
+    #        if reg in unused:
+    #            # Statement is redefined later, so this statement is useless
+    #            if block.debug:
+    #                s.stype = 'comment'
+    #                s.options['block'] = False
+    #                s.name = ' Dead:\t%s\t%s' \
+    #                        % (s.name, ','.join(map(str, s)))
+    #            else:
+    #                s.remove = True
+
+    #            changed = True
+    #        else:
+    #            unused.add(reg)
+
+    #    unused -= set(s.get_use())
+
+    if not block.debug:
+        block.apply_filter(lambda s: not hasattr(s, 'remove'))
 
     return changed
