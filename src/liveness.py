@@ -94,11 +94,12 @@ def create_in_out(blocks):
 
     # Start by analyzing the exit points
     work_list = set()
+    exit_points = []
 
     for b in blocks:
         if b.edges_from and not b.edges_to:
             work_list.add(b)
-            b.live_out = set(RESERVED_OUT)
+            exit_points.append(b)
 
     while len(work_list):
         b = work_list.pop()
@@ -117,3 +118,6 @@ def create_in_out(blocks):
         if new_in != b.live_in:
             b.live_in = new_in
             work_list |= set(b.edges_from)
+
+    for b in exit_points:
+        b.live_out |= set(RESERVED_OUT)
