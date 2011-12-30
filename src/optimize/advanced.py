@@ -141,7 +141,7 @@ def fold_constants(block):
 
         if s.name == 'li':
             # Save value in register
-            if not isinstance(s[1], int):
+            if not isinstance(s[1], int): # Negative numbers are stored as int
                 register[s[0]] = int(s[1], 16)
             else:
                 register[s[0]] = s[1]
@@ -175,6 +175,7 @@ def fold_constants(block):
             known.append((s[0], register[s[0]]))
         elif s.name == 'mult' and s[0]in register and s[1] in register:
             # Multiplication/division with constants
+            print s
             rs, rt = s
             a, b = register[rs], register[rt]
 
