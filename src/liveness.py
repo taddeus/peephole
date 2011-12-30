@@ -72,21 +72,24 @@ def create_in_out(blocks):
     # Start by analyzing the exit points
     work_list = set()
 
-    for b in blocks:
-        if b.edges_from and not b.edges_to:
-            work_list.add(b)
+    if len(blocks) == 1:
+        work_list.add(blocks[0])
+    else:
+        for b in blocks:
+            if b.edges_from and not b.edges_to:
+                work_list.add(b)
 
     while len(work_list):
         b = work_list.pop()
-
-        # in[B] = use[B] | (out[B] - def[B])
-        new_in = b.use_set | (b.live_out - b.def_set)
 
         # out[B] = union of in[S] for S in succ(B)
         b.live_out = set()
 
         for s in succ(b):
             b.live_out |= s.live_in
+
+        # in[B] = use[B] | (out[B] - def[B])
+        new_in = b.use_set | (b.live_out - b.def_set)
 
         # Check if the out set has changed. If so, add all predecessors to the
         # work list
