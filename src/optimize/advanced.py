@@ -79,15 +79,20 @@ def eliminate_common_subexpressions(block):
                 new_reg = find_free_reg(block, occurrences[0], occurrences[-1])
 
                 # Replace all occurrences with a move statement
+                message = 'Common subexpression reference: %s %s' \
+                        % (s.name, ', '.join(map(str, [new_reg] + s[1:])))
+
                 for occurrence in occurrences:
                     rd = block[occurrence][0]
                     block.replace(1, [S('command', 'move', rd, new_reg)], \
-                            start=occurrence)
+                            start=occurrence, message=message)
 
                 # Insert the calculation before the original with the new
                 # destination address
+                message = 'Common subexpression: %s %s' \
+                        % (s.name, ', '.join(map(str, s)))
                 block.insert(S('command', s.name, *([new_reg] + args)), \
-                             index=occurrences[0])
+                             index=occurrences[0], message=message)
 
                 changed = True
 
@@ -129,6 +134,7 @@ def fold_constants(block):
 
     while not block.end():
         s = block.read()
+        known = []
 
         if not s.is_command():
             continue
@@ -136,27 +142,34 @@ def fold_constants(block):
         if s.name == 'li':
             # Save value in register
             register[s[0]] = int(s[1], 16)
+            known.append((s[0], register[s[0]]))
         elif s.name == 'move' and s[0] in register:
             reg_to, reg_from = s
 
             if reg_from in register:
                 # Other value is also known, copy its value
                 register[reg_to] = register[reg_from]
+                known.append((reg_to, register[reg_to]))
             else:
                 # Other value is unknown, delete the value
                 del register[reg_to]
+                known.append((reg_to, 'unknown'))
         elif s.name == 'sw' and s[0] in register:
             # Constant variable definition, e.g. 'int a = 1;'
             constants[s[1]] = register[s[0]]
+            known.append((s[1], register[s[0]]))
         elif s.name == 'lw' and s[1] in constants:
             # Usage of variable with constant value
             register[s[0]] = constants[s[1]]
+            known.append((s[0], register[s[0]]))
         elif s.name == 'mflo' and '$lo' in register:
             # Move of `Lo' register to another register
             register[s[0]] = register['$lo']
+            known.append((s[0], register[s[0]]))
         elif s.name == 'mfhi' and '$hi' in register:
             # Move of `Hi' register to another register
             register[s[0]] = register['$hi']
+            known.append((s[0], register[s[0]]))
         elif s.name in ['mult', 'div'] \
                 and s[0]in register and s[1] in register:
             # Multiplication/division with constants
@@ -167,51 +180,68 @@ def fold_constants(block):
                 if not a or not b:
                     # Multiplication by 0
                     hi = lo = to_hex(0)
+                    message = 'Multiplication by 0: %d * 0' % (b if a else a)
                 elif a == 1:
                     # Multiplication by 1
                     hi = to_hex(0)
                     lo = to_hex(b)
+                    message = 'Multiplication by 1: %d * 1' % b
                 elif b == 1:
                     # Multiplication by 1
                     hi = to_hex(0)
                     lo = to_hex(a)
+                    message = 'Multiplication by 1: %d * 1' % a
                 else:
                     # Calculate result and fill Hi/Lo registers
-                    binary = bin(a * b)[2:]
+                    result = a * b
+                    binary = bin(result)[2:]
                     binary = '0' * (64 - len(binary)) + binary
                     hi = int(binary[:32], base=2)
                     lo = int(binary[32:], base=2)
+                    message = 'Constant multiplication: %d * %d = %d' \
+                              % (a, b, result)
 
                 # Replace the multiplication with two immidiate loads to the
                 # Hi/Lo registers
                 block.replace(1, [S('command', 'li', '$hi', hi),
-                                S('command', 'li', '$lo', li)])
+                                  S('command', 'li', '$lo', li)],
+                              message=message)
             elif s.name == 'div':
                 lo, hi = divmod(rs, rt)
 
             register['$lo'], register['$hi'] = lo, hi
+            known += [('$lo', lo), ('$hi', hi)]
             changed = True
         elif s.name in ['addu', 'subu']:
             # Addition/subtraction with constants
             rd, rs, rt = s
             rs_known = rs in register
             rt_known = rt in register
+            print 'rs:', rs, type(rs)
+            print 'rt:', rt, type(rt)
 
-            if rs_known and rt_known:
+            if (rs_known or isinstance(rs, int)) and \
+                    (rt_known or isinstance(rt, int)):
                 # a = 5         ->  b = 15
                 # c = 10
                 # b = a + c
-                rs_val = register[rs]
-                rt_val = register[rt]
+                rs_val = register[rs] if rs_known else rs
+                rt_val = register[rt] if rt_known else rt
 
                 if s.name == 'addu':
-                    result = to_hex(rs_val + rt_val)
+                    result = rs_val + rt_val
+                    message = 'Constant addition: %d + %d = %d' \
+                            % (rs_val, rt_val, result)
 
                 if s.name == 'subu':
-                    result = to_hex(rs_val - rt_val)
+                    result = rs_val - rt_val
+                    message = 'Constant subtraction: %d - %d = %d' \
+                            % (rs_val, rt_val, result)
 
-                block.replace(1, [S('command', 'li', rd, result)])
+                block.replace(1, [S('command', 'li', rd, to_hex(result))],
+                              message=message)
                 register[rd] = result
+                known.append((rd, result))
                 changed = True
                 continue
 
@@ -228,13 +258,20 @@ def fold_constants(block):
                 changed = True
 
             if s[2] == 0:
-                # Addition/subtraction with 0
-                block.replace(1, [S('command', 'move', rd, s[1])])
+                # Addition/subtraction by 0
+                message = '%s by 0: %s * 1' % ('Addition' if s.name == 'addu' \
+                                               else 'Substraction', s[1])
+                block.replace(1, [S('command', 'move', rd, s[1])], \
+                              message=message)
         else:
             for reg in s.get_def():
                 if reg in register:
                     # Known register is overwritten, remove its value
                     del register[reg]
+                    known.append((reg, 'unknown'))
+
+        if block.debug and len(known):
+            s.set_inline_comment(','.join([' %s = %s' % k for k in known]))
 
     return changed
 

@@ -47,6 +47,7 @@ def t_offset_address(t):
 def t_int(t):
     r'-?[0-9]+'
     t.type = 'WORD'
+    t.value = int(t.value)
     return t
 
 def t_WORD(t):
