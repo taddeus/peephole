@@ -180,6 +180,19 @@ This code shows that \texttt{\$regA} is replaced with \texttt{\$regB}. This
 way, the move instruction might have become useless, and it will then be
 removed by the dead code elimination.
 
+\subsection{Dead code elimination}
+
+The final optimization that is performed is dead code elimination. This means
+that when an instruction is executed, but the result is never used, that
+instruction can be removed.
+
+To be able to properly perform dead code elimination, we need to know whether a
+variable will be used, before it is overwritten again. If it does, we call the
+variable live, otherwise the variable is dead. The technique to find out if a
+variable is live is called liveness analysis. We implemented this for the
+entire code, by analyzing each block, and using the variables that come in the
+block live as the variables that exit its predecessor live.
+
 \section{Implementation}
 
 We decided to implement the optimization in Python. We chose this programming
