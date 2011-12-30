@@ -95,7 +95,6 @@ def eliminate_common_subexpressions(block):
                         % (s.name, ', '.join(map(str, s)))
                 block.insert(S('command', s.name, *([new_reg] + args)), \
                              index=occurrences[0], message=message)
-
                 changed = True
 
             # Reset pointer to continue from the original statement
@@ -267,6 +266,7 @@ def fold_constants(block):
                                                else 'Substraction', s[1])
                 block.replace(1, [S('command', 'move', rd, s[1])], \
                               message=message)
+                changed = True
         else:
             for reg in s.get_def():
                 if reg in register:

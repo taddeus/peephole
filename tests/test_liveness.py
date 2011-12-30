@@ -41,12 +41,12 @@ class TestLiveness(unittest.TestCase):
         s33 = S('command', 'mult', 'b', 'd')
         s34 = S('command', 'mflo', 'temp')
         s35 = S('command', 'addu', 'return', 'temp', 'c')
-
-        b1, b2, b3 = find_basic_blocks([s11, s12, s13, s14, s15, s21, s22, \
+        
+        b1, b2, b3, b4 = find_basic_blocks([s11, s12, s13, s14, s15, s21, s22, \
                                         s31, s32, s33, s34, s35])
 
-        generate_flow_graph([b1, b2, b3])
-        create_in_out([b1, b2, b3])
+        generate_flow_graph([b1, b2, b3, b4])
+        create_in_out([b1, b2, b3, b4])
 
         self.assertEqual(b1.use_set, set())
         self.assertEqual(b1.def_set, set(['a', 'b', 'd', 'x']))
@@ -57,12 +57,12 @@ class TestLiveness(unittest.TestCase):
         self.assertEqual(b3.use_set, set(['b', 'd']))
         self.assertEqual(b3.def_set, set(['c', 'temp', 'return']))
 
-        self.assertEqual(b1.live_in, set())
-        self.assertEqual(b1.live_out, set(['a', 'b', 'd']))
-        self.assertEqual(b2.live_in, set(['a', 'b']))
-        self.assertEqual(b2.live_out, set(['b', 'd']))
-        self.assertEqual(b3.live_in, set(['b', 'd']))
-        self.assertEqual(b3.live_out, set())
+        self.assertEqual(b1.live_in, set(['$4', '$5', '$6', '$7']))
+        self.assertEqual(b1.live_out, set(['a', 'b', 'd', '$4', '$5', '$6', '$7']))
+        self.assertEqual(b2.live_in, set(['a', 'b', '$4', '$5', '$6', '$7']))
+        self.assertEqual(b2.live_out, set(['b', 'd', '$4', '$5', '$6', '$7']))
+        self.assertEqual(b3.live_in, set(['b', 'd', '$4', '$5', '$6', '$7']))
+        self.assertEqual(b3.live_out, set(['$4', '$5', '$6', '$7']))
         
 #    def test_create_in_out_two(self):    
 #        s11 = S('command', 'subu', 'i', 'm', '0x00000001')
