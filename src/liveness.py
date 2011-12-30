@@ -18,7 +18,7 @@ def is_reg_dead_after(reg, block, index, known_jump_targets=[]):
             and block[-1][0] not in known_jump_targets:
         if block.verbose:
             block[index].set_inline_comment(
-                    'Register %s cannot be removed due to "jal %s"'
+                    ' Register %s cannot be removed due to "jal %s"'
                     % (reg, block[-1][0]))
         return False
 
