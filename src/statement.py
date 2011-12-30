@@ -174,11 +174,15 @@ class Statement:
             'dmfc1']
         use = []
 
+        # Jump to register addres uses register
+        if self.is_command('j') and re.match('^\$\d+$', self[0]):
+            use.append(self[0])
+
         # Case arg0
         if (self.is_branch() \
-                and not self.is_command(*['bc1f', 'bc1t', 'bct', 'bcf'])) \
+                and not self.is_command('bc1f', 'bc1t', 'bct', 'bcf')) \
                 or self.is_store() or self.is_compare() \
-                or self.is_command(*['mult', 'dsz', 'mtc1']):
+                or self.is_command('mult', 'dsz', 'mtc1'):
             if self.name == 'dsz':
                 m = re.match('^[^(]+\(([^)]+)\)$', self[0])
 
@@ -186,27 +190,29 @@ class Statement:
                     use.append(m.group(1))
             else:
                 use.append(self[0])
-        # Case arg1 direct adressing
+
         if (self.is_branch() and not self.is_branch_zero() \
-                and not self.is_command(*['bc1f', 'bc1t', 'bct', 'bcf'])) \
+                and not self.is_command('bc1f', 'bc1t', 'bct', 'bcf')) \
                 or self.is_shift() \
                 or self.is_double_arithmetic() or self.is_double_unary() \
                 or self.is_logical() or self.is_convert() \
                 or self.is_truncate() or self.is_set_if_less() \
                 or self.is_compare() or self.is_command(*instr):
+            # Case arg1 direct adressing
             use.append(self[1])
-        # Case arg1 relative adressing
-        if self.is_load_non_immediate() or self.is_store():
+        elif self.is_load_non_immediate() or self.is_store():
+            # Case arg1 relative adressing
             m = re.match('^[^(]+\(([^)]+)\)$', self[1])
 
             if m:
                 use.append(m.group(1))
             else:
                 use.append(self[1])
+
         # Case arg2
         if self.is_double_arithmetic() or self.is_set_if_less() \
                 or self.is_logical() or self.is_truncate() \
-                or self.is_command(*['addu', 'subu', 'div']):
+                or self.is_command('addu', 'subu', 'div'):
             if not isinstance(self[2], int):
                     use.append(self[2])
 
