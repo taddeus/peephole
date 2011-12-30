@@ -412,26 +412,6 @@ def eliminate_dead_code(block):
 
                 changed = True
 
-    #unused = set()
-
-    #for s in reversed(block):
-    #    for reg in s.get_def():
-    #        if reg in unused:
-    #            # Statement is redefined later, so this statement is useless
-    #            if block.debug:
-    #                s.stype = 'comment'
-    #                s.options['block'] = False
-    #                s.name = ' Dead:\t%s\t%s' \
-    #                        % (s.name, ','.join(map(str, s)))
-    #            else:
-    #                s.remove = True
-
-    #            changed = True
-    #        else:
-    #            unused.add(reg)
-
-    #    unused -= set(s.get_use())
-
     if not block.debug:
         block.apply_filter(lambda s: not hasattr(s, 'remove'))
 
