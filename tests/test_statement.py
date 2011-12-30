@@ -37,7 +37,7 @@ class TestStatement(unittest.TestCase):
         self.assertFalse(S('directive', 'foo').is_command())
 
     def test_has_inline_comment(self):
-        self.assertTrue(S('comment', 'foo', comment='bar').has_inline_comment())
+        self.assertTrue(S('comment', 'foo', comment='a').has_inline_comment())
         self.assertFalse(S('comment', 'foo', comment='').has_inline_comment())
         self.assertFalse(S('comment', 'foo').has_inline_comment())
 
@@ -118,9 +118,8 @@ class TestStatement(unittest.TestCase):
         self.assertEqual(S('command', 'trunc.w.d', 'a', 'b', 'c').get_def(), a)
 
     def test_get_def_false(self):
-        a = []
-
-        self.assertEqual(S('command', 'bne', 'a', 'b', 'L1').get_def(), a)
+        self.assertEqual(S('command', 'bne', 'a', 'b', 'L1').get_def(), [])
+        self.assertEqual(S('command', 'beq', 'a', 'b', 'L1').get_def(), [])
 
     def test_get_use_true(self):
         arg1 = ['$1']
