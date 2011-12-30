@@ -2,7 +2,7 @@ from math import ceil
 
 
 TABSIZE = 4                 # Size in spaces of a single tab
-INLINE_COMMENT_LEVEL = 6    # Number of tabs to inline commment level
+INLINE_COMMENT_LEVEL = 7    # Number of tabs to inline commment level
 COMMAND_SIZE = 8            # Default length of a command name, used for
                             # indenting
 ADD_COMMENT_BLOCKS = True   # Wether to add newlines before and after
@@ -53,9 +53,10 @@ def write_statements(statements):
             start = INLINE_COMMENT_LEVEL * TABSIZE
             diff = start - len(line.expandtabs(TABSIZE))
 
+            print line.expandtabs(TABSIZE), start, len(line.expandtabs(TABSIZE)), diff
             # The comment must not be directly adjacent to the command itself
             if diff > 0:
-                tabs = '\t' * (int(ceil(diff / float(TABSIZE))) + 1)
+                tabs = '\t' * int(ceil(diff / float(TABSIZE)))
             else:
                 tabs = '  '
 
