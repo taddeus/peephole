@@ -173,49 +173,45 @@ def fold_constants(block):
             # Move of `Hi' register to another register
             register[s[0]] = register['$hi']
             known.append((s[0], register[s[0]]))
-        elif s.name in ['mult', 'div'] \
-                and s[0]in register and s[1] in register:
+        elif s.name == 'mult' and s[0]in register and s[1] in register:
             # Multiplication/division with constants
             rs, rt = s
             a, b = register[rs], register[rt]
 
-            if s.name == 'mult':
-                if not a or not b:
-                    # Multiplication by 0
-                    hi = lo = to_hex(0)
-                    message = 'Multiplication by 0: %d * 0' % (b if a else a)
-                elif a == 1:
-                    # Multiplication by 1
-                    hi = to_hex(0)
-                    lo = to_hex(b)
-                    message = 'Multiplication by 1: %d * 1' % b
-                elif b == 1:
-                    # Multiplication by 1
-                    hi = to_hex(0)
-                    lo = to_hex(a)
-                    message = 'Multiplication by 1: %d * 1' % a
-                else:
-                    # Calculate result and fill Hi/Lo registers
-                    result = a * b
-                    binary = bin(result)[2:]
-                    binary = '0' * (64 - len(binary)) + binary
-                    hi = int(binary[:32], base=2)
-                    lo = int(binary[32:], base=2)
-                    message = 'Constant multiplication: %d * %d = %d' \
-                              % (a, b, result)
+            if not a or not b:
+                # Multiplication by 0
+                hi = lo = to_hex(0)
+                message = 'Multiplication by 0: %d * 0' % (b if a else a)
+            elif a == 1:
+                # Multiplication by 1
+                hi = to_hex(0)
+                lo = to_hex(b)
+                message = 'Multiplication by 1: %d * 1' % b
+            elif b == 1:
+                # Multiplication by 1
+                hi = to_hex(0)
+                lo = to_hex(a)
+                message = 'Multiplication by 1: %d * 1' % a
+            else:
+                # Calculate result and fill Hi/Lo registers
+                result = a * b
+                binary = bin(result)[2:]
+                binary = '0' * (64 - len(binary)) + binary
+                hi = int(binary[:32], base=2)
+                lo = int(binary[32:], base=2)
+                message = 'Constant multiplication: %d * %d = %d' \
+                            % (a, b, result)
 
-                # Replace the multiplication with two immidiate loads to the
-                # Hi/Lo registers
-                block.replace(1, [S('command', 'li', '$hi', hi),
-                                  S('command', 'li', '$lo', li)],
-                              message=message)
-            elif s.name == 'div':
-                lo, hi = divmod(rs, rt)
+            # Replace the multiplication with two immidiate loads to the
+            # Hi/Lo registers
+            block.replace(1, [S('command', 'li', '$hi', hi),
+                                S('command', 'li', '$lo', li)],
+                            message=message)
 
             register['$lo'], register['$hi'] = lo, hi
             known += [('$lo', lo), ('$hi', hi)]
             changed = True
-        elif s.name in ['addu', 'subu']:
+        elif s.name in ['addu', 'subu', 'div']:
             # Addition/subtraction with constants
             rd, rs, rt = s
             rs_known = rs in register
@@ -232,12 +228,17 @@ def fold_constants(block):
                 if s.name == 'addu':
                     result = rs_val + rt_val
                     message = 'Constant addition: %d + %d = %d' \
-                            % (rs_val, rt_val, result)
+                              % (rs_val, rt_val, result)
 
                 if s.name == 'subu':
                     result = rs_val - rt_val
                     message = 'Constant subtraction: %d - %d = %d' \
-                            % (rs_val, rt_val, result)
+                              % (rs_val, rt_val, result)
+
+                if s.name == 'div':
+                    result = rs_val / rt_val
+                    message = 'Constant division: %d - %d = %d' \
+                              % (rs_val, rt_val, result)
 
                 block.replace(1, [S('command', 'li', rd, to_hex(result))],
                               message=message)
