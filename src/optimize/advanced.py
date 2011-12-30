@@ -177,7 +177,6 @@ def fold_constants(block):
             known.append((s[0], register[s[0]]))
         elif s.name == 'mult' and s[0]in register and s[1] in register:
             # Multiplication/division with constants
-            print s
             rs, rt = s
             a, b = register[rs], register[rt]
 
