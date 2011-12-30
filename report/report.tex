@@ -298,14 +298,14 @@ The following results have been obtained:\\
 \begin{tabular}{|c|c|c|c|c|c|}
 \hline
 Benchmark & Original     & Optimized    & Original & Optimized & Performance \\
-        & Instructions & instructions & cycles   & cycles    &  boost(cycles)\\
+        & Instructions & instructions   & cycles   & cycles    &  boost(cycles)\\
 \hline
-pi        &           94 &              &  1714468 &           &             \\
-acron     &          361 &              &  4435687 &           &             \\
-dhrystone &          752 &              &  2887710 &           &             \\
-whet      &          935 &              &  2864526 &           &             \\
-slalom    &         4177 &              &  2879140 &           &             \\
-clinpack  &         3523 &              &  1543746 &           &             \\
+pi        &           94 &      2       &    1714468   &   1714362      &   0.006182676 \%       \\
+acron     &          361 &      19      &    4435687   &   4372825      &   1.417187462 \%       \\
+dhrystone &          752 &      36      &    2887710   &   2742720      &   5.020933542 \%       \\  
+whet      &          935 &      23      &    2864526   &   2840042      &   0.854731289 \%       \\
+slalom    &         4177 &      107     &    2879140   &   2876105      &   0.143480345 \%       \\
+clinpack  &         3523 &      49      &    1543746   &   1528406      &   1.353201887  \%       \\ 
 \hline
 \end{tabular}
 
