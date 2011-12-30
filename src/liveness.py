@@ -17,8 +17,9 @@ def is_reg_dead_after(reg, block, index, known_jump_targets=[]):
     if reg in RESERVED_USE and block[-1].is_command('jal') \
             and block[-1][0] not in known_jump_targets:
         if block.verbose:
-            block[].set_inline_comment('Cannot be removed due to "jal"')
-        print 'Found conclicting jump with %s:' % reg, block[-1]
+            block[index].set_inline_comment(
+                    'Register %s cannot be removed due to "jal %s"'
+                    % (reg, block[-1][0]))
         return False
 
     if index < len(block) - 1:
