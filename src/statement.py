@@ -158,14 +158,14 @@ class Statement:
         defined = set()
 
         if self.is_command('mtc1'):
-            return defined.add(self[1])
+             defined.add(self[1])
         if self.is_load_non_immediate() or self.is_arith() \
                 or self.is_logical() or self.is_double_arithmetic() \
                 or self.is_move_from_spec() or self.is_double_unary() \
                 or self.is_set_if_less() or self.is_convert() \
                 or self.is_truncate() or self.is_load() \
                 or self.is_command(*instr):
-            return defined.add(self[0])
+            defined.add(self[0])
 
         return defined
 
