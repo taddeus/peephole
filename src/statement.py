@@ -154,7 +154,7 @@ class Statement:
 
     def get_def(self):
         """Get the variable that this statement defines, if any."""
-        instr = ['move', 'addu', 'subu', 'li', 'dmfc1', 'mov.d']
+        instr = ['div', 'move', 'addu', 'subu', 'li', 'dmfc1', 'mov.d']
 
         if self.is_command('mtc1'):
             return [self[1]]
@@ -178,7 +178,7 @@ class Statement:
         if (self.is_branch() \
                 and not self.is_command(*['bc1f', 'bc1t', 'bct', 'bcf'])) \
                 or self.is_store() or self.is_compare() \
-                or self.is_command(*['mult', 'div', 'dsz', 'mtc1']):
+                or self.is_command(*['mult', 'dsz', 'mtc1']):
             if self.name == 'dsz':
                 m = re.match('^[^(]+\(([^)]+)\)$', self[0])
 
@@ -206,7 +206,7 @@ class Statement:
         # Case arg2
         if self.is_double_arithmetic() or self.is_set_if_less() \
                 or self.is_logical() or self.is_truncate() \
-                or self.is_command(*['addu', 'subu']):
+                or self.is_command(*['addu', 'subu', 'div']):
             if not isinstance(self[2], int):
                     use.append(self[2])
 
