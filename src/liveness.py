@@ -1,7 +1,7 @@
 from copy import copy
 
 
-RESERVED_REGISTERS = ['$fp', '$sp']
+RESERVED_REGISTERS = ['$fp', '$sp', '$31']
 
 
 def is_reg_dead_after(reg, block, index):

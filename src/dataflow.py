@@ -76,8 +76,10 @@ def generate_flow_graph(blocks):
                 if other[0].is_label(target):
                     b.add_edge_to(other)
 
-            # A branch instruction also creates an edge to the next block
-            if last_statement.is_branch() and i < len(blocks) - 1:
+            # A branch and jump-and-line instruction also creates an edge to
+            # the next block
+            if (last_statement.is_branch() or last_statement.name == 'jal') \
+                    and i < len(blocks) - 1:
                 b.add_edge_to(blocks[i + 1])
         elif i < len(blocks) - 1:
             b.add_edge_to(blocks[i + 1])
