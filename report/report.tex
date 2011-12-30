@@ -126,9 +126,10 @@ calculated at compile time. If a value x is assigned to a certain value, lets
 say 10, than all next occurences of \texttt{x} are replaced by 10 until a
 redefinition of x. Arithmetics in Assembly are always performed between two
 variables or a variable and a constant. If this is not the case the calculation
-is not possible. See the example for a more clear explanation of constant
-folding(will come). In other words until the current definition of \texttt{x}
-becomes dead. Therefore reaching definitions analysis is needed.
+is not possible. See \ref{opt} for an example. In other words until the current
+definition of \texttt{x} becomes dead. Therefore reaching definitions analysis is 
+needed. Reaching definitions is a form of liveness analysis, we use the liveness
+analysis within a block and not between blocks.
 
 \subsubsection*{Copy propagation}
 
@@ -305,7 +306,13 @@ addu $regC, $regB, 4        move $regC, $regD
 
 
 # Constant folding
-
+li $regA, constA                ""       
+sw $regA, 16($fp)               ""
+li $regA, constB        ->      ""
+sw $regA, 20($fp)               ""	
+lw $regA, 16($fp)               "" 
+lw $regB, 20($fp)               ""
+addu $regA, $regA, $regA        $li regA, (constA + constB) at compile time
 
 # Copy propagation
 move $regA, $regB           move $regA, $regB
