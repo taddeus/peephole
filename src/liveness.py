@@ -34,7 +34,7 @@ def is_reg_dead_after(reg, block, index, known_jump_targets=[]):
 
     # If dead within the same block, check if the register is in the block's
     # live_out set
-    return reg in RESERVED_DEF or reg not in block.live_out
+    return reg not in RESERVED_DEF and reg not in block.live_out
 
 
 def create_use_def(block):
