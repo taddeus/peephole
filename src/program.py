@@ -71,7 +71,10 @@ class Program(Block):
         """Divide the statement list into basic blocks."""
         self.blocks = find_basic_blocks(self.statements)
 
-        # Remove the old statment list, since it will probably change
+        for b in self.blocks:
+            b.debug = self.debug
+
+        # Remove the old statement list, since it will probably change
         del self.statements
 
     def perform_dataflow_analysis(self):

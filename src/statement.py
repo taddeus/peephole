@@ -38,6 +38,9 @@ class Statement:
     def __repr__(self):  # pragma: nocover
         return str(self)
 
+    def set_inline_comment(self, comment):
+        self.options['comment'] = comment
+
     def has_inline_comment(self):
         return 'comment' in self.options and len(self.options['comment'])
 
@@ -221,13 +224,15 @@ class Statement:
 class Block:
     bid = 1
 
-    def __init__(self, statements=[]):
+    def __init__(self, statements=[], debug=False):
         self.statements = statements
         self.pointer = 0
 
         # Assign a unique ID to each block for printing purposes
         self.bid = Block.bid
         Block.bid += 1
+
+        self.debug = debug
 
     def __str__(self):
         return '<Block bid=%d statements=%d>' % (self.bid, len(self))
@@ -265,7 +270,7 @@ class Block:
         return self.statements[self.pointer] if count == 1 \
                else self.statements[self.pointer:self.pointer + count]
 
-    def replace(self, count, replacement, start=None):
+    def replace(self, count, replacement, start=None, message=''):
         """Replace the given range start-(start + count) with the given
         statement list, and move the pointer to the first statement after the
         replacement."""
@@ -275,14 +280,34 @@ class Block:
         if start == None:
             start = self.pointer - 1
 
+        # Add a message in inline comments
+        if self.debug:
+            if len(message):
+                message = ' ' + message
+
+                if len(replacement):
+                    replacement[0].set_inline_comment(message)
+
+                    for s in replacement[1:]:
+                        s.set_inline_comment('|')
+                else:
+                    replacement = [Statement('comment', message)]
+            elif not len(replacement):
+                # Statement is removed, comment it
+                replacement = [Statement('comment', str(b)) \
+                               for b in self.statements[start:start + count]]
+
         before = self.statements[:start]
         after = self.statements[start + count:]
         self.statements = before + replacement + after
         self.pointer = start + len(replacement)
 
-    def insert(self, statement, index=None):
+    def insert(self, statement, index=None, message=''):
         if index == None:
             index = self.pointer
+
+        if self.debug and len(message):
+            statement.set_inline_comment(' ' + message)
 
         self.statements.insert(index, statement)
 

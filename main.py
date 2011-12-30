@@ -2,6 +2,7 @@
 from src.parser import parse_file
 from src.optimize import optimize
 
+
 if __name__ == '__main__':
     from sys import argv, exit
 
@@ -12,6 +13,7 @@ if __name__ == '__main__':
 
     # Parse file
     program = parse_file(argv[1])
+    program.debug = True
 
     if len(argv) > 3:
         # Save input assembly in new file for easy comparison
