@@ -148,6 +148,8 @@ class TestStatement(unittest.TestCase):
                 arg2)
         self.assertEqual(S('command', 's.s', '$1', '10($2)').get_use(), \
                 arg2)
+        self.assertEqual(S('command', 'sw', '$1', '10($2)').get_use(), \
+                arg2)
         self.assertEqual(S('command', 'sb', '$1', '10($2)').get_use(), \
                 arg2)
         self.assertEqual(S('command', 'mtc1', '$1', '$2').get_use(), arg1)
