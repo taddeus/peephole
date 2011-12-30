@@ -1,6 +1,7 @@
 from statement import Statement as S, Block
 from dataflow import find_basic_blocks, generate_flow_graph
-from optimize.redundancies import remove_redundant_jumps, remove_redundancies
+from optimize.redundancies import remove_redundant_jumps, remove_redundancies,\
+        remove_redundant_branch_jumps
 from optimize.advanced import eliminate_common_subexpressions, \
         fold_constants, copy_propagation, eliminate_dead_code
 from writer import write_statements
@@ -65,42 +66,24 @@ class Program(Block):
         if not hasattr(self, 'statements'):
             self.statements = self.get_statements()
 
-        return remove_redundant_jumps(self)
+        return remove_redundant_jumps(self) \
+               | remove_redundant_branch_jumps(self)
 
     def optimize_blocks(self):
         """Optimize on block level. Keep executing all optimizations until no
         more changes occur."""
-        self.program_iterations = self.block_iterations = 0
-        program_changed = True
+        changed = False
 
-        while program_changed:
-            self.program_iterations += 1
-            program_changed = False
+        for block in self.blocks:
+            print 'block iteration'
+            if remove_redundancies(block) \
+                    | eliminate_common_subexpressions(block) \
+                    | fold_constants(block) \
+                    | copy_propagation(block) \
+                    | eliminate_dead_code(block):
+                changed = True
 
-            for block in self.blocks:
-                self.block_iterations += 1
-                block_changed = True
-
-                while block_changed:
-                    block_changed = False
-
-                    if remove_redundancies(block):
-                        block_changed = True
-
-                    if eliminate_common_subexpressions(block):
-                        block_changed = True
-
-                    if fold_constants(block):
-                        block_changed = True
-
-                    if copy_propagation(block):
-                        block_changed = True
-
-                    if eliminate_dead_code(block):
-                        block_changed = True
-
-                    if block_changed:
-                        program_changed = True
+        return changed
 
     def find_basic_blocks(self):
         """Divide the statement list into basic blocks."""

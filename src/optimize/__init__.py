@@ -14,6 +14,7 @@ def optimize(program, verbose=0):
     changed = True
 
     while changed:
+        print 'main iteration'
         changed = False
 
         # Optimize on a global level
