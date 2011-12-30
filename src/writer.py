@@ -25,7 +25,7 @@ def write_statements(statements):
             indent_level = 1
         elif s.is_comment():
             line = '\t' * indent_level + '#' + s.name
-            current_comment = True
+            current_comment = s.options.get('block', True)
         elif s.is_directive():
             line = '\t' + s.name
         elif s.is_command():

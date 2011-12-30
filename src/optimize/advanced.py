@@ -217,8 +217,6 @@ def fold_constants(block):
             rd, rs, rt = s
             rs_known = rs in register
             rt_known = rt in register
-            print 'rs:', rs, type(rs)
-            print 'rt:', rt, type(rt)
 
             if (rs_known or isinstance(rs, int)) and \
                     (rt_known or isinstance(rt, int)):
@@ -399,14 +397,19 @@ def eliminate_dead_code(block):
         for reg in s.get_def():
             if reg in unused:
                 # Statement is redefined later, so this statement is useless
-                s.remove = True
-                #print 'reg %s is in %s, remove:' % (reg, unused), \
-                #        block.pointer - 1, s
+                if block.debug:
+                    s.stype = 'comment'
+                    s.options['block'] = False
+                    s.name = ' Dead code: %s %s' \
+                            % (s.name, ', '.join(map(str, s)))
+                else:
+                    s.remove = True
             else:
                 unused.add(reg)
 
         unused -= set(s.get_use())
 
-    block.apply_filter(lambda s: not hasattr(s, 'remove'))
+    if not block.debug:
+        block.apply_filter(lambda s: not hasattr(s, 'remove'))
 
     return changed
