@@ -405,8 +405,7 @@ def eliminate_dead_code(block):
                     s.stype = 'comment'
                     s.options['block'] = False
                     s.set_inline_comment(' dead register %s' % reg)
-                    s.name = ' Dead:\t%s\t%s' \
-                            % (s.name, ','.join(map(str, s)))
+                    s.name = ' Dead:\t%s\t%s' % (s.name, ','.join(map(str, s)))
                 else:
                     s.remove = True
 
