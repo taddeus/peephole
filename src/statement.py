@@ -155,28 +155,29 @@ class Statement:
     def get_def(self):
         """Get the variable that this statement defines, if any."""
         instr = ['div', 'move', 'addu', 'subu', 'li', 'dmfc1', 'mov.d']
+        defined = set()
 
         if self.is_command('mtc1'):
-            return [self[1]]
+            return defined.add(self[1])
         if self.is_load_non_immediate() or self.is_arith() \
                 or self.is_logical() or self.is_double_arithmetic() \
                 or self.is_move_from_spec() or self.is_double_unary() \
                 or self.is_set_if_less() or self.is_convert() \
                 or self.is_truncate() or self.is_load() \
                 or self.is_command(*instr):
-            return self[:1]
+            return defined.add(self[0])
 
-        return []
+        return defined
 
     def get_use(self):
         """Get the variables that this statement uses, if any."""
         instr = ['addu', 'subu', 'mult', 'div', 'move', 'mov.d', \
             'dmfc1']
-        use = []
+        use = set()
 
         # Jump to register addres uses register
         if self.is_command('j') and re.match('^\$\d+$', self[0]):
-            use.append(self[0])
+            use.add(self[0])
 
         # Case arg0
         if (self.is_branch() \
@@ -187,9 +188,9 @@ class Statement:
                 m = re.match('^[^(]+\(([^)]+)\)$', self[0])
 
                 if m:
-                    use.append(m.group(1))
+                    use.add(m.group(1))
             else:
-                use.append(self[0])
+                use.add(self[0])
 
         if (self.is_branch() and not self.is_branch_zero() \
                 and not self.is_command('bc1f', 'bc1t', 'bct', 'bcf')) \
@@ -199,22 +200,22 @@ class Statement:
                 or self.is_truncate() or self.is_set_if_less() \
                 or self.is_compare() or self.is_command(*instr):
             # Case arg1 direct adressing
-            use.append(self[1])
+            use.add(self[1])
         elif self.is_load_non_immediate() or self.is_store():
             # Case arg1 relative adressing
             m = re.match('^[^(]+\(([^)]+)\)$', self[1])
 
             if m:
-                use.append(m.group(1))
+                use.add(m.group(1))
             else:
-                use.append(self[1])
+                use.add(self[1])
 
         # Case arg2
         if self.is_double_arithmetic() or self.is_set_if_less() \
                 or self.is_logical() or self.is_truncate() \
                 or self.is_command('addu', 'subu', 'div'):
             if not isinstance(self[2], int):
-                    use.append(self[2])
+                    use.add(self[2])
 
         return use
 
