@@ -66,21 +66,22 @@ class Program(Block):
         if not hasattr(self, 'statements'):
             self.statements = self.get_statements()
 
-        return remove_redundant_jumps(self)
-#               | remove_redundant_branch_jumps(self)
+        return remove_redundant_jumps(self) \
+               | remove_redundant_branch_jumps(self)
+        return False
 
     def optimize_blocks(self):
         """Optimize on block level. Keep executing all optimizations until no
         more changes occur."""
         changed = False
 
-#        for block in self.blocks:
-#            if remove_redundancies(block) \
-#                    | eliminate_common_subexpressions(block) \
-#                    | fold_constants(block) \
-#                    | copy_propagation(block) \
-#                    | eliminate_dead_code(block):
-#                changed = True
+        for block in self.blocks:
+            if remove_redundancies(block) \
+                    | eliminate_common_subexpressions(block) \
+                    | fold_constants(block) \
+                    | copy_propagation(block) \
+                    | eliminate_dead_code(block):
+                 changed = True
 
         return changed
 

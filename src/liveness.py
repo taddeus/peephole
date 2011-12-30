@@ -29,7 +29,8 @@ def create_use_def(block):
     defined = set()
 
     if block.dummy:
-        block.use_set = set(['$4', '$5', '$6', '$7'])
+        block.use_set = set(['$4', '$5', '$6', '$7', \
+            '$f0', '$f3', '$f4', '$f12', '$2'])
         block.def_set = set(['$2', '$3'])
         return
 
