@@ -72,12 +72,9 @@ def create_in_out(blocks):
     # Start by analyzing the exit points
     work_list = set()
 
-    if len(blocks) == 1:
-        work_list.add(blocks[0])
-    else:
-        for b in blocks:
-            if b.edges_from and not b.edges_to:
-                work_list.add(b)
+    for b in blocks:
+        if b.edges_from and not b.edges_to:
+            work_list.add(b)
 
     while len(work_list):
         b = work_list.pop()
