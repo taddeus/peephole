@@ -52,8 +52,7 @@ of course be done for the opposite case, where a \texttt{bne} is changed into a
 \texttt{beq}.
 
 Since this optimization is done between two series of codes with jumps and
-labels, we can not perform this code during the basic block optimizations. The
-reason for this will become clearer in the following section.
+labels, we can not perform this code during the basic block optimizations.
 
 \subsection{Basic Block Optimizations}
 
@@ -127,9 +126,23 @@ say 10, than all next occurences of \texttt{x} are replaced by 10 until a
 redefinition of x. Arithmetics in Assembly are always performed between two
 variables or a variable and a constant. If this is not the case the calculation
 is not possible. See \ref{opt} for an example. In other words until the current
-definition of \texttt{x} becomes dead. Therefore reaching definitions analysis is 
-needed. Reaching definitions is a form of liveness analysis, we use the liveness
-analysis within a block and not between blocks.
+definition of \texttt{x} becomes dead. Therefore reaching definitions analysis
+is needed. Reaching definitions is a form of liveness analysis, we use the
+liveness analysis within a block and not between blocks.
+
+During the constant folding, so-called algebraic transformations are performed
+as well. Some expression can easily be replaced with more simple once if you
+look at what they are saying algebraically. An example is the statement
+$x = y + 0$, or in Assembly \texttt{addu \$1, \$2, 0}. This can easily be
+changed into $x = y$ or \texttt{move \$1, \$2}.
+
+Another case is the multiplication with a power of two. This can be done way
+more efficiently by shifting left a number of times. An example:
+\texttt{mult \$regA, \$regB, 4    ->  sll  \$regA, \$regB, 2}. We perform this
+optimization for any multiplication with a power of two.
+
+There are a number of such cases, all of which are once again stated in
+appendix \ref{opt}.
 
 \subsubsection*{Copy propagation}
 
@@ -166,21 +179,6 @@ addu $regC, $regA, ...      addu $regC, $regB, ...
 This code shows that \texttt{\$regA} is replaced with \texttt{\$regB}. This
 way, the move instruction might have become useless, and it will then be
 removed by the dead code elimination.
-
-\subsubsection*{Algebraic transformations}
-
-Some expression can easily be replaced with more simple once if you look at
-what they are saying algebraically. An example is the statement $x = y + 0$, or
-in Assembly \texttt{addu \$1, \$2, 0}. This can easily be changed into $x = y$
-or \texttt{move \$1, \$2}.
-
-Another case is the multiplication with a power of two. This can be done way
-more efficiently by shifting left a number of times. An example:
-\texttt{mult \$regA, \$regB, 4    ->  sll  \$regA, \$regB, 2}. We perform this
-optimization for any multiplication with a power of two.
-
-There are a number of such cases, all of which are once again stated in
-appendix \ref{opt}.
 
 \section{Implementation}
 
@@ -235,21 +233,65 @@ the generated Assembly code.
 The writer expects a list of statements, so first the blocks have to be
 concatenated again into a list. After this is done, the list is passed on to
 the writer, which writes the instructions back to Assembly and saves the file
-so we can let xgcc compile it.
+so we can let xgcc compile it. We also write the original statements to a file,
+so differences in tabs, spaces and newlines do not show up when we check the
+differences between the optimized and non-optimized files.
+
+\subsection{Execution}
+
+To execute the optimizer, the following command can be given:\\
+\texttt{./main <original file> <optimized file> <rewritten original file>}
+
+\section{Testing}
+
+Of course, it has to be guaranteed that the optimized code still functions
+exactly the same as the none-optimized code. To do this, testing is an
+important part of out program. We have two stages of testing. The first stage
+is unit testing. The second stage is to test whether the compiled code has
+exactly the same output.
+
+\subsection{Unit testing}
+
+For almost every piece of important code, unit tests are available. Unit tests
+give the possibility to check whether each small part of the program, for
+instance each small function, is performing as expected. This way bugs are
+found early and very exactly. Otherwise, one would only see that there is a
+mistake in the program, not knowing where this bug is. Naturally, this means
+debugging is a lot easier.
+
+The unit tests can be run by executing \texttt{make test} in the root folder of
+the project. This does require the \texttt{textrunner} module.
+
+Also available is a coverage report. This report shows how much of the code has
+been unit tested. To make this report, the command \texttt{make coverage} can
+be run in the root folder. The report is than added as a folder \emph{coverage}
+in which a \emph{index.html} can be used to see the entire report.
+
+\subsection{Ouput comparison}
+
+In order to check whether the optimization does not change the functioning of
+the program, the output of the provided benchmark programs has to be compared
+to the output after optimization. If any of these outputs is not equal to the
+original output, our optimizations are to aggressive, or there is a bug
+somewhere in the code.
 
 \section{Results}
 
-\subsection{pi.c}
+The following results have been obtained:\\
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+Benchmark & Original     & Optimized    & Original & Optimized & Performance \\
+        & Instructions & instructions & cycles   & cycles    &  boost(cycles)\\
+\hline
+pi        &          134 &              &          &           &             \\
+acron     &              &              &          &           &             \\
+dhrystone &              &              &          &           &             \\
+whet      &              &              &          &           &             \\
+slalom    &              &              &          &           &             \\
+clinpack  &              &              &          &           &             \\
+\hline
+\end{tabular}
 
-\subsection{acron.c}
-
-\subsection{whet.c}
-
-\subsection{slalom.c}
-
-\subsection{clinpack.c}
-
-\section{Conclusion}
 
 \appendix
 
