@@ -16,6 +16,9 @@ def is_reg_dead_after(reg, block, index, known_jump_targets=[]):
     # of reserved argument registers are not removed
     if reg in RESERVED_USE and block[-1].is_command('jal') \
             and block[-1][0] not in known_jump_targets:
+        if block.verbose:
+            block[].set_inline_comment('Cannot be removed due to "jal"')
+        print 'Found conclicting jump with %s:' % reg, block[-1]
         return False
 
     if index < len(block) - 1:
@@ -30,7 +33,7 @@ def is_reg_dead_after(reg, block, index, known_jump_targets=[]):
 
     # If dead within the same block, check if the register is in the block's
     # live_out set
-    return reg not in block.live_out
+    return reg in RESERVED_DEF or reg not in block.live_out
 
 
 def create_use_def(block):
