@@ -120,6 +120,7 @@ class TestStatement(unittest.TestCase):
         a = []
 
         self.assertEqual(S('command', 'bne', 'a', 'b', 'L1').get_def(), a)
+        self.assertEqual(S('command', 'beq', 'a', 'b', 'L1').get_def(), a)
     
     def test_get_use_true(self):
         arg1 = ['$1']
