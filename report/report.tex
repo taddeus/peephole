@@ -246,14 +246,18 @@ the generated Assembly code.
 The writer expects a list of statements, so first the blocks have to be
 concatenated again into a list. After this is done, the list is passed on to
 the writer, which writes the instructions back to Assembly and saves the file
-so we can let xgcc compile it. We also write the original statements to a file,
-so differences in tabs, spaces and newlines do not show up when we check the
-differences between the optimized and non-optimized files.
+so we can let xgcc compile it. The original statements can also written to a
+file, so differences in tabs, spaces and newlines do not show up when checking
+the differences between the optimized and non-optimized files.
 
 \subsection{Execution}
 
 To execute the optimizer, the following command can be given:\\
-\texttt{./main <original file> <optimized file> <rewritten original file>}
+\texttt{./main.py <original file> <optimized file> <rewritten original file>}\\
+There is also a script available that runs the optimizer and automatically
+starts the program \emph{meld}. In meld it is easy to visually compare the
+original file and the optimized file. The command to execute this script is:\\
+\texttt{./run <benchmark name (e.g. whet)>}\\
 
 \section{Testing}
 

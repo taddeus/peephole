@@ -123,8 +123,25 @@ def add_lw(add, statements):
 
             return True
 
-
 def remove_redundant_jumps(statements):
+    """Remove jump if label follows immediatly."""
+    old_len = -1
+
+    while old_len != len(statements):
+        old_len = len(statements)
+        
+        while not statements.end():
+            s = statements.read()
+
+            #     j $Lx     ->             $Lx:
+            # $Lx:
+            if s.is_command('j'):
+                following = statements.peek(2)
+
+                if following.is_label(s[0]):
+                    statements.replace(1, [])
+                        
+def remove_redundant_branch_jumps(statements):
     """Optimize statement sequences on a global level."""
     old_len = -1
 
