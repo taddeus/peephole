@@ -1,22 +1,17 @@
 \documentclass[10pt,a4paper]{article}
 \usepackage[latin1]{inputenc}
-\usepackage{amsmath}
-\usepackage{amsfonts}
-\usepackage{amssymb}
-\usepackage{booktabs}
-\usepackage{graphicx}
-\usepackage{listings}
-\usepackage{subfigure}
-\usepackage{float}
-\usepackage{hyperref}
+\usepackage{amsmath,amsfonts,amssymb,booktabs,graphicx,listings,subfigure}
+\usepackage{float,hyperref}
 
 \title{Peephole Optimizer}
 \author{Jayke Meijer (6049885), Richard Torenvliet (6138861), Tadde\"us Kroes
     (6054129)}
 
 \begin{document}
+
 \maketitle
 \tableofcontents
+
 \pagebreak
 
 \section{Introduction}
@@ -81,7 +76,7 @@ These are optimizations that simply look for a certain statement or pattern of
 statements, and optimize these. For example,
 \begin{verbatim}
 mov $regA,$regB
-instr $regA, $regA,... 
+instr $regA, $regA,...
 \end{verbatim}
 can be optimized into
 \begin{verbatim}
@@ -184,7 +179,7 @@ more efficiently by shifting left a number of times. An example:
 optimization for any multiplication with a power of two.
 
 There are a number of such cases, all of which are once again stated in
-appendix \ref{opt}. 
+appendix \ref{opt}.
 
 \section{Implementation}
 
@@ -372,4 +367,5 @@ mult $regA, $regB, 0    ->  li   $regA, 0
 
 mult $regA, $regB, 2    ->  sll  $regA, $regB, 1
 \end{verbatim}
+
 \end{document}
