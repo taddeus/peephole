@@ -79,7 +79,7 @@ class Program(Block):
 
     def perform_dataflow_analysis(self):
         """Perform dataflow analysis:
-           -Divide the statement list into basic blocks
+           - Divide the statement list into basic blocks
            - Generate flow graph
            - Create liveness sets: def, use, in, out
            - Create reaching definitions sets: gen, kill, in, out"""
