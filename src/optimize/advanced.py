@@ -141,7 +141,10 @@ def fold_constants(block):
 
         if s.name == 'li':
             # Save value in register
-            register[s[0]] = int(s[1], 16)
+            if not isinstance(s[1], int):
+                register[s[0]] = int(s[1], 16)
+            else:
+                register[s[0]] = s[1]
             known.append((s[0], register[s[0]]))
         elif s.name == 'move' and s[0] in register:
             reg_to, reg_from = s
