@@ -115,7 +115,7 @@ We now add the instruction above the first use, and write the result in a new
 variable. Then all occurrences of this expression can be replaced by a move of
 from new variable into the original destination variable of the instruction.
 
-This is a less efficient method then the dag, but because the basic blocks are
+This is a less efficient method then the DAG, but because the basic blocks are
 in general not very large and the execution time of the optimizer is not a
 primary concern, this is not a big problem.
 
@@ -190,7 +190,7 @@ To be able to properly perform dead code elimination, we need to know whether a
 variable will be used, before it is overwritten again. If it does, we call the
 variable live, otherwise the variable is dead. The technique to find out if a
 variable is live is called liveness analysis. We implemented this for the
-entire code, by analyzing each block, and using the variables that come in the
+entire code, by analysing each block, and using the variables that come in the
 block live as the variables that exit its predecessor live.
 
 \section{Implementation}
@@ -228,7 +228,7 @@ The optimizations are done in two different steps. First the global
 optimizations are performed, which are only the optimizations on branch-jump
 constructions. This is done repeatedly until there are no more changes.
 
-After all possible global optimizations are done, the program is seperated into
+After all possible global optimizations are done, the program is separated into
 basic blocks. The algorithm to do this is described earlier, and means all
 jump and branch instructions are called leaders, as are their targets. A basic
 block then goes from leader to leader.
