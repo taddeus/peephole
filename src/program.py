@@ -1,4 +1,4 @@
-from statement import Block
+from statement import Statement as S, Block
 from dataflow import find_basic_blocks, generate_flow_graph
 from optimize.redundancies import remove_redundant_jumps, remove_redundancies
 from optimize.advanced import eliminate_common_subexpressions, \
@@ -14,14 +14,30 @@ class Program(Block):
         return len(self.statements) if hasattr(self, 'statements') \
                else reduce(lambda a, b: len(a) + len(b), self.blocks, 0)
 
-    def get_statements(self):
+    def get_statements(self, add_block_comments=False):
         """Concatenate the statements of all blocks and return the resulting
         list."""
         if hasattr(self, 'statements'):
             return self.statements
-        else:
-            return reduce(lambda a, b: a + b,
-                          [b.statements for b in self.blocks])
+
+        # Only add block start and end comments when in debug mode
+        if add_block_comments and self.debug:
+            get_id = lambda b: b.bid
+            statements = []
+
+            for b in self.blocks:
+                message = ' Block %d (%d statements), edges from: %s' \
+                          % (b.bid, len(b), map(get_id, b.edges_from))
+                statements.append(S('comment', message, block=False))
+                statements += b.statements
+                message = ' End of block %d, edges to: %s' \
+                          % (b.bid, map(get_id, b.edges_to))
+                statements.append(S('comment', message, block=False))
+
+            return statements
+
+        return reduce(lambda a, b: a + b,
+                      [b.statements for b in self.blocks])
 
     def count_instructions(self):
         """Count the number of statements that are commands or labels."""
@@ -91,5 +107,5 @@ class Program(Block):
     def save(self, filename):
         """Save the program in the specified file."""
         f = open(filename, 'w+')
-        f.write(write_statements(self.get_statements()))
+        f.write(write_statements(self.get_statements(True)))
         f.close()
