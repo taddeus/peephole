@@ -53,7 +53,6 @@ def write_statements(statements):
             start = INLINE_COMMENT_LEVEL * TABSIZE
             diff = start - len(line.expandtabs(TABSIZE))
 
-            print line.expandtabs(TABSIZE), start, len(line.expandtabs(TABSIZE)), diff
             # The comment must not be directly adjacent to the command itself
             if diff > 0:
                 tabs = '\t' * int(ceil(diff / float(TABSIZE)))
