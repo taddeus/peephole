@@ -1,3 +1,4 @@
+from copy import copy
 import re
 
 
@@ -7,7 +8,7 @@ class Statement:
     def __init__(self, stype, name, *args, **kwargs):
         self.stype = stype
         self.name = name
-        self.args = list(args)
+        self.args = copy(list(args))
         self.options = kwargs
 
         # Assign a unique ID to each statement
@@ -96,10 +97,10 @@ class Statement:
                                                    's.s', 's.b']
 
     def is_arith(self):
-        """Check if the statement is an arithmetic operation."""
+        """Check if the statement is an aritmethic operation."""
         return self.is_command() \
                and re.match('^s(ll|rl|ra)'
-                            + '|(mfhi|mflo|abs|neg|and|[xn]?or)'
+                            + '|(abs|neg|and|[xn]?or)'
                             + '|(add|sub|slt)u?'
                             + '|(add|sub|mult|div|abs|neg|sqrt|c)\.[sd]$', \
                             self.name)
@@ -252,7 +253,7 @@ class Statement:
         return reg in use
 
     def replace_usage(self, x, y, index, bid=0):
-        """Replace the uses of register x by y."""
+        """Replace uses of register x by y at the specified index."""
         self[index] = re.sub('\\' + x + '(?!\d)', y, str(self[index]))
 
         if bid:

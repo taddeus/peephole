@@ -5,31 +5,11 @@ from src.liveness import RESERVED_REGISTERS, is_reg_dead_after
 from src.dataflow import succ
 
 
-#def reg_can_be_used_in(reg, block, start, end):
-#    """Check if a register addres safely be used in a block section using local
-#    dataflow analysis."""
-#    # Check if the register used or defined in the block section
-#    for s in block[start:end]:
-#        if s.uses(reg) or s.defines(reg):
-#            return False
-#
-#    # Check if the register is used inside the block after the specified
-#    # section, without having been re-assigned first
-#    for s in block[end:]:
-#        if s.uses(reg):
-#            return False
-#        elif s.defines(reg):
-#            return True
-#
-#    return reg not in block.live_out
-
-
 def find_free_reg(block, start):
     """Find a temporary register that is free in a given list of statements."""
     for i in xrange(8, 16):
         tmp = '$%d' % i
 
-        #if reg_can_be_used_in(tmp, block, start, end):
         if is_reg_dead_after(tmp, block, start):
             return tmp
 
@@ -53,54 +33,88 @@ def eliminate_common_subexpressions(block):
       occurrences to a move instruction from that address.
     """
     changed = False
+    prev = False
 
     block.reset()
 
     while not block.end():
         s = block.read()
+        args = s[1:]
+        mult = False
 
-        if s.is_arith():
-            pointer = block.pointer
-            occurrences = [pointer - 1]
-            args = s[1:]
+        if s.is_command('mflo') and prev and prev.name == 'mult':
+            mult = prev
+            args = mult.args
+        elif not s.is_arith():
+            prev = s
+            continue
 
-            # Collect similar statements
-            while not block.end():
-                s2 = block.read()
+        pointer = block.pointer
+        occurrences = [pointer - 1]
 
-                if not s2.is_command():
-                    continue
+        # Collect similar statements
+        while not block.end():
+            s2 = block.read()
 
-                # Stop if one of the arguments is assigned
-                if len(s2) and s2[0] in args:
+            if not s2.is_command():
+                continue
+
+            # Stop if one of the arguments is assigned
+            assign = False
+
+            for reg in s2.get_def():
+                if reg in args:
+                    assign = True
                     break
 
-                # Replace a similar expression by a move instruction
-                if s2.name == s.name and s2[1:] == args:
-                    occurrences.append(block.pointer - 1)
+            if assign:
+                break
 
-            if len(occurrences) > 1:
-                new_reg = find_free_reg(block, occurrences[0])
+            # Replace a similar expression by a move instruction
+            if mult:
+                # Multiplication has two instructions: mult and mflo
+                if s2.name == 'mult' and s2.args == args:
+                    mflo = block.peek()
 
-                # Replace all occurrences with a move statement
-                message = 'Common subexpression reference: %s %s' \
-                        % (s.name, ','.join(map(str, [new_reg] + s[1:])))
+                    if mflo.is_command('mflo'):
+                        occurrences.append(block.pointer - 1)
+            elif s2.name == s.name and  s2[1:] == args:
+                # Regular arithmetic command
+                occurrences.append(block.pointer - 1)
 
-                for occurrence in occurrences:
-                    rd = block[occurrence][0]
-                    block.replace(1, [S('command', 'move', rd, new_reg)], \
-                            start=occurrence, message=message)
+        if len(occurrences) > 1:
+            new_reg = find_free_reg(block, occurrences[0])
 
-                # Insert the calculation before the original with the new
-                # destination address
+            # Replace each occurrence with a move statement
+            message = 'Common subexpression reference: %s %s' \
+                    % (s.name, ','.join(map(str, [new_reg] + s[1:])))
+
+            for occurrence in occurrences:
+                rd = block[occurrence][0]
+                block.replace(1, [S('command', 'move', rd, new_reg)], \
+                        start=occurrence, message=message)
+
+            # Insert the calculation before the original with the new
+            # destination address
+            if mult:
+                message = 'Common subexpression: mult ' \
+                          + ','.join(map(str, args))
+                block.insert(S('command', 'mult', *args), \
+                                index=occurrences[0], message=message)
+                block.insert(S('command', 'mflo', new_reg), \
+                                index=occurrences[0], message=' |')
+            else:
                 message = 'Common subexpression: %s %s' \
                         % (s.name, ','.join(map(str, s)))
                 block.insert(S('command', s.name, *([new_reg] + args)), \
-                             index=occurrences[0], message=message)
-                changed = True
+                                index=occurrences[0], message=message)
 
-            # Reset pointer to continue from the original statement
-            block.pointer = pointer
+            changed = True
+
+        prev = s
+
+        # Reset pointer to continue from the original statement
+        block.pointer = pointer
 
     return changed
 
@@ -473,26 +487,26 @@ def propagate_copies(block):
             # Determine uses of x in successors of the block
             # Determine if for each of those uses if this is the only
             # definition reaching it -> s in in[B_use]
-            #if s.sid in block.reach_out:
-            #    for b in filter(lambda b: (x, y) in b.copy_in, succ(block)):
-            #        print b
-            #        for s2 in b:
-            #            # Determine if for each of those uses this is the only
-            #            # definition reaching it -> s in in[B_use]
-            #            i = s2.uses(x, True)
+            if s.sid in block.reach_out:
+                for b in filter(lambda b: (x, y) in b.copy_in, succ(block)):
+                    print b
+                    for s2 in b:
+                        # Determine if for each of those uses this is the only
+                        # definition reaching it -> s in in[B_use]
+                        i = s2.uses(x, True)
 
-            #            if i != -1:
-            #                s2.replace_usage(x, y, i, block.bid)
-            #                print ' Replaced %s with %s from block %d' \
-            #                      % (x, y, block.bid)
-            #                changed = True
+                        if i != -1:
+                            s2.replace_usage(x, y, i, block.bid)
+                            print ' Replaced %s with %s from block %d' \
+                                  % (x, y, block.bid)
+                            changed = True
 
-            #            # An assignment to x or y kills the copy statement x =
-            #            # y
-            #            defined = s2.get_def()
+                        # An assignment to x or y kills the copy statement x =
+                        # y
+                        defined = s2.get_def()
 
-            #            if x in defined or y in defined:
-            #                break
+                        if x in defined or y in defined:
+                            break
 
     return changed
 
