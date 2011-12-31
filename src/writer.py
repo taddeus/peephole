@@ -11,7 +11,7 @@ ADD_ARGUMENT_SPACE = False  # Wether to add a space between command arguments
                             # and the previous comma
 
 
-def write_statements(statements):
+def write_statements(statements, verbose=0):
     """Write a list of statements to valid assembly code."""
     out = ''
     indent_level = 0
@@ -49,7 +49,14 @@ def write_statements(statements):
             raise Exception('Unsupported statement type "%s"' % s.stype)
 
         # Add the inline comment, if there is any
+        comment = ''
+
         if s.has_inline_comment():
+            comment = s.options['comment']
+        elif verbose:
+            comment = s.options.get('message', '')
+
+        if len(comment):
             start = INLINE_COMMENT_LEVEL * TABSIZE
             diff = start - len(line.expandtabs(TABSIZE))
 
@@ -59,7 +66,7 @@ def write_statements(statements):
             else:
                 tabs = '  '
 
-            line += tabs + '#' + s.options['comment']
+            line += tabs + '#' + comment
 
         # Add newline at end of command
         line += '\n'

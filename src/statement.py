@@ -38,6 +38,9 @@ class Statement:
     def __repr__(self):  # pragma: nocover
         return str(self)
 
+    def set_message(self, message):
+        self.options['message'] = message
+
     def set_inline_comment(self, comment):
         self.options['comment'] = comment
 
@@ -169,15 +172,17 @@ class Statement:
 
         return defined
 
-    def get_use(self):
+    def get_use(self, as_items=False):
         """Get the variables that this statement uses, if any."""
         instr = ['addu', 'subu', 'mult', 'div', 'move', 'mov.d', \
             'dmfc1', 'div.s']
         use = set()
+        indices = []
 
         # Jump to register addres uses register
         if self.is_command('j') and re.match('^\$\d+$', self[0]):
             use.add(self[0])
+            indices.append(0)
 
         # Case arg0
         if (self.is_branch() \
@@ -189,8 +194,10 @@ class Statement:
 
                 if m:
                     use.add(m.group(1))
+                    indices.append(0)
             else:
                 use.add(self[0])
+                indices.append(0)
 
         if (self.is_branch() and not self.is_branch_zero() \
                 and not self.is_command('bc1f', 'bc1t', 'bct', 'bcf')) \
@@ -201,23 +208,27 @@ class Statement:
                 or self.is_compare() or self.is_command(*instr):
             # Case arg1 direct adressing
             use.add(self[1])
+            indices.append(1)
         elif self.is_load_non_immediate() or self.is_store():
             # Case arg1 relative adressing
             m = re.match('^[^(]+\(([^)]+)\)$', self[1])
 
             if m:
                 use.add(m.group(1))
+                indices.append(1)
             elif not re.match('^\$LC\d+$', self[1]):
                 use.add(self[1])
+                indices.append(1)
 
         # Case arg2
-        if self.is_double_arithmetic() or self.is_set_if_less() \
+        if (self.is_double_arithmetic() or self.is_set_if_less() \
                 or self.is_logical() or self.is_truncate() \
-                or self.is_command('addu', 'subu', 'div'):
-            if not isinstance(self[2], int):
-                    use.add(self[2])
+                or self.is_command('addu', 'subu', 'div')) \
+                and not isinstance(self[2], int):
+            use.add(self[2])
+            indices.append(2)
 
-        return use
+        return zip(indices, use) if as_items else use
 
     def defines(self, reg):
         """Check if this statement defines the given register."""
@@ -226,6 +237,11 @@ class Statement:
     def uses(self, reg):
         """Check if this statement uses the given register."""
         return reg in self.get_use()
+
+    def replace_usage(self, x, y):
+        """Replace the uses of register x by y."""
+        for i, arg in enumerate(self):
+            self[i] = re.sub('\\' + x + '(?!\d)', y, str(arg))
 
 
 class Block:
@@ -256,7 +272,7 @@ class Block:
     def __len__(self):
         return len(self.statements)
 
-    def read(self, count=1):
+    def read(self):
         """Read the statement at the current pointer position and move the
         pointer one position to the right."""
         s = self.statements[self.pointer]
@@ -293,10 +309,10 @@ class Block:
                 message = ' ' + message
 
                 if len(replacement):
-                    replacement[0].set_inline_comment(message)
+                    replacement[0].set_message(message)
 
                     for s in replacement[1:]:
-                        s.set_inline_comment('|')
+                        s.set_message('|')
                 else:
                     replacement = [Statement('comment', message)]
             elif not len(replacement):
@@ -313,10 +329,8 @@ class Block:
         if index == None:
             index = self.pointer
 
-        if self.verbose and len(message):
-            statement.set_inline_comment(' ' + message)
-
         self.statements.insert(index, statement)
+        statement.set_message(' ' + message)
 
     def apply_filter(self, callback):
         """Apply a filter to the statement list. If the callback returns True,

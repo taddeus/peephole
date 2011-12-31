@@ -1,12 +1,15 @@
 from statement import Statement as S, Block
 from dataflow import find_basic_blocks, generate_flow_graph
+
 from optimize.redundancies import remove_redundant_jumps, remove_redundancies,\
         remove_redundant_branch_jumps
 from optimize.advanced import eliminate_common_subexpressions, \
         fold_constants, copy_propagation, eliminate_dead_code
-from writer import write_statements
+
 import liveness
 import reaching_definitions
+
+from writer import write_statements
 
 
 class Program(Block):
@@ -30,6 +33,9 @@ class Program(Block):
                 message = ' Block %d (%d statements), edges from: %s' \
                           % (b.bid, len(b), map(get_id, b.edges_from))
 
+                if hasattr(b, 'copy_in'):
+                    message += ', COPY_in: %s' % list(b.copy_in)
+
                 if hasattr(b, 'live_in'):
                     message += ', LIVE_in: %s' % list(b.live_in)
 
@@ -42,6 +48,9 @@ class Program(Block):
 
                 message = ' End of block %d, edges to: %s' \
                           % (b.bid, map(get_id, b.edges_to))
+
+                if hasattr(b, 'copy_out'):
+                    message += ', COPY_out: %s' % list(b.copy_out)
 
                 if hasattr(b, 'live_out'):
                     message += ', LIVE_out: %s' % list(b.live_out)
@@ -108,5 +117,6 @@ class Program(Block):
     def save(self, filename):
         """Save the program in the specified file."""
         f = open(filename, 'w+')
-        f.write(write_statements(self.get_statements(True)))
+        f.write(write_statements(self.get_statements(True),
+                verbose=self.verbose))
         f.close()
