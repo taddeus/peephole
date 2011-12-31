@@ -1,8 +1,5 @@
-* Apart python script maken die de generator genereert dmv config file
-* 'verbose' argument in main.py
-
-* Gaat fout:
-
-li  $5,0x00008000  ->  l.d  $f0,32768($4)
-addu    $4,$4,$5
-l.d $f0,0($4)
+* `verbose' argument in main.py
+* infinite loop in pred/succ
+* 2 unit tests copy propagation falen: of het argument wordt niet goed
+  vervangen, of de unit test is raar (print statements laten namelijk wel
+  vervangende code zien)
