@@ -4,7 +4,7 @@ from sys import argv, exit
 from src.parser import parse_file
 
 
-verbose_level = 1
+verbose_level = 2
 
 
 # Parse arguments
