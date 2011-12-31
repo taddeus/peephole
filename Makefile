@@ -1,5 +1,5 @@
 BUILD=build/
-CLEAN=*.pyc src/*.pyc src/optimize/*.pyc parser.out parsetab.py
+CLEAN=*.pyc src/*.pyc src/optimize/*.pyc parser.out parsetab.py in.s out.s
 
 # Fix pdflatex search path
 TGT_DIR := report
