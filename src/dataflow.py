@@ -1,3 +1,5 @@
+from copy import copy
+
 from statement import Block
 
 
@@ -83,12 +85,12 @@ def generate_flow_graph(blocks):
 
             # Compare the target to all leading labels, add an edge if the
             # label matches the jump target
-            target_found = False
+            #target_found = False
 
             for other in blocks:
                 if other[0].is_label(target):
                     b.add_edge_to(other)
-                    target_found = True
+                    #target_found = True
 
             # If the jump target is outside the program, add an edge to the
             # dummy block
@@ -102,3 +104,27 @@ def generate_flow_graph(blocks):
                 b.add_edge_to(blocks[i + 1])
         elif i < len(blocks) - 1:
             b.add_edge_to(blocks[i + 1])
+
+
+def pred(block, known=[]):
+    """Recursively find all predecessors of a node."""
+    direct = filter(lambda b: b != block and b not in known, block.edges_from)
+    p = copy(direct)
+
+    for predecessor in direct:
+        p += pred(predecessor, known + direct)
+        return p
+
+    return p
+
+
+def succ(block, known=[]):
+    """Recursively find all successors of a node."""
+    direct = filter(lambda b: b != block and b not in known, block.edges_to)
+    s = copy(direct)
+
+    for successor in direct:
+        s += succ(successor, known + direct)
+        return s
+
+    return s

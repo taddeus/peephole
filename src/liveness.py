@@ -1,4 +1,4 @@
-from copy import copy
+from dataflow import succ
 
 
 RETURN_REGS = ['$2', '$3']
@@ -20,10 +20,10 @@ def is_reg_dead_after(reg, block, index, known_jump_targets=[]):
     # of reserved argument registers are not removed
     if reg in RESERVED_USE and block[-1].is_command('jal') \
             and block[-1][0] not in known_jump_targets:
-        if block.verbose:
-            block[index].set_inline_comment(
-                    ' Register %s cannot be removed due to "jal %s"'
-                    % (reg, block[-1][0]))
+        #if block.verbose:
+        #    block[index].set_inline_comment(
+        #            ' Register %s cannot be removed due to "jal %s"'
+        #            % (reg, block[-1][0]))
         return False
 
     if index < len(block) - 1:
@@ -70,18 +70,6 @@ def create_use_def(block):
 
             if reg not in used:
                 block.def_set.add(reg)
-
-
-def succ(block, known=[]):
-    """Recursively find all successors of a node."""
-    direct = filter(lambda b: b != block and b not in known, block.edges_to)
-    s = copy(direct)
-
-    for successor in direct:
-        s += succ(successor, known + direct)
-        return s
-
-    return s
 
 
 def create_in_out(blocks):
