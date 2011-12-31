@@ -2,10 +2,13 @@ import unittest
 from copy import copy
 
 from src.optimize_advanced import eliminate_common_subexpressions, \
-        fold_constants, propagate_copies
+        propagate_copies
 from src.statement import Statement as S
-from src.dataflow import BasicBlock as B, generate_flow_graph
+from src.dataflow import BasicBlock as B, find_basic_blocks, \
+        generate_flow_graph
 import src.liveness as liveness
+import src.reaching_definitions as reaching_definitions
+import src.copy_propagation as copy_propagation
 
 
 class TestOptimizeAdvanced(unittest.TestCase):
@@ -37,9 +40,6 @@ class TestOptimizeAdvanced(unittest.TestCase):
         eliminate_common_subexpressions(b)
         self.assertEqual(b.statements, e)
 
-    def test_fold_constants(self):
-        pass
-
     #def test_propagate_copies_true(self):
     #    block = B([self.foo,
     #               S('command', 'move', '$1', '$2'),
@@ -60,6 +60,11 @@ class TestOptimizeAdvanced(unittest.TestCase):
                    self.foo,
                    S('command', 'addu', '$3', '$4', '$1'),
                    self.bar])
+
+        find_basic_blocks([block])
+        generate_flow_graph([block])
+        reaching_definitions.create_in_out([block])
+        copy_propagation.create_in_out([block])
 
         self.assertTrue(propagate_copies(block))
         self.assertEqual(block.statements, [self.foo,
@@ -90,6 +95,12 @@ class TestOptimizeAdvanced(unittest.TestCase):
                    S('command', 'addu', '$3', '$1', '$4'),
                    self.bar]
         block = B(arguments)
+
+        find_basic_blocks([block])
+        generate_flow_graph([block])
+        reaching_definitions.create_in_out([block])
+        copy_propagation.create_in_out([block])
+
         self.assertFalse(propagate_copies(block))
         self.assertEqual(block.statements, arguments)
 
@@ -101,6 +112,12 @@ class TestOptimizeAdvanced(unittest.TestCase):
                    S('command', 'addu', '$3', '$1', '$4'),
                    self.bar]
         block = B(arguments)
+
+        find_basic_blocks([block])
+        generate_flow_graph([block])
+        reaching_definitions.create_in_out([block])
+        copy_propagation.create_in_out([block])
+
         self.assertFalse(propagate_copies(block))
         self.assertEqual(block.statements, arguments)
 
