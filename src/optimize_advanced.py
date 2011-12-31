@@ -33,88 +33,55 @@ def eliminate_common_subexpressions(block):
       occurrences to a move instruction from that address.
     """
     changed = False
-    prev = False
 
     block.reset()
 
     while not block.end():
         s = block.read()
-        args = s[1:]
-        mult = False
 
-        if s.is_command('mflo') and prev and prev.name == 'mult':
-            mult = prev
-            args = mult.args
-        elif not s.is_arith():
-            prev = s
-            continue
+        if s.is_arith():
+            pointer = block.pointer
+            occurrences = [pointer - 1]
+            args = s[1:]
 
-        pointer = block.pointer
-        occurrences = [pointer - 1]
+            # Collect similar statements
+            while not block.end():
+                s2 = block.read()
 
-        # Collect similar statements
-        while not block.end():
-            s2 = block.read()
+                if not s2.is_command():
+                    continue
 
-            if not s2.is_command():
-                continue
-
-            # Stop if one of the arguments is assigned
-            assign = False
-
-            for reg in s2.get_def():
-                if reg in args:
-                    assign = True
+                # Stop if one of the arguments is assigned
+                if len(s2) and s2[0] in args:
                     break
 
-            if assign:
-                break
+                # Replace a similar expression by a move instruction
+                if s2.name == s.name and s2[1:] == args:
+                    occurrences.append(block.pointer - 1)
 
-            # Replace a similar expression by a move instruction
-            if mult:
-                # Multiplication has two instructions: mult and mflo
-                if s2.name == 'mult' and s2.args == args:
-                    mflo = block.peek()
+            if len(occurrences) > 1:
+                new_reg = find_free_reg(block, occurrences[0])
 
-                    if mflo.is_command('mflo'):
-                        occurrences.append(block.pointer - 1)
-            elif s2.name == s.name and  s2[1:] == args:
-                # Regular arithmetic command
-                occurrences.append(block.pointer - 1)
+                # Replace each occurrence with a move statement
+                message = 'Common subexpression reference: %s %s' \
+                        % (s.name, ','.join(map(str, [new_reg] + s[1:])))
 
-        if len(occurrences) > 1:
-            new_reg = find_free_reg(block, occurrences[0])
+                for occurrence in occurrences:
+                    rd = block[occurrence][0]
+                    block.replace(1, [S('command', 'move', rd, new_reg)], \
+                            start=occurrence, message=message)
 
-            # Replace each occurrence with a move statement
-            message = 'Common subexpression reference: %s %s' \
-                    % (s.name, ','.join(map(str, [new_reg] + s[1:])))
-
-            for occurrence in occurrences:
-                rd = block[occurrence][0]
-                block.replace(1, [S('command', 'move', rd, new_reg)], \
-                        start=occurrence, message=message)
-
-            # Insert the calculation before the original with the new
-            # destination address
-            if mult:
-                message = 'Common subexpression: mult ' \
-                          + ','.join(map(str, args))
-                block.insert(S('command', 'mult', *args), \
-                                index=occurrences[0], message=message)
-                block.insert(S('command', 'mflo', new_reg), \
-                                index=occurrences[0], message=' |')
-            else:
+                # Insert the calculation before the original with the new
+                # destination address
                 message = 'Common subexpression: %s %s' \
                         % (s.name, ','.join(map(str, s)))
                 block.insert(S('command', s.name, *([new_reg] + args)), \
                                 index=occurrences[0], message=message)
 
-            changed = True
+                changed = True
 
-        prev = s
-
-        # Reset pointer to continue from the original statement
-        block.pointer = pointer
+            # Reset pointer to continue from the original statement
+            block.pointer = pointer
 
     return changed
 
@@ -489,7 +456,6 @@ def propagate_copies(block):
             # definition reaching it -> s in in[B_use]
             if s.sid in block.reach_out:
                 for b in filter(lambda b: (x, y) in b.copy_in, succ(block)):
-                    print b
                     for s2 in b:
                         # Determine if for each of those uses this is the only
                         # definition reaching it -> s in in[B_use]
