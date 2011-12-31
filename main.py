@@ -19,7 +19,7 @@ if __name__ == '__main__':
         # Save input assembly in new file for easy comparison
         program.save(argv[3])
 
-    optimize(program, verbose=1)
+    optimize(program, verbose=2)
 
     if len(argv) > 2:
         # Save output assembly
