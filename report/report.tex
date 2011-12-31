@@ -7,9 +7,10 @@
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
 
-\title{Peephole Optimizer}
-\author{Jayke Meijer (6049885), Richard Torenvliet (6138861), Tadde\"us Kroes
-    (6054129)}
+\title{Compilerbouw - Peephole Optimizer}
+\author{Jayke Meijer (6049885), \\
+        Richard Torenvliet (6138861), \\
+        Tadde\"us Kroes (6054129)}
 
 \begin{document}
 
@@ -140,7 +141,17 @@ redefinition of x.
 Arithmetics in Assembly are always performed between two registers or a
 register and a constant. If the current value of all used registers is known,
 The expression can be executed at-compile-time and the instruction can be
-replaced by an immediate load of the result. See \ref{opt} for an example.
+replaced by an immediate load of the result. The following example illustrates
+this:
+\begin{verbatim}
+li $2, 2                # $2 = 2
+sw $2, 16($fp)          # 16($fp) = 2
+li $2, 3                # $2 = 3
+sw $2, 20($fp)          # 20($fp) = 3
+lw $2, 16($fp)          # $2 = 16($fp) = 2
+lw $3, 20($fp)          # $3 = 20($fp) = 3
+addu $2, $2, $3         # change to "li $2, 0x00000005"
+\end{verbatim}
 
 %In other words until the current definition of \texttt{x} becomes dead.
 %Therefore reaching definitions analysis is needed. Reaching definitions is a
@@ -151,8 +162,8 @@ During the constant folding, so-called algebraic transformations are performed
 as well. When calculations are performed using constants, some calculations can
 be replaced by a load- or move-instruction. An example is the statement
 $x = y + 0$, or in Assembly: \texttt{addu \$1, \$2, 0}. This can be replaced by
-$x = y$ or \texttt{move \$1, \$2}. A list of transformations that are performed
-can be found in appendix \ref{opt}.
+$x = y$ or \texttt{move \$1, \$2}. To see all transformations that are
+performed, read the inline comment blocks in the corresponding code.
 
 \subsubsection{Copy propagation}
 
@@ -433,7 +444,7 @@ clinpack  &         3523 &          231 &  1543746 &   1457479 &      5.59\% \\
 \pagebreak
 \appendix
 
-\section{List of all optimizations}
+\section{List of straight-forward optimizations}
 
 \label{opt}
 
@@ -476,45 +487,6 @@ shift $regA,$regA,0     ->  --- // remove it
 
 add $regA,$regA,X       ->  lw ...,X($regA)
 lw ...,0($regA)
-\end{verbatim}
-\textbf{Advanced basic block optimizations}
-
-\begin{verbatim}
-# Common subexpression elimination
-addu $regA, $regB, 4        addu $regD, $regB, 4
-...                         move $regA, $regD
-Code not writing $regB  ->  ...
-...                         ...
-addu $regC, $regB, 4        move $regC, $regD
-
-# Constant folding
-li $2, 2                    $2 = 2
-sw $2, 16($fp)              16($fp) = 2
-li $2, 3                    $2 = 3
-sw $2, 20($fp)          ->  20($fp) = 3
-lw $2, 16($fp)              $2 = 16($fp) = 2
-lw $3, 20($fp)              $3 = 20($fp) = 3
-addu $2, $2, $3             change to "li $2, 0x00000005"
-
-# Copy propagation
-move $regA, $regB           move $regA, $regB
-...                         ...
-Code not writing $regA, ->  ...
-$regB                       ...
-...                         ...
-addu $regC, $regA, ...      addu $regC, $regB, ...
-
-
-# Algebraic transformations
-addu $regA, $regB, 0    ->  move $regA, $regB
-
-subu $regA, $regB, 0    ->  move $regA, $regB
-
-mult $regA, $regB, 1    ->  move $regA, $regB
-
-mult $regA, $regB, 0    ->  li   $regA, 0
-
-mult $regA, $regB, 2    ->  sll  $regA, $regB, 1
 \end{verbatim}
 
 \end{document}
