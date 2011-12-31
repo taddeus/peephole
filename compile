@@ -1,5 +1,0 @@
-#!/bin/sh
-xgcc -S $1.c
-xgcc -o $1.o $1.s
-sim-outorder $1.o 2>&1 | egrep -o ^sim_cycle[[:space:]]+[[:digit:]]+ \
-    | egrep -o [[:digit:]]+$
