@@ -421,12 +421,12 @@ The results are displayed in the following table: \\
 Benchmark & Original     & Removed      & Original & Optimized & Performance \\
           & Instructions & instructions & cycles   & cycles    & boost(cycles) \\
 \hline
-pi        &           94 &            2 &          &           &             \% \\
-acron     &          361 &           24 &          &           &             \% \\
-dhrystone &          752 &           52 &          &           &             \% \\
-whet      &          935 &           37 &          &           &             \% \\
-slalom    &         4177 &          227 &          &           &             \% \\
-clinpack  &         3523 &              &          &           &              \% \\
+pi        &           94 &            2 &  1714468 &           &             \% \\
+acron     &          361 &           24 &  4435687 &           &             \% \\
+dhrystone &          752 &           52 &  2887710 &           &             \% \\
+whet      &          935 &           37 &  2864526 &           &             \% \\
+slalom    &         4177 &          227 &  2879140 &   2872414 &      0.15\% \\
+clinpack  &         3523 &              &  1543746 &           &              \% \\
 \hline
 \end{tabular}
 
@@ -462,6 +462,9 @@ $Lx:   ...
 
     bne ...,$Lx             beq ...,$Ly
     j $Ly               ->  $Lx:   ...
+$Lx:   ...
+
+    j $Lx               ->  $Lx:   ...
 $Lx:   ...
 \end{verbatim}
 \textbf{Standard basic block optimizations}
