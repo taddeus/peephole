@@ -137,3 +137,46 @@ class Program(Block):
         f.write(write_statements(self.get_statements(True),
                 verbose=self.verbose))
         f.close()
+
+    def optimize(self):
+        """Optimization wrapper function, calls global and basic-block level
+        optimization functions."""
+        # Remember original number of statements
+        o = self.count_instructions()
+
+        changed = True
+        iterations = 0
+
+        while changed:
+            iterations += 1
+
+            if self.verbose > 1:
+                print 'main iteration %d', iterations
+
+            changed = False
+
+            # Optimize on a global level
+            if self.optimize_global():
+                if self.verbose > 1:
+                    print 'changed on global level'
+
+                changed = True
+
+            # Perform dataflow analysis on new blocks
+            self.perform_dataflow_analysis()
+
+            # Optimize basic blocks
+            if self.optimize_blocks():
+                if self.verbose > 1:
+                    print 'changed on block level'
+
+                changed = True
+
+        # Count number of instructions after optimization
+        b = self.count_instructions()
+
+        # Print results
+        if self.verbose:
+            print 'Original statements: %d' % o
+            print 'Statements removed:  %d (%d%%)' \
+                % (o - b, int((o - b) / float(b) * 100))
