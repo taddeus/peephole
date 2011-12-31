@@ -1,7 +1,7 @@
 import unittest
 from copy import copy
 
-from src.optimize.advanced import eliminate_common_subexpressions, \
+from src.optimize_advanced import eliminate_common_subexpressions, \
         fold_constants, propagate_copies
 from src.statement import Statement as S
 from src.dataflow import BasicBlock as B, generate_flow_graph

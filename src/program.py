@@ -1,9 +1,9 @@
 from statement import Statement as S, Block
 from dataflow import find_basic_blocks, generate_flow_graph
 
-from optimize.redundancies import remove_redundant_jumps, remove_redundancies,\
+from optimize_redundancies import remove_redundant_jumps, remove_redundancies,\
         remove_redundant_branch_jumps
-from optimize.advanced import eliminate_common_subexpressions, \
+from optimize_advanced import eliminate_common_subexpressions, \
         fold_constants, propagate_copies, eliminate_dead_code
 
 import liveness
