@@ -4,11 +4,11 @@ from dataflow import find_basic_blocks, generate_flow_graph
 from optimize.redundancies import remove_redundant_jumps, remove_redundancies,\
         remove_redundant_branch_jumps
 from optimize.advanced import eliminate_common_subexpressions, \
-        fold_constants, copy_propagation, eliminate_dead_code
+        fold_constants, propagate_copies, eliminate_dead_code
 
 import liveness
 import reaching_definitions
-#import copy_propagation as copy_propagation_flow
+import copy_propagation
 
 from writer import write_statements
 
@@ -95,7 +95,7 @@ class Program(Block):
             if fold_constants(block):
                 changed = True
 
-            if copy_propagation(block):
+            if propagate_copies(block):
                 changed = True
 
             if eliminate_dead_code(block):
@@ -104,7 +104,7 @@ class Program(Block):
             #if remove_redundancies(block) \
             #        | eliminate_common_subexpressions(block) \
             #        | fold_constants(block) \
-            #        | copy_propagation(block) \
+            #        | propagate_copies(block) \
             #        | eliminate_dead_code(block):
             #     changed = True
 
@@ -129,7 +129,7 @@ class Program(Block):
         generate_flow_graph(self.blocks)
         liveness.create_in_out(self.blocks)
         reaching_definitions.create_in_out(self.blocks)
-        #copy_propagation_flow.create_in_out(self.blocks)
+        copy_propagation.create_in_out(self.blocks)
 
     def save(self, filename):
         """Save the program in the specified file."""

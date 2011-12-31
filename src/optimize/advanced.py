@@ -282,7 +282,7 @@ def fold_constants(block):
     return changed
 
 
-#def copy_propagation(block):
+#def propagate_copies(block):
 #    """
 #    Unpack a move instruction, by replacing its destination
 #    address with its source address in the code following the move instruction.
@@ -343,7 +343,7 @@ def fold_constants(block):
 #    return changed
 
 
-#def copy_propagation(block):
+#def propagate_copies(block):
 #    """
 #    Unpack a move instruction, by replacing its destination
 #    address with its source address in the code following the move instruction.
@@ -420,7 +420,7 @@ def fold_constants(block):
 #    return changed
 
 
-def copy_propagation(block):
+def propagate_copies(block):
     """
     Unpack a move instruction, by replacing its destination
     address with its source address in the code following the move instruction.
