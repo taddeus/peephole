@@ -1,4 +1,4 @@
-from math import log
+import re
 
 from src.statement import Statement as S
 from src.liveness import is_reg_dead_after
@@ -83,7 +83,7 @@ def eliminate_common_subexpressions(block):
 
                 # Replace all occurrences with a move statement
                 message = 'Common subexpression reference: %s %s' \
-                        % (s.name, ', '.join(map(str, [new_reg] + s[1:])))
+                        % (s.name, ','.join(map(str, [new_reg] + s[1:])))
 
                 for occurrence in occurrences:
                     rd = block[occurrence][0]
@@ -93,7 +93,7 @@ def eliminate_common_subexpressions(block):
                 # Insert the calculation before the original with the new
                 # destination address
                 message = 'Common subexpression: %s %s' \
-                        % (s.name, ', '.join(map(str, s)))
+                        % (s.name, ','.join(map(str, s)))
                 block.insert(S('command', s.name, *([new_reg] + args)), \
                              index=occurrences[0], message=message)
                 changed = True
@@ -207,7 +207,7 @@ def fold_constants(block):
             # Replace the multiplication with two immidiate loads to the
             # Hi/Lo registers
             block.replace(1, [S('command', 'li', '$hi', hi),
-                                S('command', 'li', '$lo', li)],
+                                S('command', 'li', '$lo', lo)],
                             message=message)
 
             register['$lo'], register['$hi'] = lo, hi
@@ -276,9 +276,70 @@ def fold_constants(block):
                     known.append((reg, 'unknown'))
 
         if block.verbose and len(known):
-            s.set_inline_comment(','.join([' %s = %s' % k for k in known]))
+            s.set_message(','.join([' %s = %s' % k for k in known]))
 
     return changed
+
+
+#def copy_propagation(block):
+#    """
+#    Unpack a move instruction, by replacing its destination
+#    address with its source address in the code following the move instruction.
+#    This way, the move statement might be a target for dead code elimination.
+#
+#    move $regA, $regB           move $regA, $regB
+#    ...                         ...
+#    Code not writing $regA, ->  ...
+#    $regB                       ...
+#    ...                         ...
+#    addu $regC, $regA, ...      addu $regC, $regB, ...
+#    """
+#    moves_from = []
+#    moves_to = []
+#    changed = False
+#
+#    block.reset()
+#
+#    while not block.end():
+#        s = block.read()
+#
+#        if s.is_command('move') and s[0] not in moves_to:
+#            # Add this move to the lists, because it is not yet there.
+#            moves_from.append(s[1])
+#            moves_to.append(s[0])
+#        elif s.is_command('move') and s[0] in moves_to:
+#            # This move is already in the lists, so only update it
+#            for i in xrange(len(moves_to)):
+#                if moves_to[i] == s[0]:
+#                    moves_from[i] = s[1]
+#                    continue
+#        elif (len(s) == 3 or s.is_command('mlfo') or s.is_load()) \
+#                and (s[0] in moves_to or s[0] in moves_from):
+#            # One of the registers gets overwritten, so remove the data from
+#            # the list.
+#            i = 0
+#
+#            while i < len(moves_to):
+#                if moves_to[i] == s[0] or moves_to[i] == s[1]:
+#                    del moves_to[i]
+#                    del moves_from[i]
+#                else:
+#                    i += 1
+#        elif len(s) == 3 and (s[1] in moves_to or s[2] in moves_to):
+#            # Check where the result of the move is used and replace it with
+#            # the original variable.
+#            for i in xrange(len(moves_to)):
+#                if s[1] == moves_to[i]:
+#                    s[1] = moves_from[i]
+#                    continue
+#
+#                if s[2] == moves_to[i]:
+#                    s[2] = moves_from[i]
+#                    continue
+#
+#            changed = True
+#
+#    return changed
 
 
 def copy_propagation(block):
@@ -294,50 +355,56 @@ def copy_propagation(block):
     ...                         ...
     addu $regC, $regA, ...      addu $regC, $regB, ...
     """
-    moves_from = []
-    moves_to = []
     changed = False
+
+    moves = {}
 
     block.reset()
 
     while not block.end():
         s = block.read()
 
-        if s.is_command('move') and s[0] not in moves_to:
-            # Add this move to the lists, because it is not yet there.
-            moves_from.append(s[1])
-            moves_to.append(s[0])
-        elif s.is_command('move') and s[0] in moves_to:
-            # This move is already in the lists, so only update it
-            for i in xrange(len(moves_to)):
-                if moves_to[i] == s[0]:
-                    moves_from[i] = s[1]
-                    continue
-        elif (len(s) == 3 or s.is_command('mlfo') or s.is_load()) \
-                and (s[0] in moves_to or s[0] in moves_from):
-            # One of the registers gets overwritten, so remove the data from
-            # the list.
-            i = 0
+        if not s.is_command():
+            continue
 
-            while i < len(moves_to):
-                if moves_to[i] == s[0] or moves_to[i] == s[1]:
-                    del moves_to[i]
-                    del moves_from[i]
+        if s.name == 'move':
+            # Register the move
+            reg_to, reg_from = s
+
+            if reg_from in moves:
+                if moves[reg_from] == reg_to:
+                    continue
                 else:
-                    i += 1
-        elif len(s) == 3 and (s[1] in moves_to or s[2] in moves_to):
-            # Check where the result of the move is used and replace it with
-            # the original variable.
-            for i in xrange(len(moves_to)):
-                if s[1] == moves_to[i]:
-                    s[1] = moves_from[i]
-                    continue
+                    moves[reg_to] = moves[reg_from]
+            elif reg_to == reg_from:
+                del moves[reg_to]
+            else:
+                moves[reg_to] = reg_from
 
-                if s[2] == moves_to[i]:
-                    s[2] = moves_from[i]
-                    continue
+            s.set_message(' Move: %s = %s' % (reg_to, moves[reg_to]))
+            continue
 
-            changed = True
+        # Replace used registers with moved equivalents when possible
+        for i, reg in s.get_use(True):
+            if reg in moves:
+                s[i] = re.sub('\\' + reg + '(?!\d)', moves[reg], s[i])
+                s.set_message(' Replaced %s with %s' % (reg, moves[reg]))
+                changed = True
+
+        # If a known moved register is overwritten, remove it from the
+        # registration
+        defined = s.get_def()
+        delete = []
+
+        for move_to, move_from in moves.iteritems():
+            if move_to in defined or move_from in defined:
+                delete.append(move_to)
+
+        if len(delete):
+            s.set_message(' Moves deleted: %s' % ', '.join(delete))
+
+            for reg in delete:
+                del moves[reg]
 
     return changed
 
@@ -362,7 +429,7 @@ def eliminate_dead_code(block):
                 if block.verbose:
                     s.stype = 'comment'
                     s.options['block'] = False
-                    s.set_inline_comment(' dead register %s' % reg)
+                    s.set_message(' dead register %s' % reg)
                     s.name = ' Dead:\t%s\t%s' % (s.name, ','.join(map(str, s)))
                 else:
                     s.remove = True

@@ -36,7 +36,8 @@ class Statement:
                 % (self.sid, self.stype, self.name, self.args)
 
     def __repr__(self):  # pragma: nocover
-        return str(self)
+        return '<Statement type=%s name=%s args=%s>' \
+                % (self.stype, self.name, self.args)
 
     def set_message(self, message):
         self.options['message'] = message
@@ -247,7 +248,7 @@ class Statement:
 class Block:
     bid = 1
 
-    def __init__(self, statements=[], verbose=False):
+    def __init__(self, statements=[], verbose=0):
         self.statements = statements
         self.pointer = 0
 
