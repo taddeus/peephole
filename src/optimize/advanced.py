@@ -446,8 +446,8 @@ def copy_propagation(block):
 
             # Moves to reserved registers will never be removed, so don't
             # bother replacing them
-            #if x in RESERVED_REGISTERS:
-            #    continue
+            if x in RESERVED_REGISTERS:
+                continue
 
             # Determine the uses of x reached by this definition of x
             for s2 in block[block.pointer:]:

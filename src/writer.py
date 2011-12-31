@@ -54,7 +54,7 @@ def write_statements(statements, verbose=0):
         if s.has_inline_comment():
             comment = s.options['comment']
         elif verbose:
-            comment = s.options.get('message', '')
+            comment = ' |'.join(s.options.get('message', []))
 
         if len(comment):
             start = INLINE_COMMENT_LEVEL * TABSIZE

@@ -40,10 +40,10 @@ class Statement:
                 % (self.stype, self.name, self.args)
 
     def set_message(self, message):
-        if len(self.options.get('message', '')):
-            self.options['message'] += ' |' + message
-        else:
-            self.options['message'] = message
+        if 'message' not in self.options:
+            self.options['message'] = [message]
+        elif message not in self.options['message']:
+            self.options['message'].append(message)
 
     def set_inline_comment(self, comment):
         self.options['comment'] = comment
