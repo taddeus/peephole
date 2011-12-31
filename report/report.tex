@@ -251,7 +251,51 @@ Our code is provided with this report, and is also available on GitHub: \\
 
 \subsection{Structure}
 
-% TODO
+The folder structure of out implementation is as follows:
+\begin{itemize}
+\item \texttt{.}
+    \begin{itemize}
+    \item \texttt{benchmarks/} \\
+        All benchmark files and their assembly versions (both unoptimized and
+        optimized).
+    \item \texttt{src/}
+        \begin{itemize}
+        \item \texttt{copy\_propagation.py} \\
+              \texttt{liveness.py} \\
+              \texttt{reaching\_definitions.py} \\
+              Implementation of specific dataflow problems.
+        \item \texttt{dag.py} \\
+            DAG creation (unused).
+        \item \texttt{dataflow.py} \\
+            Common dataflow functions such as basic block-division and flow
+            graph generation. Contains definition of \texttt{BasicBlock} class.
+        \item \texttt{dominator.py} \\
+            Dominator tree creation (unused, untested).
+        \item \texttt{optimize\_advanced.py} \\
+            Advanced optimizations on basic block-level: Common subexpression
+            elimination, constant folding, copy propagation and dead code
+            elimination.
+        \item \texttt{optimize\_redundancies.py} \\
+            Straight-forward replacement functions for statement sequences on
+            global- and basic block-level.
+        \item \texttt{parser.py} \\
+            Assembly parser.
+        \item \texttt{program.py} \\
+            Definition of \texttt{Program} class.
+        \item \texttt{statement.py} \\
+            Definition of \texttt{Statement} and \texttt{Block} classes.
+        \item \texttt{writer.py} \\
+            Assembly writer.
+        \end{itemize}
+    \item \texttt{tests/} \\
+        Unit tests.
+    \item \texttt{main.py} \\
+        Runs the optimizer.
+    \item \texttt{run} \\
+        Runs the optimizer and compares original statement list to the
+        optimized one.
+    \end{itemize}
+\end{itemize}
 
 \subsection{Parsing}
 
@@ -309,12 +353,29 @@ non-optimized files.
 
 \subsection{Execution}
 
-To execute the optimizer, the following command can be given: \\
-\texttt{./main.py <original file> <optimized file> <rewritten original file>} \\
-There is also a script available that runs the optimizer and automatically
-starts the program \emph{meld}. In meld it is easy to visually compare the
-original file and the optimized file. The command to execute this script is: \\
-\texttt{./run <benchmark name (e.g. whet)>}
+The main execution file (\emph{main.py}) is located in the root directory. It
+takes the file to be optimized as last argument, optionally preceded by one or
+more of the following options:
+\begin{itemize}
+    \item \texttt{-o OUT\_FILE}
+          Location to save the optimized statement list.
+    \item \texttt{-i SOURCE\_OUT\_FILE}
+          Location to save the original statement list.
+    \item \texttt{-v VERBOSE\_LEVEL}
+          The optimizer's verbose level (default 1). \\
+          Possible verbose levels are: \\
+          0: No command-line output, no comments in output file. \\
+          1: Results in command-line output, inline optimization comments in
+             output file. \\
+          2: Results and debug statements in command-line output, inline
+             optimization comments in output file. \\
+\end{itemize}
+
+The root directory also contains an executable script: \texttt{run}. This
+script calls \texttt{main.py} and automatically starts the program
+\texttt{meld}.  In \texttt{meld} it is easy to visually compare the original
+file and the optimized file. The usage of this script is as follows: \\
+\texttt{./run <benchmark name (e.g. whet)> [ <verbose level> ]}
 
 \section{Testing}
 
@@ -341,17 +402,20 @@ been unit tested. To make this report, the command \texttt{make coverage} can
 be run in the root folder. The report is than added as a folder \emph{coverage}
 in which a \emph{index.html} can be used to see the entire report.
 
-\subsection{Ouput comparison}
+\subsection{Output comparison}
 
-In order to check whether the optimization does not change the functioning of
-the program, the output of the provided benchmark programs has to be compared
-to the output after optimization. If any of these outputs is not equal to the
-original output, our optimizations are to aggressive, or there is a bug
+In order to check whether the optimization does not change the functionality of
+the program, the output of the provided benchmark programs was compared to
+their output after optimization. If any of these outputs was not equal to the
+original output, either our optimizations are to aggressive, or there is a bug
 somewhere in the code.
 
 \section{Results}
 
-The following results have been obtained:\\
+We have executed the optimizer on each of the benchmark files and compared the
+number of execution cycles of the optimized versions vs. the original versions.
+The results are displayed in the following table: \\
+\\
 \begin{tabular}{|c|c|c|c|c|c|}
 \hline
 Benchmark & Original     & Removed      & Original & Optimized & Performance \\
@@ -365,6 +429,7 @@ slalom    &         4177 &          227 &          &           &             \% 
 clinpack  &         3523 &              &          &           &              \% \\
 \hline
 \end{tabular}
+
 
 \begin{tabular}{|c|c|c|c|c|c|}
 \hline
