@@ -3,6 +3,10 @@
 \usepackage{amsmath,amsfonts,amssymb,booktabs,graphicx,listings,subfigure}
 \usepackage{float,hyperref}
 
+% Paragraph indentation
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+
 \title{Peephole Optimizer}
 \author{Jayke Meijer (6049885), Richard Torenvliet (6138861), Tadde\"us Kroes
     (6054129)}
@@ -16,248 +20,301 @@
 
 \section{Introduction}
 
-The goal of the assignment is to implement the optimization stage of the
-compiler. To reach this goal the parser and the optimizer part of the compiler
-have to be implemented.
+The goal of the assignment is to implement the peephole optimization stage of
+xgcc cross compiler. This requires a MIPS Assembly parser to parse the output
+of the compiler. Also, an assembly writer is needed to write the optimized
+statements back to valid Assembly code for the assembler.
 
-The output of the xgcc cross compiler on a C program is our input. The output
-of the xgcc cross compiler is in the form of Assembly code, but not optimized.
-Our assignment includes a number of C programs. An important part of the
-assignment is parsing the data. Parsing the data is done with Lex and Yacc. The
-Lexer is a program that finds keywords that meets the regular expression
-provided in the Lexer. After the Lexer, the Yaccer takes over. Yacc can turn
-the keywords in to an action.
+The assignment provides a number of benchmarks written in C. The objective is
+to obtain a high speedup in number of cycles for these benchmarks.
 
-\section{Design}
+\section{Types of optimizations}
 
-There are two general types of optimizations of the assembly code, global
-optimizations and optimizations on a so-called basic block. These optimizations
-will be discussed separately
+There are two general types of optimizations on the assembly code: global
+optimizations and optimizations on so-called basic blocks. These optimizations
+will be discussed individually below.
 
 \subsection{Global optimizations}
 
 We only perform one global optimization, which is optimizing branch-jump
-statements. The unoptimized Assembly code contains sequences of code of the
-following structure:
+statements. The unoptimized Assembly code contains sequences of statements with
+the following structure:
 \begin{verbatim}
     beq ...,$Lx
     j $Ly
 $Lx:   ...
 \end{verbatim}
-This is inefficient, since there is a jump to a label that follows this code.
-It would be more efficient to replace the branch statement with a \texttt{bne}
-(the opposite case) to the label used in the jump statement. This way the jump
-statement can be eliminated, since the next label follows anyway. The same can
-of course be done for the opposite case, where a \texttt{bne} is changed into a
-\texttt{beq}.
+%This is inefficient, since there is a branch to a label that follows this code.
+In this code, it is more efficient to replace the branch statement with a
+\texttt{bne} (the opposite case) to the label used in the jump statement. This
+way, the jump statement can be eliminated since the label directly follows it.
+The same can be done for the opposite case, where a \texttt{bne} is changed
+into a \texttt{beq}.
 
 Since this optimization is done between two series of codes with jumps and
 labels, we can not perform this code during the basic block optimizations.
 
 \subsection{Basic Block Optimizations}
 
-Optimizations on basic blocks are a more important part of the optimizer.
-First, what is a basic block? A basic block is a sequence of statements
+Optimizations on basic blocks are a more extended part of the optimizer.
+
+First of all, what is a basic block? A basic block is a sequence of statements
 guaranteed to be executed in that order, and that order alone. This is the case
-for a piece of code not containing any branches or jumps.
+for a piece of code not containing any branches or jumps (except for the last
+statement).
 
-To create a basic block, you need to define what is the leader of a basic
-block. We call a statement a leader if it is either a jump/branch statement, or
-the target of such a statement. Then a basic block runs from one leader until
-the next leader.
+To divide the code into basic blocks, the ``leaders'' have to be found. A
+leading statement is a leader if it is either a jump or branch statement, or
+the target of such a statement. Each leader is the start of a new basic block.
 
-There are quite a few optimizations we perform on these basic blocks, so we
-will describe the types of optimizations here in stead of each optimization.
+There are five types of optimizations performed on basic blocks in our
+implementation. Each is described individually below.
 
-\subsubsection*{Standard peephole optimizations}
+\subsubsection{Standard peephole optimizations}
 
-These are optimizations that simply look for a certain statement or pattern of
+These are optimizations that look for a certain statement or pattern of
 statements, and optimize these. For example,
 \begin{verbatim}
 mov $regA,$regB
 instr $regA, $regA,...
 \end{verbatim}
-can be optimized into
+can be optimized to:
 \begin{verbatim}
 instr $regA, $regB,...
 \end{verbatim}
-since the register \texttt{\$regA} gets overwritten by the second instruction
-anyway, and the instruction can easily use \texttt{\$regB} in stead of
-\texttt{\$regA}. There are a few more of these cases, which are the same as
-those described on the practicum page
+\texttt{\$regA} should contain the same value as \texttt{\$regB} after the move
+statement, so \texttt{\$regB} can be used by \texttt{instr}.  Since
+\texttt{instr} overwrites \texttt{\$regA}, the move statement has not further
+effect after \texttt{instr} and can be removed.
+
+There are a few more of these cases, which are described on the practicum page
 \footnote{\url{http://staff.science.uva.nl/~andy/compiler/prac.html}} and in
 Appendix \ref{opt}.
 
-\subsubsection*{Common subexpression elimination}
+\subsubsection{Common subexpression elimination}
 
 A more advanced optimization is common subexpression elimination. This means
-that expensive operations as a multiplication or addition are performed only
-once and the result is then `copied' into variables where needed.
+that expensive operations like multiplications or additions are performed only
+once and the result is then `copied' into registers where needed.
 \begin{verbatim}
-
-addu	$2,$4,$3              addu = $t1, $4, $3
-...                        mov = $2, $t1
+addu $2,$4,$3              addu = $8, $4, $3  # $8 is free
+...                        mov = $2, $8
 ...                   ->   ...
 ...                        ...
-addu	$5,$4,$3              mov = $4, $t1
-
+addu $5,$4,$3              mov = $4, $8
 \end{verbatim}
 
-A standard method for doing this is the creation of a DAG or Directed Acyclic
-Graph. However, this requires a fairly advanced implementation. Our
-implementation is a slightly less fancy, but easier to implement.
-We search from the end of the block up for instructions that are eligible for
-CSE. If we find one, we check further up in the code for the same instruction,
-and add that to a temporary storage list. This is done until the beginning of
-the block or until one of the arguments of this expression is assigned.
+A standard method for doing this is usage of a DAG or Directed Acyclic Graph.
+However, this requires either the code to be in Static single
+assignment
+form\footnote{\url{http://en.wikipedia.org/wiki/Static\_single\_assignment\_form}},
+or an advanced liveness check. Our implementation contains a (partially tested)
+implementation of DAG creation, but this is not used in the final
+implementation.  However, our implementation does contain a simplified version
+of common subexpression elimination:
 
-We now add the instruction above the first use, and write the result in a new
-variable. Then all occurrences of this expression can be replaced by a move of
-from new variable into the original destination variable of the instruction.
+The statement list of a block is traversed in reversed order, looking for
+instructions that are eligible for CSE (\texttt{addu}, for example). If such an
+instruction is found, it is marked and the rest of the statement list is
+traversed while marking all statements that are equal to the found instruction.
+If a statement assigns a register that is uses by the instruction, traversal
+stops.
 
-This is a less efficient method then the DAG, but because the basic blocks are
-in general not very large and the execution time of the optimizer is not a
-primary concern, this is not a big problem.
+If more than one instruction have been marked, a new instruction is inserted
+above the first occurrence (the last occurrence in reversed order). This
+instruction performs the calculation and saves it in a free temporary register.
+Then, each occurrence is replaced by a \texttt{move} of the free register to
+its original destination register.
 
-\subsubsection*{Fold constants}
+This method is obviously less efficient method then the DAG.  However, since
+the basic blocks are generally not very large and the execution time of the
+optimizer is not a primary concern, this is not a large problem.
+
+\subsubsection{Constant folding}
+
 Constant folding is an optimization where the outcome of arithmetics are
-calculated at compile time. If a value x is assigned to a certain value, lets
-say 10, than all next occurences of \texttt{x} are replaced by 10 until a
-redefinition of x. Arithmetics in Assembly are always performed between two
-variables or a variable and a constant. If this is not the case the calculation
-is not possible. See \ref{opt} for an example. In other words until the current
-definition of \texttt{x} becomes dead. Therefore reaching definitions analysis
-is needed. Reaching definitions is a form of liveness analysis, we use the
-liveness analysis within a block and not between blocks.
+calculated at compile time. If a register x is known to contain a constant
+value, all following uses of \texttt{x} can be replaced by that value until a
+redefinition of x.
+
+Arithmetics in Assembly are always performed between two registers or a
+register and a constant. If the current value of all used registers is known,
+The expression can be executed at-compile-time and the instruction can be
+replaced by an immediate load of the result. See \ref{opt} for an example.
+
+%In other words until the current definition of \texttt{x} becomes dead.
+%Therefore reaching definitions analysis is needed. Reaching definitions is a
+%form of liveness analysis, we use the liveness analysis within a block and not
+%between blocks.
 
 During the constant folding, so-called algebraic transformations are performed
-as well. Some expression can easily be replaced with more simple once if you
-look at what they are saying algebraically. An example is the statement
-$x = y + 0$, or in Assembly \texttt{addu \$1, \$2, 0}. This can easily be
-changed into $x = y$ or \texttt{move \$1, \$2}.
+as well. When calculations are performed using constants, some calculations can
+be replaced by a load- or move-instruction. An example is the statement
+$x = y + 0$, or in Assembly: \texttt{addu \$1, \$2, 0}. This can be replaced by
+$x = y$ or \texttt{move \$1, \$2}. A list of transformations that are performed
+can be found in appendix \ref{opt}.
 
-Another case is the multiplication with a power of two. This can be done way
-more efficiently by shifting left a number of times. An example:
-\texttt{mult \$regA, \$regB, 4    ->  sll  \$regA, \$regB, 2}. We perform this
-optimization for any multiplication with a power of two.
+\subsubsection{Copy propagation}
 
-There are a number of such cases, all of which are once again stated in
-appendix \ref{opt}.
+Copy propagation replaces usage of registers that have been assigned the value
+of another register earlier. In Assembly code, such an assignment is in the
+form of a \texttt{move} instruction.
 
-\subsubsection*{Copy propagation}
+This is not a direct optimization, but is often does create dead code (the
+\texttt{move} statement) that can be eliminated.
 
-Copy propagation `unpacks' a move instruction, by replacing its destination
-address with its source address in the code following the move instruction.
+To perform copy propagation within the same basic block, the block is traversed
+until a \texttt{move x, y} instruction is encountered. For each of these ``copy
+statements'', the rest of the block is traversed while looking for usage of the
+\texttt{move}'s destination address \texttt{x}. These usages are replaced by
+usages of \texttt{y}, until either \texttt{x} or \texttt{y} is re-assigned.
 
-This is not a direct optimization, but this does allow for a more effective
-dead code elimination.
-
-The code of the block is checked linearly. When a move operation is
-encountered, the source and destination address of this move are stored. When
-a normal operation with a source and a destination address are found, a number
-of checks are performed.
-
-The first check is whether the destination address is stored as a destination
-address of a move instruction. If so, this move instruction is no longer valid,
-so the optimizations can not be done. Otherwise, continue with the second
-check.
-
-In the second check, the source address is compared to the destination
-addresses of all still valid move operations. If these are the same, in the
-current operation the found source address is replaced with the source address
-of the move operation.
+%Copy propagation `unpacks' a move instruction, by replacing its destination
+%address with its source address in the code following the move instruction.
+%
+%This is not a direct optimization, but this does allow for a more effective
+%dead code elimination.
+%
+%The code of the block is traversed linearly. If a move operation is
+%encountered, the source and destination address of this move are stored. If a
+%normal operation with a source and a destination address are found, a number of
+%checks are performed.
+%
+%The first check is whether the destination address is stored as a destination
+%address of a move instruction. If so, this move instruction is no longer valid,
+%so the optimizations can not be done. Otherwise, continue with the second
+%check.
+%
+%In the second check, the source address is compared to the destination
+%addresses of all still valid move operations. If these are the same, in the
+%current operation the found source address is replaced with the source address
+%of the move operation.
 
 An example would be the following:
 \begin{verbatim}
-move $regA, $regB           move $regA, $regB
-...                         ...
-Code not writing $regA, ->  ...
-$regB                       ...
-...                         ...
-addu $regC, $regA, ...      addu $regC, $regB, ...
+move $regA, $regB                    move $regA, $regB
+...                                  ...
+Code not writing $regA or $regB  ->  ...
+...                                  ...
+addu $regC, $regA, ...               addu $regC, $regB, ...
 \end{verbatim}
-This code shows that \texttt{\$regA} is replaced with \texttt{\$regB}. This
-way, the move instruction might have become useless, and it will then be
-removed by the dead code elimination.
+\texttt{\$regA} is replaced with \texttt{\$regB}. Now, the move instruction
+might have become useless. If so, it will be removed by dead code elimination.
 
-\subsection{Dead code elimination}
+To also replace usages in successors of the basic block, a Reaching Definitions
+analysis is used: If a \texttt{move}-statement is in the $REACH_{out}$ set of
+the block, it is used in one of the block's successors. To be able to replace a
+usage, the definition must me the only definition reaching the usage. To
+determine this, copy propagation defines a new dataflow problem that yields the
+$COPY_{in}$ and $COPY_{out}$ sets. the successor The definition is the only
+reaching definition if it is in the successor's $COPY_{in}$ set. If this is the
+case, the usage van be replaced by the destination address of the
+\texttt{move}-statement. \\
+Note: Though we implemented the algorithm as described above, we did not
+encounter any replacements between basic blocks while optimizing the provided
+benchmark scripts. This might mean that our implementation of the copy
+propagation dataflow problem is based on the lecture slides, which only briefly
+describe the algorithm.
 
-The final optimization that is performed is dead code elimination. This means
-that when an instruction is executed, but the result is never used, that
-instruction can be removed.
+\subsubsection{Dead code elimination}
 
-To be able to properly perform dead code elimination, we need to know whether a
-variable will be used, before it is overwritten again. If it does, we call the
-variable live, otherwise the variable is dead. The technique to find out if a
-variable is live is called liveness analysis. We implemented this for the
-entire code, by analysing each block, and using the variables that come in the
-block live as the variables that exit its predecessor live.
+The final optimization that is performed is dead code elimination. This removes
+statements of which the result is never used.
+
+To determine if a register is used from a certain point in the code, liveness
+analysis is used. A variable is ``live'' at a certain point in the code if it
+holds a value that may be needed in the future. Using the $LIVE_{out}$ set
+that is generated by the analysis, we can check if a register is dead after a
+certain point in a basic block. Each statement that assigns a register which
+is dead from that point on is removed.
 
 \section{Implementation}
 
-We decided to implement the optimization in Python. We chose this programming
+We decided to implement the optimizations in Python. We chose this programming
 language because Python is an easy language to manipulate strings, work
-object-oriented etc.
-It turns out that a Lex and Yacc are also available as a Python module,
-named PLY(Python Lex-Yacc). This allows us to use one language, Python, instead
-of two, i.e. C and Python. Also no debugging is needed in C, only in Python
-which makes our assignment more feasible.
+object-oriented etc..
 
-The program has three steps, parsing the Assembly code into a datastructure we
-can use, the so-called Intermediate Representation, performing optimizations on
-this IR and writing the IR back to Assembly.
+To implement the parser, we use a Python variant of Yacc and Lex named
+PLY(Python Lex-Yacc). By using this module instead of the regular C
+implementations of Yacc and Lex, we only use a single language in the entire
+project.
+
+The program has three steps:
+\begin{enumerate}
+    \item Parsing the Assembly code to an Intermediate Representation (IR).
+    \item Performing optimizations on the IR.
+    \item Writing the IR back to Assembly code.
+\end{enumerate}
+
+Our code is provided with this report, and is also available on GitHub: \\
+\url{https://github.com/taddeus/peephole}
+
+\subsection{Structure}
+
+% TODO
 
 \subsection{Parsing}
 
-The parsing is done with PLY, which allows us to perform Lex-Yacc tasks in
-Python by using a Lex-Yacc like syntax. This way there is no need to combine
-languages like we should do otherwise since Lex and Yacc are coupled with C.
+The parser is implemented using PLY, which uses standard Lex-Yacc syntax in
+given function formats.
 
-The decision was made to not recognize exactly every possible instruction in
-the parser, but only if something is for example a command, a comment or a gcc
-directive. We then transform per line to an object called a Statement. A
-statement has a type, a name and optionally a list of arguments. These
-statements together form a statement list, which is placed in another object
-called a Block. In the beginning there is one block for the entire program, but
-after global optimizations this will be separated in several blocks that are
-the basic blocks.
+The parser assumes that it is given valid Assembly code as input, so it does
+not validate whether, for example, command arguments are valid. This design
+decision was made because the optimizer uses the output of a compiler, which
+should produce valid Assembly code.
 
-\subsection{Optimizations}
+The parser recognizes 4 types of ``statements'':
+\begin{itemize}
+    \item \textbf{comment} Line starting with a `\#'.
+    \item \textbf{directive} C-directive, used by the compiler. These are
+                             matched and treated in the same way as comments.
+    \item \textbf{command} Machine instruction, followed 0 to 3 arguments and
+                           optionally an inline comment.
+    \item \textbf{label} Line containing a \texttt{WORD} token, followed by a
+                         colon (`:').
+\end{itemize}
 
-The optimizations are done in two different steps. First the global
-optimizations are performed, which are only the optimizations on branch-jump
-constructions. This is done repeatedly until there are no more changes.
+Each statement is represented by a \texttt{Statement} object containing a type,
+a name, optionally a list of arguments and optionally a list of extra options
+(such as inline comments). The parsed list of statements forms a
+\texttt{Program} object, which is the return value of the parser.
 
-After all possible global optimizations are done, the program is separated into
-basic blocks. The algorithm to do this is described earlier, and means all
-jump and branch instructions are called leaders, as are their targets. A basic
-block then goes from leader to leader.
+\subsection{Optimization loop}
 
-After the division in basic blocks, optimizations are performed on each of
-these basic blocks. This is also done repeatedly, since some times several
-steps can be done to optimize something.
+The optimizations are performed in a loop until no more changed are made. The
+optimization loop first performs global optimizations on the entire statement
+list of the program. Second, all dataflow analyses are performed (basic block
+creation, flow graph generation, liveness, reaching definitions, copy
+propagation). Finally, all basic block-level optimizations are executed. if
+either the global or one of the block optimizations yields a change in
+statements, another iteration is executed.
 
 \subsection{Writing}
 
-Once all the optimizations have been done, the IR needs to be rewritten into
-Assembly code. After this step the xgcc crosscompiler can make binary code from
-the generated Assembly code.
+Once all the optimizations have been done, the IR needs to be rewritten to
+Assembly code. After this step, the xgcc cross compiler can make binary code
+from the generated Assembly code.
 
 The writer expects a list of statements, so first the blocks have to be
 concatenated again into a list. After this is done, the list is passed on to
-the writer, which writes the instructions back to Assembly and saves the file
-so we can let xgcc compile it. The original statements can also written to a
-file, so differences in tabs, spaces and newlines do not show up when checking
-the differences between the optimized and non-optimized files.
+the writer, which writes the instructions back to Assembly and saves the file.
+We believe that the writer code is self-explanatory, so we will not discuss it
+in detail here.
+
+The writer has a slightly different output format than the xgcc compiler in
+some cases. Therefore, the main execution file has an option to also write the
+original statement list back to a files way, differences in tabs, spaces and
+newlines do not show up when checking the differences between optimized and
+non-optimized files.
 
 \subsection{Execution}
 
-To execute the optimizer, the following command can be given:\\
-\texttt{./main.py <original file> <optimized file> <rewritten original file>}\\
+To execute the optimizer, the following command can be given: \\
+\texttt{./main.py <original file> <optimized file> <rewritten original file>} \\
 There is also a script available that runs the optimizer and automatically
 starts the program \emph{meld}. In meld it is easy to visually compare the
-original file and the optimized file. The command to execute this script is:\\
-\texttt{./run <benchmark name (e.g. whet)>}\\
+original file and the optimized file. The command to execute this script is: \\
+\texttt{./run <benchmark name (e.g. whet)>}
 
 \section{Testing}
 
@@ -277,7 +334,7 @@ mistake in the program, not knowing where this bug is. Naturally, this means
 debugging is a lot easier.
 
 The unit tests can be run by executing \texttt{make test} in the root folder of
-the project. This does require the \texttt{textrunner} module.
+the project. This does require the \texttt{testrunner} module of Python.
 
 Also available is a coverage report. This report shows how much of the code has
 been unit tested. To make this report, the command \texttt{make coverage} can
@@ -297,15 +354,29 @@ somewhere in the code.
 The following results have been obtained:\\
 \begin{tabular}{|c|c|c|c|c|c|}
 \hline
-Benchmark & Original     & Optimized    & Original & Optimized & Performance \\
-        & Instructions & instructions   & cycles   & cycles    &  boost(cycles)\\
+Benchmark & Original     & Removed      & Original & Optimized & Performance \\
+          & Instructions & instructions & cycles   & cycles    & boost(cycles) \\
+\hline
+pi        &           94 &            2 &          &           &             \% \\
+acron     &          361 &           24 &          &           &             \% \\
+dhrystone &          752 &           52 &          &           &             \% \\
+whet      &          935 &           37 &          &           &             \% \\
+slalom    &         4177 &          227 &          &           &             \% \\
+clinpack  &         3523 &              &          &           &              \% \\
+\hline
+\end{tabular}
+
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+Benchmark & Original     & Removed      & Original & Optimized & Performance \\
+          & Instructions & instructions & cycles   & cycles    & boost(cycles)\\
 \hline
 pi        &           94 &      2       &    1714468   &   1714362      &   0.006182676 \%       \\
 acron     &          361 &      19      &    4435687   &   4372825      &   1.417187462 \%       \\
-dhrystone &          752 &      36      &    2887710   &   2742720      &   5.020933542 \%       \\  
+dhrystone &          752 &      36      &    2887710   &   2742720      &   5.020933542 \%       \\
 whet      &          935 &      23      &    2864526   &   2840042      &   0.854731289 \%       \\
 slalom    &         4177 &      107     &    2879140   &   2876105      &   0.143480345 \%       \\
-clinpack  &         3523 &      49      &    1543746   &   1528406      &   1.353201887  \%       \\ 
+clinpack  &         3523 &      49      &    1543746   &   1528406      &   1.353201887  \%       \\
 \hline
 \end{tabular}
 
@@ -363,15 +434,14 @@ Code not writing $regB  ->  ...
 ...                         ...
 addu $regC, $regB, 4        move $regC, $regD
 
-
 # Constant folding
-li $regA, constA                ""       
-sw $regA, 16($fp)               ""
-li $regA, constB        ->      ""
-sw $regA, 20($fp)               ""	
-lw $regA, 16($fp)               "" 
-lw $regB, 20($fp)               ""
-addu $regA, $regA, $regA        $li regA, (constA + constB) at compile time
+li $2, 2                    $2 = 2
+sw $2, 16($fp)              16($fp) = 2
+li $2, 3                    $2 = 3
+sw $2, 20($fp)          ->  20($fp) = 3
+lw $2, 16($fp)              $2 = 16($fp) = 2
+lw $3, 20($fp)              $3 = 20($fp) = 3
+addu $2, $2, $3             change to "li $2, 0x00000005"
 
 # Copy propagation
 move $regA, $regB           move $regA, $regB
