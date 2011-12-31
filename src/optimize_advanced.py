@@ -1,5 +1,3 @@
-import re
-
 from src.statement import Statement as S
 from src.liveness import RESERVED_REGISTERS, is_reg_dead_after
 from src.dataflow import succ
@@ -96,6 +94,10 @@ def fold_constants(block):
     Constant folding:
     x = 3 + 5           ->  x = 8
     y = x * 2               y = 16
+
+    Also preforms algebraic transformations:
+    x = y + 0           ->  x = y
+    etc.
 
     To keep track of constant values, the following assumptions are made:
     - An immediate load defines a register value:
@@ -276,67 +278,6 @@ def fold_constants(block):
 #    ...                         ...
 #    addu $regC, $regA, ...      addu $regC, $regB, ...
 #    """
-#    moves_from = []
-#    moves_to = []
-#    changed = False
-#
-#    block.reset()
-#
-#    while not block.end():
-#        s = block.read()
-#
-#        if s.is_command('move') and s[0] not in moves_to:
-#            # Add this move to the lists, because it is not yet there.
-#            moves_from.append(s[1])
-#            moves_to.append(s[0])
-#        elif s.is_command('move') and s[0] in moves_to:
-#            # This move is already in the lists, so only update it
-#            for i in xrange(len(moves_to)):
-#                if moves_to[i] == s[0]:
-#                    moves_from[i] = s[1]
-#                    continue
-#        elif (len(s) == 3 or s.is_command('mlfo') or s.is_load()) \
-#                and (s[0] in moves_to or s[0] in moves_from):
-#            # One of the registers gets overwritten, so remove the data from
-#            # the list.
-#            i = 0
-#
-#            while i < len(moves_to):
-#                if moves_to[i] == s[0] or moves_to[i] == s[1]:
-#                    del moves_to[i]
-#                    del moves_from[i]
-#                else:
-#                    i += 1
-#        elif len(s) == 3 and (s[1] in moves_to or s[2] in moves_to):
-#            # Check where the result of the move is used and replace it with
-#            # the original variable.
-#            for i in xrange(len(moves_to)):
-#                if s[1] == moves_to[i]:
-#                    s[1] = moves_from[i]
-#                    continue
-#
-#                if s[2] == moves_to[i]:
-#                    s[2] = moves_from[i]
-#                    continue
-#
-#            changed = True
-#
-#    return changed
-
-
-#def propagate_copies(block):
-#    """
-#    Unpack a move instruction, by replacing its destination
-#    address with its source address in the code following the move instruction.
-#    This way, the move statement might be a target for dead code elimination.
-#
-#    move $regA, $regB           move $regA, $regB
-#    ...                         ...
-#    Code not writing $regA, ->  ...
-#    $regB                       ...
-#    ...                         ...
-#    addu $regC, $regA, ...      addu $regC, $regB, ...
-#    """
 #    changed = False
 #
 #    moves = {}
@@ -438,12 +379,13 @@ def propagate_copies(block):
                 if i != -1 and (not replaced_before \
                         or (x, y) not in s2.replaced):
                     s2.replace_usage(x, y, i)
-                    changed = True
 
                     if replaced_before:
                         s2.replaced.append((x, y))
                     else:
                         s2.replaced = [(x, y)]
+
+                    changed = True
 
                 # An assignment to x or y kills the copy statement x = y
                 defined = s2.get_def()
@@ -463,8 +405,6 @@ def propagate_copies(block):
 
                         if i != -1:
                             s2.replace_usage(x, y, i, block.bid)
-                            print ' Replaced %s with %s from block %d' \
-                                  % (x, y, block.bid)
                             changed = True
 
                         # An assignment to x or y kills the copy statement x =

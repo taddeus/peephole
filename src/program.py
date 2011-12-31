@@ -73,12 +73,18 @@ class Program(Block):
 
     def optimize_global(self):
         """Optimize on a global level."""
+        changed = False
+
         if not hasattr(self, 'statements'):
             self.statements = self.get_statements()
 
-        return remove_redundant_jumps(self) \
-               | remove_redundant_branch_jumps(self)
-        return False
+        if remove_redundant_jumps(self):
+            changed = True
+
+        if remove_redundant_branch_jumps(self):
+            changed = True
+
+        return changed
 
     def optimize_blocks(self):
         """Optimize on block level. Keep executing all optimizations until no
@@ -100,13 +106,6 @@ class Program(Block):
 
             if eliminate_dead_code(block):
                 changed = True
-
-            #if remove_redundancies(block) \
-            #        | eliminate_common_subexpressions(block) \
-            #        | fold_constants(block) \
-            #        | propagate_copies(block) \
-            #        | eliminate_dead_code(block):
-            #     changed = True
 
         return changed
 
