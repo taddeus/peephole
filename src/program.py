@@ -8,6 +8,7 @@ from optimize.advanced import eliminate_common_subexpressions, \
 
 import liveness
 import reaching_definitions
+#import copy_propagation as copy_propagation_flow
 
 from writer import write_statements
 
@@ -85,12 +86,27 @@ class Program(Block):
         changed = False
 
         for block in self.blocks:
-            if remove_redundancies(block) \
-                    | eliminate_common_subexpressions(block) \
-                    | fold_constants(block) \
-                    | copy_propagation(block) \
-                    | eliminate_dead_code(block):
-                 changed = True
+            if remove_redundancies(block):
+                changed = True
+
+            if eliminate_common_subexpressions(block):
+                changed = True
+
+            if fold_constants(block):
+                changed = True
+
+            if copy_propagation(block):
+                changed = True
+
+            if eliminate_dead_code(block):
+                changed = True
+
+            #if remove_redundancies(block) \
+            #        | eliminate_common_subexpressions(block) \
+            #        | fold_constants(block) \
+            #        | copy_propagation(block) \
+            #        | eliminate_dead_code(block):
+            #     changed = True
 
         return changed
 
@@ -113,6 +129,7 @@ class Program(Block):
         generate_flow_graph(self.blocks)
         liveness.create_in_out(self.blocks)
         reaching_definitions.create_in_out(self.blocks)
+        #copy_propagation_flow.create_in_out(self.blocks)
 
     def save(self, filename):
         """Save the program in the specified file."""

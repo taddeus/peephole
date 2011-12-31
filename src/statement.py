@@ -40,7 +40,10 @@ class Statement:
                 % (self.stype, self.name, self.args)
 
     def set_message(self, message):
-        self.options['message'] = message
+        if len(self.options.get('message', '')):
+            self.options['message'] += ' |' + message
+        else:
+            self.options['message'] = message
 
     def set_inline_comment(self, comment):
         self.options['comment'] = comment
@@ -235,14 +238,28 @@ class Statement:
         """Check if this statement defines the given register."""
         return reg in self.get_def()
 
-    def uses(self, reg):
+    def uses(self, reg, as_index=False):
         """Check if this statement uses the given register."""
-        return reg in self.get_use()
+        use = self.get_use(as_index)
 
-    def replace_usage(self, x, y):
+        if as_index:
+            for index, register in use:
+                if register == reg:
+                    return index
+
+            return -1
+
+        return reg in use
+
+    def replace_usage(self, x, y, index, bid=0):
         """Replace the uses of register x by y."""
-        for i, arg in enumerate(self):
-            self[i] = re.sub('\\' + x + '(?!\d)', y, str(arg))
+        self[index] = re.sub('\\' + x + '(?!\d)', y, str(self[index]))
+
+        if bid:
+            self.set_message(' Replaced %s with %s from block %d' \
+                             % (x, y, bid))
+        else:
+            self.set_message(' Replaced %s with %s' % (x, y))
 
 
 class Block:

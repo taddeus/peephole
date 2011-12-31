@@ -1,7 +1,8 @@
 import re
 
 from src.statement import Statement as S
-from src.liveness import is_reg_dead_after
+from src.liveness import RESERVED_REGISTERS, is_reg_dead_after
+from src.dataflow import succ
 
 
 #def reg_can_be_used_in(reg, block, start, end):
@@ -342,6 +343,83 @@ def fold_constants(block):
 #    return changed
 
 
+#def copy_propagation(block):
+#    """
+#    Unpack a move instruction, by replacing its destination
+#    address with its source address in the code following the move instruction.
+#    This way, the move statement might be a target for dead code elimination.
+#
+#    move $regA, $regB           move $regA, $regB
+#    ...                         ...
+#    Code not writing $regA, ->  ...
+#    $regB                       ...
+#    ...                         ...
+#    addu $regC, $regA, ...      addu $regC, $regB, ...
+#    """
+#    changed = False
+#
+#    moves = {}
+#
+#    block.reset()
+#
+#    while not block.end():
+#        s = block.read()
+#
+#        if not s.is_command():
+#            continue
+#
+#        if s.name == 'move':
+#            # Register the move
+#            reg_to, reg_from = s
+#
+#            if reg_from in moves:
+#                if moves[reg_from] == reg_to:
+#                    continue
+#                else:
+#                    moves[reg_to] = moves[reg_from]
+#            elif reg_to == reg_from:
+#                del moves[reg_to]
+#            else:
+#                moves[reg_to] = reg_from
+#
+#            s.set_message(' Move: %s = %s' % (reg_to, moves[reg_to]))
+#            continue
+#
+#        # Replace used registers with moved equivalents when possible
+#        for i, reg in s.get_use(True):
+#            if reg in moves:
+#                #s.replace_usage(reg, moves[reg], i)
+#                #changed = True
+#                replaced_before = hasattr(s, 'replaced')
+#                xy = (reg, moves[reg])
+#
+#                if not replaced_before or xy not in s.replaced:
+#                    s.replace_usage(reg, moves[reg], i)
+#                    changed = True
+#
+#                    if replaced_before:
+#                        s.replaced.append(xy)
+#                    else:
+#                        s.replaced = [xy]
+#
+#        # If a known moved register is overwritten, remove it from the
+#        # registration
+#        defined = s.get_def()
+#        delete = []
+#
+#        for move_to, move_from in moves.iteritems():
+#            if move_to in defined or move_from in defined:
+#                delete.append(move_to)
+#
+#        if len(delete):
+#            s.set_message(' Moves deleted: %s' % ', '.join(delete))
+#
+#            for reg in delete:
+#                del moves[reg]
+#
+#    return changed
+
+
 def copy_propagation(block):
     """
     Unpack a move instruction, by replacing its destination
@@ -357,54 +435,64 @@ def copy_propagation(block):
     """
     changed = False
 
-    moves = {}
-
     block.reset()
 
     while not block.end():
         s = block.read()
 
-        if not s.is_command():
-            continue
+        # For each copy statement s: x = y do
+        if s.is_command('move'):
+            x, y = s
 
-        if s.name == 'move':
-            # Register the move
-            reg_to, reg_from = s
+            # Moves to reserved registers will never be removed, so don't
+            # bother replacing them
+            #if x in RESERVED_REGISTERS:
+            #    continue
 
-            if reg_from in moves:
-                if moves[reg_from] == reg_to:
-                    continue
-                else:
-                    moves[reg_to] = moves[reg_from]
-            elif reg_to == reg_from:
-                del moves[reg_to]
-            else:
-                moves[reg_to] = reg_from
+            # Determine the uses of x reached by this definition of x
+            for s2 in block[block.pointer:]:
+                i = s2.uses(x, True)
+                replaced_before = hasattr(s2, 'replaced')
 
-            s.set_message(' Move: %s = %s' % (reg_to, moves[reg_to]))
-            continue
+                if i != -1 and (not replaced_before \
+                        or (x, y) not in s2.replaced):
+                    s2.replace_usage(x, y, i)
+                    changed = True
 
-        # Replace used registers with moved equivalents when possible
-        for i, reg in s.get_use(True):
-            if reg in moves:
-                s[i] = re.sub('\\' + reg + '(?!\d)', moves[reg], s[i])
-                s.set_message(' Replaced %s with %s' % (reg, moves[reg]))
-                changed = True
+                    if replaced_before:
+                        s2.replaced.append((x, y))
+                    else:
+                        s2.replaced = [(x, y)]
 
-        # If a known moved register is overwritten, remove it from the
-        # registration
-        defined = s.get_def()
-        delete = []
+                # An assignment to x or y kills the copy statement x = y
+                defined = s2.get_def()
 
-        for move_to, move_from in moves.iteritems():
-            if move_to in defined or move_from in defined:
-                delete.append(move_to)
+                if x in defined or y in defined:
+                    break
 
-        if len(delete):
-            s.set_message(' Moves deleted: %s' % ', '.join(delete))
+            # Determine uses of x in successors of the block
+            # Determine if for each of those uses if this is the only
+            # definition reaching it -> s in in[B_use]
+            #if s.sid in block.reach_out:
+            #    for b in filter(lambda b: (x, y) in b.copy_in, succ(block)):
+            #        print b
+            #        for s2 in b:
+            #            # Determine if for each of those uses this is the only
+            #            # definition reaching it -> s in in[B_use]
+            #            i = s2.uses(x, True)
 
-            for reg in delete:
-                del moves[reg]
+            #            if i != -1:
+            #                s2.replace_usage(x, y, i, block.bid)
+            #                print ' Replaced %s with %s from block %d' \
+            #                      % (x, y, block.bid)
+            #                changed = True
+
+            #            # An assignment to x or y kills the copy statement x =
+            #            # y
+            #            defined = s2.get_def()
+
+            #            if x in defined or y in defined:
+            #                break
 
     return changed
 
